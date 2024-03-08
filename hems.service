@@ -1,0 +1,16 @@
+[Unit]
+Description=Hållfjället energy managment system
+Requires=network.target
+After=network.target
+
+[Service]
+ExecStart=/opt/hems/bin/hems
+Restart=on-failure
+RestartSec=5
+User=daemon
+Group=daemon
+ProtectSystem=full
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

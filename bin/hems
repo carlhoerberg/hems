@@ -1,0 +1,37 @@
+#!/usr/bin/env ruby
+require_relative "../lib/devices"
+require_relative "../lib/metrics"
+
+# Hållfjället energy management system
+
+# Serve /metrics for influx to scrape
+Thread.new do
+  Thread.current.name = "metrics"
+  PrometheusMetrics.serve
+end
+
+next3 = Next3.new("localhost", 5002)
+genset = Genset.new("localhost", 5003)
+loop do
+  soc = next3.battery.soc
+  puts "SOC: #{soc}%"
+  if soc < 15
+    puts "Starting genset"
+    genset.start
+    until genset.ready_to_load?
+      sleep 2
+      puts "Genset is not yet ready to load"
+    end
+    puts "Genset is yet ready to load"
+    puts "Enabling charging"
+    next3.acsource.enable
+  elsif soc >= 98
+    puts "Disable charging"
+    next3.acsource.disable
+    puts "Letting genset cool down for 60s"
+    sleep 60 # let genset cool down
+    puts "Stopping genset"
+    genset.stop
+  end
+  sleep 10
+end
