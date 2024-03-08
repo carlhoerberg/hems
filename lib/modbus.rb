@@ -1,6 +1,7 @@
 # https://modbus.org/docs/Modbus_Application_Protocol_V1_1b.pdf
 module Modbus
   class Base
+    # FC02, read bit values
     def read_discrete_inputs(addr, count, unit = 255)
       function = 2
       request([unit, function, addr, count].pack("CCnn")) do
@@ -14,6 +15,7 @@ module Modbus
       read_discrete_inputs(addr, 1, unit).first
     end
 
+    # FC03, read 16-bit values
     def read_holding_registers(addr, count, unit = 255)
       function = 3
       request([unit, function, addr, count].pack("CCnn")) do
@@ -26,6 +28,16 @@ module Modbus
       read_holding_registers(addr, 1, unit).first
     end
 
+    # FC04
+    def read_input_registers(addr, count, unit = 255)
+      function = 4
+      request([unit, function, addr, count].pack("CCnn")) do
+        len = read(1).unpack1("C")
+        read(len).unpack1("n*")
+      end
+    end
+
+    # FC05
     def write_coil(addr, value, unit = 255)
       raise ArgumentError.new "Boolean value required" if value != true && value != false
       function = 5
@@ -36,7 +48,7 @@ module Modbus
       end
     end
 
-    # writes 16byte values to addr
+    # FC16
     def write_holding_registers(addr, values, unit = 255)
       function = 16
       count = values.size
@@ -79,6 +91,18 @@ module Modbus
 
       def read_discrete_input(addr)
         @modbus.read_discrete_input(addr, @unit)
+      end
+    end
+
+    protected
+
+    def handle_exception
+      exception_code = read(1).unpack1("C")
+      case exception_code
+      when 1 then raise "Modbus exception invalid function"
+      when 2 then raise "Modbus exception invalid address"
+      when 3 then raise "Modbus exception invalid data"
+      else raise "Modbus exception code #{exception_code}"
       end
     end
   end

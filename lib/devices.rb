@@ -1,20 +1,8 @@
 require_relative "./modbus/tcp"
 
-class Array
-  def to_f32
-    raise ArgumentError.new("Two 16 bit values required for 32 bit float") if size != 2
-    pack("n2").unpack1("g")
-  end
-
-  def to_f64
-    raise ArgumentError.new("Four 16 bit values required for 64 bit float") if size != 4
-    pack("n4").unpack1("G")
-  end
-end
-
 class Genset
-  def initialize(host, port)
-    @genset = Modbus::TCP.new(host, port)
+  def initialize
+    @genset = Modbus::RTU.new.unit(5)
   end
 
   def start
@@ -73,13 +61,35 @@ class Next3
 end
 
 class Relays
-  def initialize(host, port)
-    @relays = Modbus::TCP.new(host, port)
+  def initialize(host, port = 502)
+    @modbus = Modbus::TCP.new(host, port)
+  end
+
+  def activate(id)
+    @modbus.write_coil(id, true, 1)
+  end
+
+  def deactivate(id)
+    @modbus.write_coil(id, false, 1)
   end
 end
 
 class PelletsBoiler
-  def initialize(host, port)
-    @boiler = Modbus::TCP.new(host, port)
+  def initialize(host, port = 502)
+    @modbus = Modbus::TCP.new(host, port)
+  end
+end
+
+class Array
+  # Converts two 16-bit values to one 32-bit float, as Modbus only deals with 16 bit values
+  def to_f32
+    raise ArgumentError.new("Two 16 bit values required for 32 bit float") if size != 2
+    pack("n2").unpack1("g")
+  end
+
+  # Converts four 16-bit values to one 64-bit float, as Modbus only deals with 16 bit values
+  def to_f64
+    raise ArgumentError.new("Four 16 bit values required for 64 bit float") if size != 4
+    pack("n4").unpack1("G")
   end
 end
