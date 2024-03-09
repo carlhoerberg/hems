@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
-require_relative "../lib/devices"
-require_relative "../lib/metrics"
+require_relative "../lib/devices/next3"
+require_relative "../lib/devices/genset"
 
 # Hållfjället energy management system
 next3 = Next3.new

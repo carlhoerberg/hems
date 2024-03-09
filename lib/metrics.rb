@@ -1,5 +1,5 @@
 require "webrick"
-require_relative "./devices"
+require_relative "./devices/next3"
 
 class PrometheusMetrics
   def self.serve
@@ -7,7 +7,7 @@ class PrometheusMetrics
     trap('INT') { server.shutdown }
     trap('TERM') { server.shutdown }
 
-    next3 = Next3.new
+    next3 = Devices::Next3.new
     server.mount_proc '/metrics' do |req, res|
       res.content_type = "text/plain"
       res.body = <<~EOF
