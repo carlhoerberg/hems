@@ -1,4 +1,5 @@
 require_relative "./modbus/tcp"
+require_relative "./modbus/rtu"
 
 class Genset
   def initialize

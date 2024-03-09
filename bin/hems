@@ -10,8 +10,8 @@ Thread.new do
   PrometheusMetrics.serve
 end
 
-next3 = Next3.new("localhost", 5002)
-genset = Genset.new("localhost", 5003)
+next3 = Next3.new("rpi4", 5002)
+genset = Genset.new
 loop do
   soc = next3.battery.soc
   puts "SOC: #{soc}%"

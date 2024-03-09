@@ -7,7 +7,7 @@ class PrometheusMetrics
     trap('INT') { server.shutdown }
     trap('TERM') { server.shutdown }
 
-    next3 = Next3.new("localhost", 5002)
+    next3 = Next3.new("rpi4", 5002)
     server.mount_proc '/metrics' do |req, res|
       res.content_type = "text/plain"
       res.body = <<~EOF
