@@ -3,8 +3,8 @@ require_relative "../lib/devices/next3"
 require_relative "../lib/devices/genset"
 
 # Hållfjället energy management system
-next3 = Next3.new
-genset = Genset.new
+next3 = Devices::Next3.new
+genset = Devices::Genset.new
 loop do
   soc = next3.battery.soc
   puts "SOC: #{soc}%"
