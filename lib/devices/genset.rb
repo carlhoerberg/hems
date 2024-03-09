@@ -1,4 +1,4 @@
-require_relative "./modbus/rtu"
+require_relative "../modbus/rtu"
 
 module Devices
   class Genset
