@@ -3,13 +3,6 @@ require_relative "../lib/devices"
 require_relative "../lib/metrics"
 
 # Hållfjället energy management system
-
-# Serve /metrics for influx to scrape
-Thread.new do
-  Thread.current.name = "metrics"
-  PrometheusMetrics.serve
-end
-
 next3 = Next3.new
 genset = Genset.new
 loop do
