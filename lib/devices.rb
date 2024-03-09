@@ -22,7 +22,9 @@ end
 class Next3
   attr_reader :battery, :acsource
 
-  def initialize(host, port)
+  def initialize
+    host = ENV.fetch("NEXT3_HOST", "studer-next")
+    port = ENV.fetch("NEXT3_PORT", 502).to_i
     next3 = Modbus::TCP.new(host, port)
     @battery = Battery.new next3.unit(2)
     @acsource = AcSource.new next3.unit(7)
