@@ -28,7 +28,7 @@ module Modbus
       read_holding_registers(addr, 1, unit).first
     end
 
-    # FC04
+    # FC04. read 16-bit values
     def read_input_registers(addr, count, unit = 255)
       function = 4
       request([unit, function, addr, count].pack("CCnn")) do
