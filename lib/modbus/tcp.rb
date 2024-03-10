@@ -20,18 +20,22 @@ module Modbus
     Protocol = 0
 
     def request(request, &)
+      try = 0
       transaction = rand(2**16)
       length = request.bytesize
-      socket.write [transaction, Protocol, length, request].pack("nnna*")
-      header = read(8)
-      rtransaction, rprotocol, _response_length, _unit, function = header.unpack("nnnCC")
-      raise "Invalid transaction (#{rtransaction} != #{transaction})" if rtransaction != transaction
-      raise "Invalid protocol (#{rprotocol})" if rprotocol != Protocol
-      handle_exception if function[7] == 1 # highest bit set indicates an exception
-      yield
-    rescue SocketError => ex
-      close
-      raise ex
+      begin
+        socket.write [transaction, Protocol, length, request].pack("nnna*")
+        header = read(8)
+        rtransaction, rprotocol, _response_length, _unit, function = header.unpack("nnnCC")
+        raise "Invalid transaction (#{rtransaction} != #{transaction})" if rtransaction != transaction
+        raise "Invalid protocol (#{rprotocol})" if rprotocol != Protocol
+        handle_exception if function[7] == 1 # highest bit set indicates an exception
+        yield
+      rescue SocketError, SystemCallError => ex
+        close
+        retry if (try += 1) < 2
+        raise ex
+      end
     end
 
     def read(count)
