@@ -73,7 +73,7 @@ module Devices
         @unit.read_holding_registers(300 * phase + 2, 2).to_f32
       end
 
-      def powerfactor(phase)
+      def power_factor(phase)
         raise ArgumentError.new("Phase 1, 2 or 3") unless [1,2,3].include? phase
         @unit.read_holding_registers(300 * phase + 10, 2).to_f32
       end
@@ -113,7 +113,7 @@ module Devices
         @unit.read_holding_registers(3908 + 300 * phase, 2).to_f32
       end
 
-      def powerfactor(phase)
+      def power_factor(phase)
         raise ArgumentError.new("Phase 1, 2 or 3") unless [1,2,3].include? phase
         @unit.read_holding_registers(3910 + 300 * phase, 2).to_f32
       end
