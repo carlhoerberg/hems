@@ -10,6 +10,7 @@ class PrometheusMetrics
     next3 = Devices::Next3.new
     server.mount_proc '/metrics' do |req, res|
       res.content_type = "text/plain"
+      #res.content_encoding = "gzip"
       unix_ms = DateTime.now.strftime("%Q")
       res.body = <<~EOF
       # HELP soc Battery state of charge
@@ -27,6 +28,54 @@ class PrometheusMetrics
       day_charging_energy #{next3.battery.day_charging_energy} #{unix_ms}
       # TYPE day_discharging_energy counter
       day_discharging_energy #{next3.battery.day_discharging_energy} #{unix_ms}
+      # TYPE acload_l1_current gauge
+      acload_l1_current #{next3.acload.current(1)} #{unix_ms}
+      # TYPE acload_l1_voltage gauge
+      acload_l1_current #{next3.acload.voltage(1)} #{unix_ms}
+      # TYPE acload_l1_active_power gauge
+      acload_l1_active_power #{next3.acload.active_power(1)} #{unix_ms}
+      # TYPE acload_l1_reactive_power gauge
+      acload_l1_reactive_power #{next3.acload.reactive_power(1)} #{unix_ms}
+      # TYPE acload_l1_apparent_power gauge
+      acload_l1_apparent_power #{next3.acload.apparent_power(1)} #{unix_ms}
+      # TYPE acload_l1_power_factor gauge
+      acload_l1_power_factor #{next3.acload.power_factor(1)} #{unix_ms}
+      # TYPE acload_l1_day_consumed_energy counter
+      acload_l1_day_consumed_energy #{next3.acload.day_consumed_energy(1)} #{unix_ms}
+      # TYPE acload_l2_current gauge
+      acload_l2_current #{next3.acload.current(1)} #{unix_ms}
+      # TYPE acload_l2_voltage gauge
+      acload_l2_current #{next3.acload.voltage(1)} #{unix_ms}
+      # TYPE acload_l2_active_power gauge
+      acload_l2_active_power #{next3.acload.active_power(1)} #{unix_ms}
+      # TYPE acload_l2_reactive_power gauge
+      acload_l2_reactive_power #{next3.acload.reactive_power(1)} #{unix_ms}
+      # TYPE acload_l2_apparent_power gauge
+      acload_l2_apparent_power #{next3.acload.apparent_power(1)} #{unix_ms}
+      # TYPE acload_l2_power_factor gauge
+      acload_l2_power_factor #{next3.acload.power_factor(1)} #{unix_ms}
+      # TYPE acload_l2_day_consumed_energy counter
+      acload_l2_day_consumed_energy #{next3.acload.day_consumed_energy(1)} #{unix_ms}
+      # TYPE acload_l3_current gauge
+      acload_l3_current #{next3.acload.current(1)} #{unix_ms}
+      # TYPE acload_l3_voltage gauge
+      acload_l3_current #{next3.acload.voltage(1)} #{unix_ms}
+      # TYPE acload_l3_active_power gauge
+      acload_l3_active_power #{next3.acload.active_power(1)} #{unix_ms}
+      # TYPE acload_l3_reactive_power gauge
+      acload_l3_reactive_power #{next3.acload.reactive_power(1)} #{unix_ms}
+      # TYPE acload_l3_apparent_power gauge
+      acload_l3_apparent_power #{next3.acload.apparent_power(1)} #{unix_ms}
+      # TYPE acload_l3_power_factor gauge
+      acload_l3_power_factor #{next3.acload.power_factor(1)} #{unix_ms}
+      # TYPE acload_l3_day_consumed_energy counter
+      acload_l3_day_consumed_energy #{next3.acload.day_consumed_energy(1)} #{unix_ms}
+      # TYPE acsource_voltage gauge
+      acsource_voltage #{next3.acsource.voltage} #{unix_ms}
+      # TYPE acsource_current gauge
+      acsource_current #{next3.acsource.current} #{unix_ms}
+      # TYPE acsource_power_factor gauge
+      acsource_power_factor #{next3.acsource.power_factor} #{unix_ms}
       EOF
     end
 
