@@ -70,12 +70,6 @@ class PrometheusMetrics
       acload_l3_power_factor #{next3.acload.power_factor(1)} #{unix_ms}
       # TYPE acload_l3_day_consumed_energy counter
       acload_l3_day_consumed_energy #{next3.acload.day_consumed_energy(1)} #{unix_ms}
-      # TYPE acsource_voltage gauge
-      acsource_voltage #{next3.acsource.voltage} #{unix_ms}
-      # TYPE acsource_current gauge
-      acsource_current #{next3.acsource.current} #{unix_ms}
-      # TYPE acsource_power_factor gauge
-      acsource_power_factor #{next3.acsource.power_factor} #{unix_ms}
       EOF
     end
 
