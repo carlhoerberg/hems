@@ -31,7 +31,7 @@ class PrometheusMetrics
       # TYPE acload_l1_current gauge
       acload_l1_current #{next3.acload.current(1)} #{unix_ms}
       # TYPE acload_l1_voltage gauge
-      acload_l1_current #{next3.acload.voltage(1)} #{unix_ms}
+      acload_l1_voltage #{next3.acload.voltage(1)} #{unix_ms}
       # TYPE acload_l1_active_power gauge
       acload_l1_active_power #{next3.acload.active_power(1)} #{unix_ms}
       # TYPE acload_l1_reactive_power gauge
@@ -45,7 +45,7 @@ class PrometheusMetrics
       # TYPE acload_l2_current gauge
       acload_l2_current #{next3.acload.current(2)} #{unix_ms}
       # TYPE acload_l2_voltage gauge
-      acload_l2_current #{next3.acload.voltage(2)} #{unix_ms}
+      acload_l2_voltage #{next3.acload.voltage(2)} #{unix_ms}
       # TYPE acload_l2_active_power gauge
       acload_l2_active_power #{next3.acload.active_power(2)} #{unix_ms}
       # TYPE acload_l2_reactive_power gauge
@@ -59,7 +59,7 @@ class PrometheusMetrics
       # TYPE acload_l3_current gauge
       acload_l3_current #{next3.acload.current(3)} #{unix_ms}
       # TYPE acload_l3_voltage gauge
-      acload_l3_current #{next3.acload.voltage(3)} #{unix_ms}
+      acload_l3_voltage #{next3.acload.voltage(3)} #{unix_ms}
       # TYPE acload_l3_active_power gauge
       acload_l3_active_power #{next3.acload.active_power(3)} #{unix_ms}
       # TYPE acload_l3_reactive_power gauge
