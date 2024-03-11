@@ -20,8 +20,8 @@ class PrometheusMetrics
       # TYPE temp gauge
       temp #{next3.battery.temp} #{unix_ms}
       # HELP charging_current Battery charging current
-      # TYPE charging_amps gauge
-      charging_amps #{next3.battery.charging_current} #{unix_ms}
+      # TYPE charging_current gauge
+      charging_current #{next3.battery.charging_current} #{unix_ms}
       # TYPE charging_power gauge
       charging_power #{next3.battery.charging_power} #{unix_ms}
       # TYPE day_charging_energy counter
