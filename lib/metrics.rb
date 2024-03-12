@@ -3,7 +3,8 @@ require_relative "./devices/next3"
 
 class PrometheusMetrics
   def self.serve
-    server = WEBrick::HTTPServer.new :Port => ENV.fetch("PORT", 8000).to_i
+    server = WEBrick::HTTPServer.new(Port: ENV.fetch("PORT", 8000).to_i,
+                                     AccessLog: [[$stdout, "#{WEBrick::AccessLog::COMMON_LOG_FORMAT} %T"]])
     trap('INT') { server.shutdown }
     trap('TERM') { server.shutdown }
 
