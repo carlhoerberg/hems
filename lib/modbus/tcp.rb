@@ -8,6 +8,7 @@ module Modbus
     def initialize(host, port = 502)
       @host = host
       @port = port
+      @lock = Mutex.new
     end
 
     def close
@@ -23,18 +24,20 @@ module Modbus
       try = 0
       transaction = rand(2**16)
       length = request.bytesize
-      begin
-        socket.write [transaction, Protocol, length, request].pack("nnna*")
-        header = read(8)
-        rtransaction, rprotocol, _response_length, _unit, function = header.unpack("nnnCC")
-        raise "Invalid transaction (#{rtransaction} != #{transaction})" if rtransaction != transaction
-        raise "Invalid protocol (#{rprotocol})" if rprotocol != Protocol
-        handle_exception if function[7] == 1 # highest bit set indicates an exception
-        yield
-      rescue SocketError, SystemCallError => ex
-        close
-        retry if (try += 1) < 2
-        raise ex
+      @lock.synchronize do
+        begin
+          socket.write [transaction, Protocol, length, request].pack("nnna*")
+          header = read(8)
+          rtransaction, rprotocol, _response_length, _unit, function = header.unpack("nnnCC")
+          raise "Invalid transaction (#{rtransaction} != #{transaction})" if rtransaction != transaction
+          raise "Invalid protocol (#{rprotocol})" if rprotocol != Protocol
+          handle_exception if function[7] == 1 # highest bit set indicates an exception
+          yield
+        rescue SocketError, SystemCallError => ex
+          close
+          retry if (try += 1) < 2
+          raise ex
+        end
       end
     end
 

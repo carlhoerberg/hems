@@ -9,6 +9,7 @@ module Modbus
       @serial = SerialPort.new("/dev/ttyACM0", 9600, 8, 1, SerialPort::NONE)
       @serial.read_timeout  = 2000 # milliseconds
       @serial.write_timeout = 1000 # milliseconds
+      @lock = Mutex.new
     end
 
     def close
@@ -18,17 +19,19 @@ module Modbus
     private
 
     def request(request)
-      @serial.write CRC16.add_crc(request)
-      @response = ""
-      _unit = read(1)
-      function = read(1).unpack1("C")
-      handle_exception if function[7] == 1 # higest bit set indicates an exception
-      yield
-    ensure
-      crc16 = socket.read(2)
-      if crc16 != CRC16.crc16(@response) 
-        @serial.close
-        raise "Invalid CRC16"
+      @lock.synchronize do
+        @serial.write CRC16.add_crc(request)
+        @response = ""
+        _unit = read(1)
+        function = read(1).unpack1("C")
+        handle_exception if function[7] == 1 # higest bit set indicates an exception
+        yield
+      ensure
+        crc16 = socket.read(2)
+        if crc16 != CRC16.crc16(@response)
+          @serial.close
+          raise "Invalid CRC16"
+        end
       end
     end
 
