@@ -1,4 +1,3 @@
-require "serialport"
 require_relative "../modbus"
 require_relative "./crc16"
 
