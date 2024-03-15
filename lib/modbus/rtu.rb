@@ -5,9 +5,8 @@ require_relative "./crc16"
 module Modbus
   class RTU < Base
     def initialize
-      # @serial = SerialPort.new("/dev/ttyACM0", 9600, 8, 1, SerialPort::NONE)
-      # @serial.read_timeout  = 2000 # milliseconds
       @serial = File.open("/dev/ttyACM0", "r+")
+      @serial.flock(File::LOCK_EX)
       @lock = Mutex.new
     end
 
