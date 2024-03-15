@@ -87,7 +87,7 @@ module Devices
         choke: v[37],
         glow_plugs: v[38],
         valve_extinguisher: v[39],
-      }
+      }.freeze
     end
 
     def ready_to_load?
@@ -96,39 +96,40 @@ module Devices
 
     def measurements
       m = @genset.read_input_registers(0, 41)
+      power_reading_precision = 10.0 ** m[24]
       {
-        gen_v_l1_n: m[0],
-        gen_v_l2_n: m[1],
-        gen_v_l3_n: m[2],
-        gen_v_l1_l2: m[3],
-        gen_v_l2_l3: m[4],
-        gen_v_l1_l3: m[5],
-        gen_a_l1: m[6],
-        gen_a_l2: m[7],
-        gen_a_l3: m[8],
-        gen_kw_total: m[9],
-        gen_kva_total: m[10],
-        gen_pf_total: m[11] / 100.0,
-        gen_kw_l1: m[12],
-        gen_kw_l2: m[13],
-        gen_kw_l3: m[14],
-        gen_kva_l1: m[15],
-        gen_kva_l2: m[16],
-        gen_kva_l3: m[17],
-        gen_pf_l1: m[18] / 100.0,
-        gen_pf_l2: m[19] / 100.0,
-        gen_pf_l3: m[20] / 100.0,
-        load_character: m[21].chr,
+        voltage_l1_n: m[0],
+        voltage_l2_n: m[1],
+        voltage_l3_n: m[2],
+        voltage_l1_l2: m[3],
+        voltage_l2_l3: m[4],
+        voltage_l1_l3: m[5],
+        current_l1: m[6] / power_reading_precision,
+        current_l2: m[7] / power_reading_precision,
+        current_l3: m[8] / power_reading_precision,
+        kw_total: m[9] / power_reading_precision,
+        kva_total: m[10] / power_reading_precision,
+        pf_total: m[11] / 100.0,
+        kw_l1: m[12] / power_reading_precision,
+        kw_l2: m[13] / power_reading_precision,
+        kw_l3: m[14] / power_reading_precision,
+        kva_l1: m[15] / power_reading_precision,
+        kva_l2: m[16] / power_reading_precision,
+        kva_l3: m[17] / power_reading_precision,
+        pf_l1: m[18] / 100.0,
+        pf_l2: m[19] / 100.0,
+        pf_l3: m[20] / 100.0,
+        load_character: m[21].chr, # R, L, C or space
         rpm: m[22],
-        gen_frequency: m[23],
-        power_reading_precision: m[24] == 0 ? :no_decimal : :decimal,
+        frequency: m[23] / 10.0,
+        power_reading_precision: power_reading_precision,
         battery_voltage: m[25] / 10.0,
         binary_input: m[26],
         binary_output: m[27],
-        oil_pressure: m[28],
+        oil_pressure: m[28] / power_reading_precision,
         coolant_temperature: m[29],
         fuel_level: m[30],
-        unit_system: m[31] == 0 ? "metric" : "imperial",
+        unit_system: m[31] == 0 ? :metric : :imperial,
         d_plus: m[32] / 10.0,
         kWh: [m[33], m[34]].to_i32,
         maintenance_timer: m[35],
@@ -136,7 +137,7 @@ module Devices
         serial_number: [m[37], m[38]].to_i32,
         sw_version: m[39],
         sw_patch_version: m[40]
-      }
+      }.freeze
     end
   end
 end
