@@ -108,15 +108,19 @@ module Modbus
 
     protected
 
-    def handle_exception
+    def check_exception!(function)
+      return if function[7] != 1 # highest bit set indicates an exception
       exception_code = read(1).unpack1("C")
       case exception_code
-      when 1 then raise "Modbus exception invalid function"
-      when 2 then raise "Modbus exception invalid address"
-      when 3 then raise "Modbus exception invalid data"
-      else raise "Modbus exception code #{exception_code}"
+      when 1 then raise ResponseError.new("Invalid function")
+      when 2 then raise ResponseError.new("Invalid address")
+      when 3 then raise ResponseError.new("Invalid data")
+      else raise ResponseError.new("Invalid response code #{exception_code}")
       end
     end
+
+    class ResponseError < StandardError; end
+    class ProtocolException < IOError; end
   end
 
   # Adds methods to Array for easier type conversions where 16 bit values aren't enough

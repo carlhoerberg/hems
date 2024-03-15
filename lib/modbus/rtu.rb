@@ -22,9 +22,9 @@ module Modbus
         @serial.write request, CRC16.crc16(request)
         unit, function = read(2).unpack("CC")
         request_unit, request_function = request[0..1].unpack("CC")
-        raise "Invalid unit response" if unit != request_unit
-        raise "Invalid function response" if function != request_function
-        handle_exception if function[7] == 1 # highest bit set indicates an exception
+        raise ProtocolException, "Invalid unit response" if unit != request_unit
+        raise ProtocolException, "Invalid function response" if function != request_function
+        check_exception!(function)
         yield
       rescue IOError => ex
         @serial.close
@@ -33,7 +33,7 @@ module Modbus
         crc16 = @serial.read(2) || raise(EOFError.new)
         if crc16 != CRC16.crc16(@response)
           @serial.close
-          raise "Invalid CRC16"
+          raise ProtocolException, "Invalid CRC16"
         end
       end
     end

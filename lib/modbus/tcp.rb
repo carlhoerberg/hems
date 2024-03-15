@@ -27,11 +27,11 @@ module Modbus
       @lock.synchronize do
         begin
           socket.write [transaction, Protocol, length].pack("nnn"), request
-          header = read(8) || raise(EOFError.new)
+          header = read(8)
           rtransaction, rprotocol, _response_length, _unit, function = header.unpack("nnnCC")
-          raise "Invalid transaction (#{rtransaction} != #{transaction})" if rtransaction != transaction
-          raise "Invalid protocol (#{rprotocol})" if rprotocol != Protocol
-          handle_exception if function[7] == 1 # highest bit set indicates an exception
+          raise ProtocolException, "Invalid transaction (#{rtransaction} != #{transaction})" if rtransaction != transaction
+          raise ProtocolException, "Invalid protocol (#{rprotocol})" if rprotocol != Protocol
+          check_exception!(function)
           yield
         rescue SocketError, SystemCallError, IOError => ex
           close
@@ -42,7 +42,7 @@ module Modbus
     end
 
     def read(count)
-      @socket.read(count)
+      @socket.read(count) || raise(EOFError.new)
     end
 
     def socket
