@@ -18,14 +18,19 @@ module Modbus
 
     def request(request)
       @lock.synchronize do
-        @serial.write request, CRC16.crc16(request)
         @response = ""
-        _unit = read(1).unpack1("C")
-        function = read(1).unpack1("C")
+        @serial.write request, CRC16.crc16(request)
+        unit, function = read(2).unpack("CC")
+        request_unit, request_function = request[0..1].unpack("CC")
+        raise "Invalid unit response" if unit != request_unit
+        raise "Invalid function response" if function != request_function
         handle_exception if function[7] == 1 # highest bit set indicates an exception
         yield
-      ensure
-        crc16 = @serial.read(2)
+      rescue IOError => ex
+        @serial.close
+        raise ex
+      else
+        crc16 = @serial.read(2) || raise(EOFError.new)
         if crc16 != CRC16.crc16(@response)
           @serial.close
           raise "Invalid CRC16"
