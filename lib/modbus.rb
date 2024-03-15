@@ -37,6 +37,10 @@ module Modbus
       end
     end
 
+    def read_input_register(addr, unit = 255)
+      read_input_registers(addr, 1, unit).first
+    end
+
     # FC05
     def write_coil(addr, value, unit = 255)
       raise ArgumentError.new "Boolean value required" if value != true && value != false
@@ -75,6 +79,14 @@ module Modbus
 
       def read_holding_register(addr)
         @modbus.read_holding_register(addr, @unit)
+      end
+
+      def read_input_registers(addr, count)
+        @modbus.read_input_registers(addr, count, @unit)
+      end
+
+      def read_input_register(addr)
+        @modbus.read_input_register(addr, @unit)
       end
 
       def write_holding_registers(addr, values)
