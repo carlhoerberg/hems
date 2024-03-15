@@ -2,6 +2,8 @@ require_relative "../modbus/rtu"
 
 module Devices
   class Genset
+    using Modbus::TypeExtensions
+
     def initialize
       @genset = Modbus::RTU.new.unit(5)
     end
