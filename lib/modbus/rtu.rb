@@ -26,7 +26,7 @@ module Modbus
         handle_exception if function[7] == 1 # highest bit set indicates an exception
         yield
       ensure
-        crc16 = socket.read(2)
+        crc16 = @serial.read(2)
         if crc16 != CRC16.crc16(@response)
           @serial.close
           raise "Invalid CRC16"
