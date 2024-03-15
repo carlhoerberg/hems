@@ -1,4 +1,4 @@
-require_relative "../modbus/rtu"
+require_relative "../modbus/tcp"
 
 module Devices
   class Next3
