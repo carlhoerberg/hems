@@ -14,8 +14,8 @@ module Devices
       @genset.write_coil(1, true)
     end
 
-    def ready_to_load?
-      @genset.read_discrete_input(0x0025) == 1
+    def auto
+      @genset.write_coil(2, true)
     end
 
     def battery_voltage
@@ -87,6 +87,14 @@ module Devices
       ]
       values = @genset.read_discrete_inputs(0x0020, 40)
       keys.zip(values).to_h
+    end
+
+    def ready_to_load?
+      @genset.read_discrete_input(0x0025) == 1
+    end
+
+    def measurements
+      @genset.read_input_registers(0, 40)
     end
   end
 end
