@@ -41,5 +41,9 @@ module Devices
     def start_counter
       @genset.read_input_register(0x0024)
     end
+
+    def status
+      @genset.read_discrete_inputs(0x0020, 40)
+    end
   end
 end
