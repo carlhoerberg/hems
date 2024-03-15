@@ -11,7 +11,7 @@ module Devices
     end
 
     def stop
-      @genset.write_coil(0, false)
+      @genset.write_coil(1, true)
     end
 
     def ready_to_load?
