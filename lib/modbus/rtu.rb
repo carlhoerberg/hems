@@ -8,7 +8,6 @@ module Modbus
     def initialize
       @serial = SerialPort.new("/dev/ttyACM0", 9600, 8, 1, SerialPort::NONE)
       @serial.read_timeout  = 2000 # milliseconds
-      @serial.write_timeout = 1000 # milliseconds
       @lock = Mutex.new
     end
 
