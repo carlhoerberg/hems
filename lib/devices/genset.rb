@@ -45,50 +45,49 @@ module Devices
     end
 
     def status
-      keys = %i[
-        starter
-        fuel_solenoid
-        stop_solenoid
-        general_alarm
-        gcb_open
-        ready_to_load
-        preheat
-        running
-        automatic_mode
-        island_operation
-        common_warning,
-        maintenance_required
-        low_battery
-        low_fuel_level
-        external_warning1
-        external_warning2
-        external_warning3
-        generator_ccw_rotation
-        battery_flat
-        common_shutdown
-        emergency_stop_active
-        overspeed
-        underspeed
-        low_oil_pressure
-        high_coolant_temperature
-        external_shutdown1
-        external_shutdown2
-        external_shutdown3
-        gcb_fail
-        max_generator_voltage
-        min_generator_voltage
-        max_generator_frequency
-        min_generator_frequency
-        start_fail
-        stop_fail
-        generator_short_circuit
-        generating_set_overload
-        choke
-        glow_plugs
-        valve_extinguisher
-      ]
-      values = @genset.read_discrete_inputs(0x0020, 40)
-      keys.zip(values).to_h
+      v = @genset.read_discrete_inputs(0x0020, 40)
+      {
+        starter: v[0],
+        fuel_solenoid: v[1],
+        stop_solenoid: v[2],
+        general_alarm: v[3],
+        gcb_open: v[4],
+        ready_to_load: v[5],
+        preheat: v[6],
+        running: v[7],
+        automatic_mode: v[8],
+        island_operation: v[9],
+        common_warning: v[10],
+        maintenance_required: v[11],
+        low_battery: v[12],
+        low_fuel_level: v[13],
+        external_warning1: v[14],
+        external_warning2: v[15],
+        external_warning3: v[16],
+        generator_ccw_rotation: v[17],
+        battery_flat: v[18],
+        common_shutdown: v[19],
+        emergency_stop_active: v[20],
+        overspeed: v[21],
+        underspeed: v[22],
+        low_oil_pressure: v[23],
+        high_coolant_temperature: v[24],
+        external_shutdown1: v[25],
+        external_shutdown2: v[26],
+        external_shutdown3: v[27],
+        gcb_fail: v[28],
+        max_generator_voltage: v[29],
+        min_generator_voltage: v[30],
+        max_generator_frequency: v[31],
+        min_generator_frequency: v[32],
+        start_fail: v[33],
+        stop_fail: v[34],
+        generator_short_circuit: v[35],
+        generating_set_overload: v[36],
+        choke: v[37],
+        glow_plugs: v[38],
+        valve_extinguisher: v[39],
+      }
     end
 
     def ready_to_load?
@@ -96,7 +95,7 @@ module Devices
     end
 
     def measurements
-      m = @genset.read_input_registers(0, 40)
+      m = @genset.read_input_registers(0, 41)
       {
         gen_v_l1_n: m[0],
         gen_v_l2_n: m[1],
@@ -122,7 +121,7 @@ module Devices
         load_character: m[21].chr,
         rpm: m[22],
         gen_frequency: m[23],
-        power_reading_precision: m[24] == 0 ? "no_decimal" : "decimal",
+        power_reading_precision: m[24] == 0 ? :no_decimal : :decimal,
         battery_voltage: m[25] / 10,
         binary_input: m[26],
         binary_output: m[27],
