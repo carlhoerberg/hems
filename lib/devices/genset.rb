@@ -19,7 +19,7 @@ module Devices
     end
 
     def battery_voltage
-      @genset.read_input_register(0x0019)
+      @genset.read_input_register(0x0019) / 10
     end
 
     def oil_pressure
@@ -43,7 +43,50 @@ module Devices
     end
 
     def status
-      @genset.read_discrete_inputs(0x0020, 40)
+      keys = %i[
+        starter
+        fuel_solenoid
+        stop_solenoid
+        general_alarm
+        gcb_open
+        ready_to_load
+        preheat
+        running
+        automatic_mode
+        island_operation
+        common_warning,
+        maintenance_required
+        low_battery
+        low_fuel_level
+        external_warning1
+        external_warning2
+        external_warning3
+        generator_ccw_rotation
+        battery_flat
+        common_shutdown
+        emergency_stop_active
+        overspeed
+        underspeed
+        low_oil_pressure
+        high_coolant_temperature
+        external_shutdown1
+        external_shutdown2
+        external_shutdown3
+        gcb_fail
+        max_generator_voltage
+        min_generator_voltage
+        max_generator_frequency
+        min_generator_frequency
+        start_fail
+        stop_fail
+        generator_short_circuit
+        generating_set_overload
+        choke
+        glow_plugs
+        valve_extinguisher
+      ]
+      values = @genset.read_discrete_inputs(0x0020, 40)
+      keys.zip(values).to_h
     end
   end
 end
