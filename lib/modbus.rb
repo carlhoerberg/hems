@@ -33,7 +33,7 @@ module Modbus
       function = 4
       request([unit, function, addr, count].pack("CCnn")) do
         len = read(1).unpack1("C")
-        read(len).unpack1("n*")
+        read(len).unpack("n*")
       end
     end
 
