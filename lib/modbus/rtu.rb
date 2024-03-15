@@ -20,11 +20,11 @@ module Modbus
 
     def request(request)
       @lock.synchronize do
-        @serial.write CRC16.add_crc(request)
+        @serial.write request, CRC16.crc16(request)
         @response = ""
-        _unit = read(1)
+        _unit = read(1).unpack1("C")
         function = read(1).unpack1("C")
-        handle_exception if function[7] == 1 # higest bit set indicates an exception
+        handle_exception if function[7] == 1 # highest bit set indicates an exception
         yield
       ensure
         crc16 = socket.read(2)

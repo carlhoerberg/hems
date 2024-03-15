@@ -50,13 +50,5 @@ module Modbus
 
       [crc_high, crc_low].pack("CC")
     end
-
-    def self.add_crc(package)
-      package + crc16(package)
-    end
-
-    def self.check_crc(package)
-      crc16(package) == "\x00\x00"
-    end
   end
 end
