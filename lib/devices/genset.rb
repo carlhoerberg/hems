@@ -21,7 +21,7 @@ module Devices
     end
 
     def battery_voltage
-      @genset.read_input_register(0x0019) / 10
+      @genset.read_input_register(0x0019) / 10.0
     end
 
     def oil_pressure
@@ -108,28 +108,28 @@ module Devices
         gen_a_l3: m[8],
         gen_kw_total: m[9],
         gen_kva_total: m[10],
-        gen_pf_total: m[11] / 100,
+        gen_pf_total: m[11] / 100.0,
         gen_kw_l1: m[12],
         gen_kw_l2: m[13],
         gen_kw_l3: m[14],
         gen_kva_l1: m[15],
         gen_kva_l2: m[16],
         gen_kva_l3: m[17],
-        gen_pf_l1: m[18] / 100,
-        gen_pf_l2: m[19] / 100,
-        gen_pf_l3: m[20] / 100,
+        gen_pf_l1: m[18] / 100.0,
+        gen_pf_l2: m[19] / 100.0,
+        gen_pf_l3: m[20] / 100.0,
         load_character: m[21].chr,
         rpm: m[22],
         gen_frequency: m[23],
         power_reading_precision: m[24] == 0 ? :no_decimal : :decimal,
-        battery_voltage: m[25] / 10,
+        battery_voltage: m[25] / 10.0,
         binary_input: m[26],
         binary_output: m[27],
         oil_pressure: m[28],
         coolant_temperature: m[29],
         fuel_level: m[30],
         unit_system: m[31] == 0 ? "metric" : "imperial",
-        d_plus: m[32] / 10,
+        d_plus: m[32] / 10.0,
         kWh: [m[33], m[34]].to_i32,
         maintenance_timer: m[35],
         start_counter: m[36],
