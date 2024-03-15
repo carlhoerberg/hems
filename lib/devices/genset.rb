@@ -17,5 +17,9 @@ module Devices
     def ready_to_load?
       @genset.read_discrete_input(0x0025) == 1
     end
+
+    def fuel_level
+      @genset.read_input_register(0x001E)
+    end
   end
 end
