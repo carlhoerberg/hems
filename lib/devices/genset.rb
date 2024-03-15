@@ -18,8 +18,28 @@ module Devices
       @genset.read_discrete_input(0x0025) == 1
     end
 
+    def battery_voltage
+      @genset.read_input_register(0x0019)
+    end
+
+    def oil_pressure
+      @genset.read_input_register(0x001C)
+    end
+
+    def coolant_temperature
+      @genset.read_input_register(0x001D)
+    end
+
     def fuel_level
       @genset.read_input_register(0x001E)
+    end
+
+    def maintenance_timer
+      @genset.read_input_register(0x0023)
+    end
+
+    def start_counter
+      @genset.read_input_register(0x0024)
     end
   end
 end
