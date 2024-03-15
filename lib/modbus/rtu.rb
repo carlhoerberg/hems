@@ -35,7 +35,7 @@ module Modbus
     end
 
     def read(count)
-      bytes = @serial.read(count)
+      bytes = @serial.read(count) || raise(EOFError.new)
       @response += bytes
       bytes
     end
