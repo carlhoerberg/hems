@@ -7,9 +7,10 @@ module Devices
     attr_reader :acload, :battery, :acsource, :solar
 
     def initialize
-      host = ENV.fetch("NEXT3_HOST", "studer-next")
-      port = ENV.fetch("NEXT3_PORT", 502).to_i
-      next3 = Modbus::TCP.new(host, port)
+      #host = ENV.fetch("NEXT3_HOST", "studer-next")
+      #port = ENV.fetch("NEXT3_PORT", 502).to_i
+      #next3 = Modbus::TCP.new(host, port)
+      next3 = Modbus::RTU.new
       @acload = AcLoad.new next3.unit(1)
       @battery = Battery.new next3.unit(2)
       @acsource = AcSource.new next3.unit(7)
