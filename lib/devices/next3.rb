@@ -1,6 +1,6 @@
 require_relative "../modbus/tcp"
 
-module Devices
+class Devices
   class Next3
     using Modbus::TypeExtensions
 

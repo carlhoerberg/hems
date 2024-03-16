@@ -7,10 +7,7 @@ After=network.target
 ExecStart=/opt/hems/bin/hems
 Restart=on-failure
 RestartSec=5
-User=daemon
-Group=daemon
-ProtectSystem=full
-NoNewPrivileges=true
+DynamicUser=true
 
 [Install]
 WantedBy=multi-user.target

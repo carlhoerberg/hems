@@ -1,6 +1,6 @@
 require_relative "../modbus/rtu"
 
-module Devices
+class Devices
   class Genset
     using Modbus::TypeExtensions
 

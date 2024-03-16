@@ -1,0 +1,125 @@
+# HELP soc Battery state of charge
+# TYPE battery_soc gauge
+battery_soc <%=next3.battery.soc%> <%=unix_ms%>
+# HELP temp Battery temperature
+# TYPE battery_temperature gauge
+battery_temperature <%=next3.battery.temp%> <%=unix_ms%>
+# TYPE battery_charging_current gauge
+battery_charging_current <%=next3.battery.charging_current%> <%=unix_ms%>
+# TYPE battery_charging_power gauge
+battery_charging_power <%=next3.battery.charging_power%> <%=unix_ms%>
+
+# TYPE day_charging_energy counter
+day_charging_energy <%=next3.battery.day_charging_energy%> <%=unix_ms%>
+# TYPE day_discharging_energy counter
+day_discharging_energy <%=next3.battery.day_discharging_energy%> <%=unix_ms%>
+
+# TYPE acload_l1_current gauge
+acload_l1_current <%=next3.acload.current(1)%> <%=unix_ms%>
+# TYPE acload_l1_voltage gauge
+acload_l1_voltage <%=next3.acload.voltage(1)%> <%=unix_ms%>
+# TYPE acload_l1_active_power gauge
+acload_l1_active_power <%=next3.acload.active_power(1)%> <%=unix_ms%>
+# TYPE acload_l1_reactive_power gauge
+acload_l1_reactive_power <%=next3.acload.reactive_power(1)%> <%=unix_ms%>
+# TYPE acload_l1_apparent_power gauge
+acload_l1_apparent_power <%=next3.acload.apparent_power(1)%> <%=unix_ms%>
+# TYPE acload_l1_power_factor gauge
+acload_l1_power_factor <%=next3.acload.power_factor(1)%> <%=unix_ms%>
+# TYPE acload_l1_day_consumed_energy counter
+acload_l1_day_consumed_energy <%=next3.acload.day_consumed_energy(1)%> <%=unix_ms%>
+# TYPE acload_l2_current gauge
+acload_l2_current <%=next3.acload.current(2)%> <%=unix_ms%>
+# TYPE acload_l2_voltage gauge
+acload_l2_voltage <%=next3.acload.voltage(2)%> <%=unix_ms%>
+# TYPE acload_l2_active_power gauge
+acload_l2_active_power <%=next3.acload.active_power(2)%> <%=unix_ms%>
+# TYPE acload_l2_reactive_power gauge
+acload_l2_reactive_power <%=next3.acload.reactive_power(2)%> <%=unix_ms%>
+# TYPE acload_l2_apparent_power gauge
+acload_l2_apparent_power <%=next3.acload.apparent_power(2)%> <%=unix_ms%>
+# TYPE acload_l2_power_factor gauge
+acload_l2_power_factor <%=next3.acload.power_factor(2)%> <%=unix_ms%>
+# TYPE acload_l2_day_consumed_energy counter
+acload_l2_day_consumed_energy <%=next3.acload.day_consumed_energy(2)%> <%=unix_ms%>
+# TYPE acload_l3_current gauge
+acload_l3_current <%=next3.acload.current(3)%> <%=unix_ms%>
+# TYPE acload_l3_voltage gauge
+acload_l3_voltage <%=next3.acload.voltage(3)%> <%=unix_ms%>
+# TYPE acload_l3_active_power gauge
+acload_l3_active_power <%=next3.acload.active_power(3)%> <%=unix_ms%>
+# TYPE acload_l3_reactive_power gauge
+acload_l3_reactive_power <%=next3.acload.reactive_power(3)%> <%=unix_ms%>
+# TYPE acload_l3_apparent_power gauge
+acload_l3_apparent_power <%=next3.acload.apparent_power(3)%> <%=unix_ms%>
+# TYPE acload_l3_power_factor gauge
+acload_l3_power_factor <%=next3.acload.power_factor(3)%> <%=unix_ms%>
+# TYPE acload_l3_day_consumed_energy counter
+acload_l3_day_consumed_energy <%=next3.acload.day_consumed_energy(1)%> <%=unix_ms%>
+
+# TYPE acsource_l1_voltage gauge
+acsource_l1_voltage <%=next3.acsource.voltage(1)%> <%=unix_ms%>
+# TYPE acsource_l1_current gauge
+acsource_l1_current <%=next3.acsource.current(1)%> <%=unix_ms%>
+# TYPE acsource_l1_power_factor gauge
+acsource_l1_power_factor <%=next3.acsource.power_factor(1)%> <%=unix_ms%>
+# TYPE acsource_l2_voltage gauge
+acsource_l2_voltage <%=next3.acsource.voltage(2)%> <%=unix_ms%>
+# TYPE acsource_l2_current gauge
+acsource_l2_current <%=next3.acsource.current(2)%> <%=unix_ms%>
+# TYPE acsource_l2_power_factor gauge
+acsource_l2_power_factor <%=next3.acsource.power_factor(2)%> <%=unix_ms%>
+# TYPE acsource_l3_voltage gauge
+acsource_l3_voltage <%=next3.acsource.voltage(3)%> <%=unix_ms%>
+# TYPE acsource_l3_current gauge
+acsource_l3_current <%=next3.acsource.current(3)%> <%=unix_ms%>
+# TYPE acsource_l3_power_factor gauge
+acsource_l3_power_factor <%=next3.acsource.power_factor(3)%> <%=unix_ms%>
+
+# TYPE genset_l1_voltage gauge
+genset_l1_voltage <%=genset_measurements[:voltage_l1_n]%> <%=unix_ms%>
+# TYPE genset_l2_voltage gauge
+genset_l2_voltage <%=genset_measurements[:voltage_l2_n]%> <%=unix_ms%>
+# TYPE genset_l3_voltage gauge
+genset_l3_voltage <%=genset_measurements[:voltage_l3_n]%> <%=unix_ms%>
+# TYPE genset_l1_current gauge
+genset_l1_current <%=genset_measurements[:current_l1]%> <%=unix_ms%>
+# TYPE genset_l2_current gauge
+genset_l2_current <%=genset_measurements[:current_l2]%> <%=unix_ms%>
+# TYPE genset_l3_current gauge
+genset_l3_current <%=genset_measurements[:current_l3]%> <%=unix_ms%>
+# TYPE genset_l1_kva gauge
+genset_l1_kva <%=genset_measurements[:kva_l1]%> <%=unix_ms%>
+# TYPE genset_l2_kva gauge
+genset_l2_kva <%=genset_measurements[:kva_l2]%> <%=unix_ms%>
+# TYPE genset_l3_kva gauge
+genset_l3_kva <%=genset_measurements[:kva_l3]%> <%=unix_ms%>
+# TYPE genset_l1_kw gauge
+genset_l1_kw <%=genset_measurements[:kw_l1]%> <%=unix_ms%>
+# TYPE genset_l2_kw gauge
+genset_l2_kw <%=genset_measurements[:kw_l2]%> <%=unix_ms%>
+# TYPE genset_l3_kw gauge
+genset_l3_kw <%=genset_measurements[:kw_l3]%> <%=unix_ms%>
+# TYPE genset_l1_pf gauge
+genset_l1_pf <%=genset_measurements[:pf_l1]%> <%=unix_ms%>
+# TYPE genset_l2_pf gauge
+genset_l2_pf <%=genset_measurements[:pf_l2]%> <%=unix_ms%>
+# TYPE genset_l3_pf gauge
+genset_l3_pf <%=genset_measurements[:pf_l3]%> <%=unix_ms%>
+
+# TYPE genset_frequency gauge
+genset_frequency <%=genset_measurements[:frequency]%> <%=unix_ms%>
+# TYPE genset_rpm gauge
+genset_rpm <%=genset_measurements[:rpm]%> <%=unix_ms%>
+# TYPE genset_battery_voltage gauge
+genset_battery_voltage <%=genset_measurements[:battery_voltage]%> <%=unix_ms%>
+# TYPE genset_fuel_level gauge
+genset_fuel_level <%=genset_measurements[:fuel_level]%> <%=unix_ms%>
+# TYPE genset_oil_pressure gauge
+genset_oil_pressure <%=genset_measurements[:oil_pressure]%> <%=unix_ms%>
+# TYPE genset_coolant_temperature gauge
+genset_coolant_temperature <%=genset_measurements[:coolant_temperature]%> <%=unix_ms%>
+# TYPE genset_kwh counter
+genset_kwh <%=genset_measurements[:kwh]%> <%=unix_ms%>
+# TYPE genset_start_counter counter
+genset_start_counter <%=genset_measurements[:start_counter]%> <%=unix_ms%>
