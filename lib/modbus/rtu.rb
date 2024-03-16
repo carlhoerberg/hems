@@ -26,10 +26,7 @@ module Modbus
         raise ProtocolException, "Invalid function response" if function != request_function
         check_exception!(function)
         yield
-      rescue IOError => ex
-        @serial.close
-        raise ex
-      else
+      ensure
         crc16 = @serial.read(2) || raise(EOFError.new)
         if crc16 != CRC16.crc16(@response)
           @serial.close
