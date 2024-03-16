@@ -8,6 +8,7 @@ ExecStart=/opt/hems/bin/hems
 Restart=on-failure
 RestartSec=5
 DynamicUser=true
+Group=dialout
 
 [Install]
 WantedBy=multi-user.target
