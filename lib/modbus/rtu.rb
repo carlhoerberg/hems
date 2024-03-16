@@ -6,6 +6,7 @@ require "serialport"
 module Modbus
   class RTU < Base
     def initialize
+      #system "stty -F /dev/ttyACM0 9600 cs8 -cstopb -parenb"
       #@serial = File.open("/dev/ttyACM0", "r+")
       #@serial.flock(File::LOCK_EX | File::LOCK_NB) || raise("Serial device is locked by another application")
       @serial = SerialPort.new("/dev/ttyACM0", baud: 9600, data_bits: 8, stop_bits: 1, parity: SerialPort::NONE)

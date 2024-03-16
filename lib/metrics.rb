@@ -13,6 +13,7 @@ class PrometheusMetrics
         unix_ms: DateTime.now.strftime("%Q"),
         next3: devices.next3,
         genset_measurements: devices.genset.measurements,
+        boiler: devices.boiler,
       })
       if req.accept_encoding.include? "gzip"
         res["content-encoding"] = "gzip"
