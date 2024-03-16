@@ -1,4 +1,5 @@
 require "webrick"
+require "zlib"
 
 class PrometheusMetrics
   def initialize(devices)
