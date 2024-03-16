@@ -95,7 +95,7 @@ class Devices
     end
 
     def measurements
-      m = @genset.read_input_registers(0, 39)
+      m = @genset.read_input_registers(0, 41)
       power_reading_precision = 10.0 ** m[24]
       {
         voltage_l1_n: m[0],
