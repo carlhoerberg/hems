@@ -9,6 +9,7 @@ module Modbus
       #@serial = File.open("/dev/ttyACM0", "r+")
       #@serial.flock(File::LOCK_EX | File::LOCK_NB) || raise("Serial device is locked by another application")
       @serial = SerialPort.new("/dev/ttyACM0", baud: 9600, data_bits: 8, stop_bits: 1, parity: SerialPort::NONE)
+      @serial.read_timeout = 1
       @lock = Mutex.new
     end
 
