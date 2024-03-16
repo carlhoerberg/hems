@@ -9,13 +9,18 @@ class PrometheusMetrics
       AccessLog: [[STDOUT, "#{WEBrick::AccessLog::COMMON_LOG_FORMAT} %T"]])
     @server.mount_proc '/metrics' do |req, res|
       res.content_type = "text/plain"
-      res["content-encoding"] = "gzip"
       text = erb.result_with_hash({
         unix_ms: DateTime.now.strftime("%Q"),
         next3: devices.next3,
         genset_measurements: devices.genset.measurements,
       })
-      res.body = Zlib.gzip(text)
+      p req.accept_encoding
+      if req.accept_encoding.include? "gzip"
+        res["content-encoding"] = "gzip"
+        res.body = Zlib.gzip(text)
+      else
+        res.body = text
+      end
     end
   end
 
