@@ -10,7 +10,7 @@ metrics = PrometheusMetrics.new(devices)
 #trap('INT') { em.stop; metrics.stop }
 #trap('TERM') { em.stop; metrics.stop}
 trap('INT') { metrics.stop }
-trap('TERM') { metrics.stop}
+trap('TERM') { metrics.stop }
 #em_thread = Thread.new { em.start }
 #metrics_thread = Thread.new { metrics.start }
 metrics.start

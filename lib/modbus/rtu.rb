@@ -20,7 +20,9 @@ module Modbus
       @lock.synchronize do
         @response = ""
         @serial.write request, CRC16.crc16(request)
-        unit, function = read(2).unpack("CC")
+        #unit, function = read(2).unpack("CC")
+        unit = read(1).unpack1("C")
+        function = read(1).unpack1("C")
         request_unit, request_function = request[0..1].unpack("CC")
         raise ProtocolException, "Invalid unit response" if unit != request_unit
         raise ProtocolException, "Invalid function response" if function != request_function
