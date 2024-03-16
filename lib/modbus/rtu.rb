@@ -32,7 +32,7 @@ module Modbus
       ensure
         crc16 = @serial.read(2) || raise(EOFError.new)
         if crc16 != CRC16.crc16(@response)
-          @serial.close
+          #@serial.close
           raise ProtocolException, "Invalid CRC16"
         end
       end
