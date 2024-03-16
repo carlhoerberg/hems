@@ -7,7 +7,7 @@ class EnergyManagement
 
   def start
     until @stopped
-      soc = next3.battery.soc
+      soc = @devices.next3.battery.soc
       puts "SOC: #{soc}%"
       # if soc < 15
       #   puts "Starting genset"
