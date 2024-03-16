@@ -6,7 +6,7 @@ module Modbus
   class RTU < Base
     def initialize
       @serial = File.open("/dev/ttyACM0", "r+")
-      @serial.flock(File::LOCK_EX)
+      @serial.flock(File::LOCK_EX | File::LOCK_NB) || raise("Serial device is locked by another application")
       @lock = Mutex.new
     end
 
