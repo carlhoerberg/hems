@@ -95,7 +95,7 @@ class Devices
     end
 
     def measurements
-      m = @genset.read_input_registers(0, 41)
+      m = @genset.read_input_registers(0, 40)
       power_reading_precision = 10.0 ** m[24]
       {
         voltage_l1_n: m[0],
@@ -136,7 +136,7 @@ class Devices
         start_counter: m[36],
         serial_number: [m[37], m[38]].to_i32,
         sw_version: m[39],
-        sw_patch_version: m[40]
+        #sw_patch_version: m[40]
       }.freeze
     end
   end
