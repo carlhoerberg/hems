@@ -9,7 +9,7 @@ class PrometheusMetrics
       AccessLog: [[STDOUT, "#{WEBrick::AccessLog::COMMON_LOG_FORMAT} %T"]])
     @server.mount_proc '/metrics' do |req, res|
       res.content_type = "text/plain"
-      res["content_encoding"] = "gzip"
+      res["content-encoding"] = "gzip"
       text = erb.result_with_hash({
         unix_ms: DateTime.now.strftime("%Q"),
         next3: devices.next3,
