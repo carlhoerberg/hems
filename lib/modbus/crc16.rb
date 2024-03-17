@@ -50,5 +50,9 @@ module Modbus
 
       [crc_high, crc_low].pack("CC")
     end
+
+    def self.valid?(package)
+      crc16(package) == "\x00\x00"
+    end
   end
 end
