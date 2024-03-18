@@ -32,12 +32,12 @@ module Modbus
           result = yield
           read(2) # crc16 bytes
           unless CRC16.valid?(@response)
-            retry if (try += 1) < 3
             raise ProtocolException, "Invalid CRC16"
           end
           result
         rescue ProtocolException => ex
           close
+          retry if (try += 1) < 3
           raise ex
         end
       end
