@@ -12,6 +12,7 @@ module Modbus
     end
 
     def close
+      @serial.flock(File::LOCK_UN)
       @serial.close
       @serial = nil
     end
@@ -55,7 +56,7 @@ module Modbus
           raise("Serial device is locked by another application")
         system "stty -F /dev/ttyACM0 9600 cs8 -cstopb -parenb" ||
           raise("Could not set serial params")
-        s.timeout = 1
+        #s.timeout = 1
       end
     end
   end
