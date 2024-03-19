@@ -135,6 +135,6 @@ eta_boiler_2_temp <%=eta.boiler_temp(2)%> <%=unix_ms%>
 # TYPE eta_boiler_2_return_temp gauge
 eta_boiler_2_return_temp <%=eta.boiler_return_temp(2)%> <%=unix_ms%>
 <% eta.tank_temps.each_with_index do |temp, tank| %>
-# TYPE eta_tank_temp_<%=tank%> gauge
-eta_tank_temp_<%=tank%> <%=temp%> <%=unix_ms%>
+# TYPE eta_tank_temp_<%=tank + 1%> gauge
+eta_tank_temp_<%=tank + 1%> <%=temp%> <%=unix_ms%>
 <% end %>
