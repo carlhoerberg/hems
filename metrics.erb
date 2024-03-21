@@ -14,11 +14,6 @@ day_charging_energy <%=next3.battery.day_charging_energy%> <%=unix_ms%>
 # TYPE day_discharging_energy counter
 day_discharging_energy <%=next3.battery.day_discharging_energy%> <%=unix_ms%>
 
-# TYPE day_produced_energy counter
-day_produced_energy <%=next3.acload.day_produced_energy%> <%=unix_ms%>
-# TYPE day_consumed_energy counter
-day_consumed_energy <%=next3.acload.day_consumed_energy%> <%=unix_ms%>
-
 # TYPE frequency gauge
 frequency <%=next3.acload.frequency%> <%=unix_ms%>
 # TYPE acload_l1_current gauge

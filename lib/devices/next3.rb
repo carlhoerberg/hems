@@ -118,17 +118,14 @@ class Devices
         @unit.read_holding_registers(3910 + 300 * phase, 2).to_f32
       end
 
-      def day_produced_energy(phase)
+      def day_produced_energy
+        raise ArgumentError.new("Phase 1, 2 or 3") unless [1,2,3].include? phase
         @unit.read_holding_registers(3928, 2).to_f32
       end
 
       def day_consumed_energy(phase)
         raise ArgumentError.new("Phase 1, 2 or 3") unless [1,2,3].include? phase
         @unit.read_holding_registers(3928 + 300 * phase, 2).to_f32
-      end
-
-      def day_consumed_energy
-        @unit.read_holding_registers(3916, 2).to_f32
       end
     end
 
