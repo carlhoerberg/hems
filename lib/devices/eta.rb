@@ -31,6 +31,10 @@ class Devices
       get("/user/var/4#{number}/10021/0/11160/0")
     end
 
+    def pellets
+      get("/41/10201/0/0/12015")
+    end
+
     private
 
     def get(path)

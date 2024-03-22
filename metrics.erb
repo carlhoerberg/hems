@@ -126,6 +126,8 @@ genset_kwh <%=genset_measurements[:kwh]%> <%=unix_ms%>
 # TYPE genset_start_counter counter
 genset_start_counter <%=genset_measurements[:start_counter]%> <%=unix_ms%>
 
+# TYPE eta_pellets_in_storage gauge
+eta_pellets_in_storage <%=eta.pellets%> <%=unix_ms%>
 # TYPE eta_outdoor_temp gauge
 eta_outdoor_temp <%=eta.outdoor_temp%> <%=unix_ms%>
 # TYPE eta_boiler_1_temp gauge
