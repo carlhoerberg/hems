@@ -32,7 +32,7 @@ class Devices
     end
 
     def pellets
-      get("/41/10201/0/0/12015")
+      get("/user/var/41/10201/0/0/12015")
     end
 
     private
