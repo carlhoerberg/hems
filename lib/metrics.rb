@@ -24,7 +24,7 @@ class PrometheusMetrics
     end
     @server.mount_proc("/eta") do |req, res|
       res.content_type = "application/xml"
-      devices.eta.menu
+      res.body = devices.eta.menu
     end
   end
 
