@@ -4,6 +4,8 @@ require "rexml"
 class Devices
   class ETA
     def initialize(host, port = 8080)
+      @host = host
+      @port = port
       @http = Net::HTTP.new(host, port)
       @lock = Mutex.new
     end
@@ -35,6 +37,22 @@ class Devices
       get("/user/var/41/10201/0/0/12015")
     end
 
+    def stallet_temp
+      get("/user/var/124/10101/0/11060/0")
+    end
+
+    def menu
+      Net::HTTP.start(@host, @port) do |http|
+        res = http.get("/user/menu")
+        raise "HTTP response not 200 OK: #{res.inspect}" unless Net::HTTPOK === res
+        menu = REXML::Document.new(res.body, ignore_whitespace_nodes: :all)
+        menu.root.children[0].each_element do |child|
+          get_children(child, http)
+        end
+        menu.to_s
+      end
+    end
+
     private
 
     def get(path)
@@ -49,6 +67,19 @@ class Devices
         else
           raise "HTTP response not 200 OK: #{res.inspect}"
         end
+      end
+    end
+
+    def get_children(element, http)
+      if uri = element["uri"]
+        res = http.get("/user/var#{uri}")
+        if Net::HTTPOK === res
+          xml = REXML::Document.new(res.body, ignore_whitespace_nodes: :all)
+          element.add_element xml.root.children[0]
+        end
+      end
+      element.each_element do |ch|
+        get_children(ch, http)
       end
     end
   end
