@@ -38,7 +38,19 @@ class Devices
     end
 
     def stallet_temp
-      get("/user/var/124/10101/0/11060/0")
+      get("/user/var/124/10101/0/11125/2121")
+    end
+
+    def stallet_should_temp
+      get("/user/var/124/10101/0/11125/2120")
+    end
+
+    def vvx_temp
+      get("/user/var/124/10581/0/11410/2121")
+    end
+
+    def vvx_secondary_temp
+      get("/user/var/124/10581/0/11140/0")
     end
 
     def menu

@@ -128,6 +128,14 @@ genset_start_counter <%=genset_measurements[:start_counter]%> <%=unix_ms%>
 
 # TYPE eta_pellets_in_storage gauge
 eta_pellets_in_storage <%=eta.pellets%> <%=unix_ms%>
+# TYPE eta_stallet_temp gauge
+eta_stallet_temp <%=eta.stallet_temp%> <%=unix_ms%>
+# TYPE eta_stallet_should_temp gauge
+eta_stallet_should_temp <%=eta.stallet_should_temp%> <%=unix_ms%>
+# TYPE eta_vvx_temp gauge
+eta_vvx_temp <%=eta.vvx_temp%> <%=unix_ms%>
+# TYPE eta_vvx_secondary_temp gauge
+eta_vvx_secondary_temp <%=eta.vvx_secondary_temp%> <%=unix_ms%>
 # TYPE eta_outdoor_temp gauge
 eta_outdoor_temp <%=eta.outdoor_temp%> <%=unix_ms%>
 # TYPE eta_boiler_1_temp gauge
