@@ -57,7 +57,7 @@ module Modbus
       #  #s.timeout = 1
       #end
       @serial ||= SerialPort.new("/dev/ttyACM0", baud: 9600, data_bits: 8, stop_bits: 1, parity: SerialPort::NONE).tap do |s|
-        @serial.read_timeout = 1000
+        s.read_timeout = 1000
       end
     end
   end
