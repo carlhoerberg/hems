@@ -95,7 +95,13 @@ class Devices
     end
 
     def measurements
-      m = @genset.read_input_registers(0, 41)
+      m = []
+      m.concat @genset.read_input_registers(0, 10)
+      m.concat @genset.read_input_registers(10, 10)
+      m.concat @genset.read_input_registers(20, 10)
+      m.concat @genset.read_input_registers(30, 10)
+      m.concat @genset.read_input_registers(30, 10)
+      m.concat @genset.read_input_registers(40, 1)
       power_reading_precision = 10.0 ** m[24]
       {
         voltage_l1_n: m[0],
@@ -122,7 +128,7 @@ class Devices
         load_character: m[21].chr, # R, L, C or space
         rpm: m[22],
         frequency: m[23] / 10.0,
-        power_reading_precision: power_reading_precision,
+        power_reading_precision: m[24],
         battery_voltage: m[25] / 10.0,
         binary_input: m[26],
         binary_output: m[27],
