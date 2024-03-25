@@ -10,7 +10,7 @@ module Modbus
     end
 
     def close
-      @serial.flock(File::LOCK_UN)
+      #@serial.flock(File::LOCK_UN)
       @serial.close
       @serial = nil
     end
