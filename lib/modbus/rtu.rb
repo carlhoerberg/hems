@@ -10,7 +10,7 @@ module Modbus
     end
 
     def close
-      #@serial.flock(File::LOCK_UN)
+      # @serial.flock(File::LOCK_UN)
       @serial.close
       @serial = nil
     end
@@ -30,9 +30,9 @@ module Modbus
           check_exception!(function)
           result = yield
           read(2) # crc16 bytes
-          unless CRC16.valid?(@response)
-            raise ProtocolException, "Invalid CRC16"
-          end
+          #unless CRC16.valid?(@response)
+          #  raise ProtocolException, "Invalid CRC16"
+          #end
           result
         rescue ProtocolException => ex
           close
@@ -49,13 +49,13 @@ module Modbus
     end
 
     def serial
-      #@serial ||= File.open("/dev/ttyACM0", "r+").tap do |s|
+      # @serial ||= File.open("/dev/ttyACM0", "r+").tap do |s|
       #  s.flock(File::LOCK_EX | File::LOCK_NB) ||
       #    raise("Serial device is locked by another application")
       #  system "stty -F /dev/ttyACM0 9600 cs8 -cstopb -parenb" ||
       #    raise("Could not set serial params")
       #  #s.timeout = 1
-      #end
+      # end
       @serial ||= SerialPort.new("/dev/ttyACM0", baud: 9600, data_bits: 8, stop_bits: 1, parity: SerialPort::NONE).tap do |s|
         s.read_timeout = 1000
       end
