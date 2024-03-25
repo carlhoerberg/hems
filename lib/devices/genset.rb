@@ -96,13 +96,11 @@ class Devices
 
     def measurements
       m = []
-      40.times do |i|
-        if [26, 27].include? i
-          m << 0
-        else
-          m << @genset.read_input_register(i)
-        end
-      end
+      m.concat(
+        @genset.read_input_registers(0, 25),
+        [0, 0],
+        @genset.read_input_register(28, 13)
+      )
       power_reading_precision = 10.0 ** m[24]
       {
         voltage_l1_n: m[0],
