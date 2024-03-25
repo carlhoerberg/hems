@@ -96,12 +96,9 @@ class Devices
 
     def measurements
       m = []
-      m.concat @genset.read_input_registers(0, 10)
-      m.concat @genset.read_input_registers(10, 10)
-      m.concat @genset.read_input_registers(20, 10)
-      m.concat @genset.read_input_registers(30, 10)
-      m.concat @genset.read_input_registers(30, 10)
-      m.concat @genset.read_input_registers(40, 1)
+      40.times do |i|
+        m << @genset.read_input_register(i)
+      end
       power_reading_precision = 10.0 ** m[24]
       {
         voltage_l1_n: m[0],
