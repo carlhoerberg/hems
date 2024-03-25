@@ -1,13 +1,11 @@
 require_relative "../modbus"
 require_relative "./crc16"
-#require "serialport"
+require "serialport"
 
 # https://modbus.org/docs/Modbus_Application_Protocol_V1_1b.pdf
 module Modbus
   class RTU < Base
     def initialize
-      #@serial = SerialPort.new("/dev/ttyACM0", baud: 9600, data_bits: 8, stop_bits: 1, parity: SerialPort::NONE)
-      #@serial.read_timeout = 1000
       @lock = Mutex.new
     end
 
@@ -51,12 +49,15 @@ module Modbus
     end
 
     def serial
-      @serial ||= File.open("/dev/ttyACM0", "r+").tap do |s|
-        s.flock(File::LOCK_EX | File::LOCK_NB) ||
-          raise("Serial device is locked by another application")
-        system "stty -F /dev/ttyACM0 9600 cs8 -cstopb -parenb" ||
-          raise("Could not set serial params")
-        #s.timeout = 1
+      #@serial ||= File.open("/dev/ttyACM0", "r+").tap do |s|
+      #  s.flock(File::LOCK_EX | File::LOCK_NB) ||
+      #    raise("Serial device is locked by another application")
+      #  system "stty -F /dev/ttyACM0 9600 cs8 -cstopb -parenb" ||
+      #    raise("Could not set serial params")
+      #  #s.timeout = 1
+      #end
+      @serial ||= SerialPort.new("/dev/ttyACM0", baud: 9600, data_bits: 8, stop_bits: 1, parity: SerialPort::NONE).tap do |s|
+        @serial.read_timeout = 1000
       end
     end
   end
