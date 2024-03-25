@@ -1,6 +1,16 @@
 # https://modbus.org/docs/Modbus_Application_Protocol_V1_1b.pdf
 module Modbus
   class Base
+    # FC01, read bit values
+    def read_coils(addr, count, unit = 255)
+      function = 1
+      request([unit, function, addr, count].pack("CCnn")) do
+        len = read(1).unpack1("C")
+        bits = read(len).unpack1("b*")
+        Array.new(count) { |i| bits[i] == '1' }
+      end
+    end
+
     # FC02, read bit values
     def read_discrete_inputs(addr, count, unit = 255)
       function = 2
