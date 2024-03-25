@@ -97,9 +97,11 @@ class Devices
     def measurements
       m = []
       40.times do |i|
-        p i
-        m << @genset.read_input_register(i)
-        sleep 0.1
+        if [26, 27].include? i
+          m << 0
+        else
+          m << @genset.read_input_register(i)
+        end
       end
       power_reading_precision = 10.0 ** m[24]
       {
