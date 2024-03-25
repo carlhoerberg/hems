@@ -99,6 +99,7 @@ class Devices
       40.times do |i|
         p i
         m << @genset.read_input_register(i)
+        sleep 0.1
       end
       power_reading_precision = 10.0 ** m[24]
       {
