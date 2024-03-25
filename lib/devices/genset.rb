@@ -101,7 +101,7 @@ class Devices
         [0, 0],
         @genset.read_input_registers(27, 14)
       )
-      power_reading_precision = 10.0 ** m[24]
+      power_reading_precision = 10.0
       {
         voltage_l1_n: m[0],
         voltage_l2_n: m[1],
