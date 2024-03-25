@@ -12,7 +12,7 @@ class PrometheusMetrics
       metrics = erb.result_with_hash({
         unix_ms: DateTime.now.strftime("%Q"),
         next3: devices.next3,
-        genset_measurements: Hash.new(0), #devices.genset.measurements,
+        genset_measurements: devices.genset.measurements,
         eta: devices.eta,
       })
       if req.accept_encoding.include? "gzip"
