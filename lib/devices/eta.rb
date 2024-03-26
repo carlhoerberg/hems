@@ -6,7 +6,10 @@ class Devices
     def initialize(host, port = 8080)
       @host = host
       @port = port
-      @http = Net::HTTP.new(host, port)
+      @http = Net::HTTP.new(host, port).tap do |h|
+        h.open_timeout = 1
+        h.read_timeout = 1
+      end
       @lock = Mutex.new
     end
 
