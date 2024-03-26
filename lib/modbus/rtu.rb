@@ -58,7 +58,7 @@ module Modbus
       # end
       @serial ||=
         begin
-          device = Dir.glob("/dev/ttyACM*").first
+          device = Dir.glob("/dev/ttyACM?").first || raise("No serial device found")
           SerialPort.new(device, baud: 9600, data_bits: 8, stop_bits: 1, parity: SerialPort::NONE).tap do |s|
             s.read_timeout = 1000
           end
