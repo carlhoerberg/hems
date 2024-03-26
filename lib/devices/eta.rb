@@ -45,8 +45,16 @@ class Devices
       get("/user/var/124/10101/0/11125/2120")
     end
 
-    def vvx_temp
-      get("/user/var/124/10581/0/11410/2121")
+    def vvx_primary_temp
+      get("/user/var/124/10581/0/11410/0")
+    end
+
+    def vvx_primary_should_temp
+      get("/user/var/124/10581/0/11410/2120")
+    end
+
+    def vvx_primary_return_temp
+      get("/user/var/124/10581/0/11186/0")
     end
 
     def vvx_secondary_temp
