@@ -2,7 +2,7 @@ require_relative "../modbus/tcp"
 
 module Devices
   class Relays
-    def initialize(host = "192.168.1.200", port = 4196)
+    def initialize(host = "192.168.1.200", port = 502)
       @modbus = Modbus::TCP.new(host, port).unit(1)
     end
 
