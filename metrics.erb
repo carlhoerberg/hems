@@ -166,3 +166,9 @@ eta_boiler_2_return_temp <%=eta.boiler_return_temp(2)%> <%=unix_ms%>
 # TYPE eta_tank_temp_<%=tank + 1%> gauge
 eta_tank_temp_<%=tank + 1%> <%=temp%> <%=unix_ms%>
 <% end %>
+
+# TYPE eta_tank_should_temp gauge
+eta_tank_should_temp <%=eta.tank_should_temp%> <%=unix_ms%>
+
+# TYPE eta_tank_return_temp gauge
+eta_tank_return_temp <%=eta.tank_return_temp%> <%=unix_ms%>

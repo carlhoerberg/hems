@@ -21,6 +21,14 @@ class Devices
       get("/user/var/123/10601/0/#{11326 + i}/0")
     end
 
+    def tank_should_temp
+      get("/user/var/123/10601/0/0/13194")
+    end
+
+    def tank_return_temp
+      get("/user/var/123/10601/0/0/12520")
+    end
+
     def outdoor_temp
       get("/user/var/123/10601/0/0/12197")
     end
