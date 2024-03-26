@@ -99,15 +99,15 @@ class Devices
     end
 
     def get_children(element, http)
-      element.each_element do |ch|
-        get_children(ch, http)
-      end
       if uri = element["uri"]
         res = http.get("/user/var#{uri}")
         if Net::HTTPOK === res
           xml = REXML::Document.new(res.body, ignore_whitespace_nodes: :all)
           element.add_element xml.root.children[0]
         end
+      end
+      element.each_element do |ch|
+        get_children(ch, http)
       end
     end
   end
