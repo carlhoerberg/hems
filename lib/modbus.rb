@@ -83,6 +83,14 @@ module Modbus
         @unit = unit
       end
 
+      def read_coils(addr, count)
+        @modbus.read_coils(addr, count, @unit)
+      end
+
+      def read_coil(addr)
+        @modbus.read_coil(addr, @unit)
+      end
+
       def read_holding_registers(addr, count)
         @modbus.read_holding_registers(addr, count, @unit)
       end
