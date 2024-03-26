@@ -1,0 +1,47 @@
+# TYPE genset_l1_voltage gauge
+genset_l1_voltage <%=genset_measurements[:voltage_l1_n]%> <%=unix_ms%>
+# TYPE genset_l2_voltage gauge
+genset_l2_voltage <%=genset_measurements[:voltage_l2_n]%> <%=unix_ms%>
+# TYPE genset_l3_voltage gauge
+genset_l3_voltage <%=genset_measurements[:voltage_l3_n]%> <%=unix_ms%>
+# TYPE genset_l1_current gauge
+genset_l1_current <%=genset_measurements[:current_l1]%> <%=unix_ms%>
+# TYPE genset_l2_current gauge
+genset_l2_current <%=genset_measurements[:current_l2]%> <%=unix_ms%>
+# TYPE genset_l3_current gauge
+genset_l3_current <%=genset_measurements[:current_l3]%> <%=unix_ms%>
+# TYPE genset_l1_kva gauge
+genset_l1_kva <%=genset_measurements[:kva_l1]%> <%=unix_ms%>
+# TYPE genset_l2_kva gauge
+genset_l2_kva <%=genset_measurements[:kva_l2]%> <%=unix_ms%>
+# TYPE genset_l3_kva gauge
+genset_l3_kva <%=genset_measurements[:kva_l3]%> <%=unix_ms%>
+# TYPE genset_l1_kw gauge
+genset_l1_kw <%=genset_measurements[:kw_l1]%> <%=unix_ms%>
+# TYPE genset_l2_kw gauge
+genset_l2_kw <%=genset_measurements[:kw_l2]%> <%=unix_ms%>
+# TYPE genset_l3_kw gauge
+genset_l3_kw <%=genset_measurements[:kw_l3]%> <%=unix_ms%>
+# TYPE genset_l1_pf gauge
+genset_l1_pf <%=genset_measurements[:pf_l1]%> <%=unix_ms%>
+# TYPE genset_l2_pf gauge
+genset_l2_pf <%=genset_measurements[:pf_l2]%> <%=unix_ms%>
+# TYPE genset_l3_pf gauge
+genset_l3_pf <%=genset_measurements[:pf_l3]%> <%=unix_ms%>
+
+# TYPE genset_frequency gauge
+genset_frequency <%=genset_measurements[:frequency]%> <%=unix_ms%>
+# TYPE genset_rpm gauge
+genset_rpm <%=genset_measurements[:rpm]%> <%=unix_ms%>
+# TYPE genset_battery_voltage gauge
+genset_battery_voltage <%=genset_measurements[:battery_voltage]%> <%=unix_ms%>
+# TYPE genset_fuel_level gauge
+genset_fuel_level <%=genset_measurements[:fuel_level]%> <%=unix_ms%>
+# TYPE genset_oil_pressure gauge
+genset_oil_pressure <%=genset_measurements[:oil_pressure]%> <%=unix_ms%>
+# TYPE genset_coolant_temperature gauge
+genset_coolant_temperature <%=genset_measurements[:coolant_temperature]%> <%=unix_ms%>
+# TYPE genset_kwh counter
+genset_kwh <%=genset_measurements[:kwh]%> <%=unix_ms%>
+# TYPE genset_start_counter counter
+genset_start_counter <%=genset_measurements[:start_counter]%> <%=unix_ms%>
