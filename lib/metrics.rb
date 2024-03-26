@@ -18,7 +18,8 @@ class PrometheusMetrics
           next3: devices.next3,
         })
       rescue => ex
-        STDERR.puts "Could not fetch next3 metrics: #{ex.inspect_with_backtrace}"
+        STDERR.puts "Could not fetch next3 metrics: #{ex.inspect}"
+        ex.backtrace.each { |l| STDERR.puts l }
       end
       begin
         metrics += genset.result_with_hash({
@@ -26,7 +27,8 @@ class PrometheusMetrics
           genset_measurements: devices.genset.measurements,
         })
       rescue => ex
-        STDERR.puts "Could not fetch genset metrics: #{ex.inspect_with_backtrace}"
+        STDERR.puts "Could not fetch genset metrics: #{ex.inspect}"
+        ex.backtrace.each { |l| STDERR.puts l }
       end
       begin
         metrics += eta.result_with_hash({
@@ -34,7 +36,8 @@ class PrometheusMetrics
           eta: devices.eta,
         })
       rescue => ex
-        STDERR.puts "Could not fetch ETA metrics: #{ex.inspect_with_backtrace}"
+        STDERR.puts "Could not fetch ETA metrics: #{ex.inspect}"
+        ex.backtrace.each { |l| STDERR.puts l }
       end
       if req.accept_encoding.include? "gzip"
         res["content-encoding"] = "gzip"
