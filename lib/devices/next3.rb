@@ -25,6 +25,14 @@ class Devices
         @unit.read_holding_registers(26, 2).to_f32
       end
 
+      def cycles
+        @unit.read_holding_registers(322, 4).to_f64
+      end
+
+      def state_of_health
+        @unit.read_holding_registers(326, 2).to_f32
+      end
+
       def temp
         @unit.read_holding_registers(329, 2).to_f32
       end

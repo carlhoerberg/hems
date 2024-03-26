@@ -4,6 +4,10 @@ battery_soc <%=next3.battery.soc%> <%=unix_ms%>
 # HELP temp Battery temperature
 # TYPE battery_temperature gauge
 battery_temperature <%=next3.battery.temp%> <%=unix_ms%>
+# TYPE battery_cycles counter
+battery_cycles <%=next3.battery.cycles%> <%=unix_ms%>
+# TYPE battery_state_of_health gauge
+battery_state_of_health <%=next3.battery.state_of_health%> <%=unix_ms%>
 # TYPE battery_charging_current gauge
 battery_charging_current <%=next3.battery.charging_current%> <%=unix_ms%>
 # TYPE battery_charging_power gauge
