@@ -22,7 +22,7 @@ module Modbus
 
     def request(request, &)
       try = 0
-      transaction = rand(2**16)
+      transaction = 0 #rand(2**16)
       length = request.bytesize
       @lock.synchronize do
         begin
