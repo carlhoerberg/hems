@@ -56,6 +56,10 @@ class Devices
       def day_discharging_energy
         @unit.read_holding_registers(14, 2).to_f32
       end
+
+      def charging_current_high_limit
+        @unit.read_holding_registers(312, 2).to_f32
+      end
     end
 
     class AcSource
@@ -69,6 +73,18 @@ class Devices
 
       def disable
         @unit.write_holding_register(1207, 0)
+      end
+
+      def frequency
+        @unit.read_holding_registers(0, 2).to_f32
+      end
+
+      def rated_current
+        @unit.read_holding_register(1209, 2).to_f32
+      end
+
+      def rated_current=(value)
+        @unit.write_holding_registers(1209, [value].pack("g"))
       end
 
       def voltage(phase)

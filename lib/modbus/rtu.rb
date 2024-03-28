@@ -52,7 +52,7 @@ module Modbus
       # @serial ||= File.open("/dev/ttyACM0", "r+").tap do |s|
       #  s.flock(File::LOCK_EX | File::LOCK_NB) ||
       #    raise("Serial device is locked by another application")
-      #  system "stty -F /dev/ttyACM0 9600 cs8 -cstopb -parenb" ||
+      #  system "stty -F /dev/ttyACM0 9600 clocal cread cs8 -cstopb -parenb" ||
       #    raise("Could not set serial params")
       #  #s.timeout = 1
       # end

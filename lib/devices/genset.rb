@@ -44,6 +44,14 @@ class Devices
       @genset.read_input_register(0x0024)
     end
 
+    def ready_to_load?
+      @genset.read_discrete_input(0x0025)
+    end
+
+    def frequency
+      @genset.read_input_register(23) / 10.0
+    end
+
     def status
       v = @genset.read_discrete_inputs(0x0020, 40)
       {
@@ -90,8 +98,8 @@ class Devices
       }.freeze
     end
 
-    def ready_to_load?
-      @genset.read_discrete_input(0x0025) == 1
+    def currents
+      @genset.read_input_registers(6, 3).map { |c| c / 10.0 }
     end
 
     def measurements
