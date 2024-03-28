@@ -60,6 +60,10 @@ class Devices
       def charging_current_high_limit
         @unit.read_holding_registers(312, 2).to_f32
       end
+
+      def bms_recommended_charging_current
+        @unit.read_holding_registers(427, 2).to_f32
+      end
     end
 
     class AcSource
