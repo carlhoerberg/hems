@@ -4,11 +4,11 @@
 # TYPE genset_kw gauge
 # TYPE genset_pf gauge
 <%[1, 2, 3].each do |l|%>
-genset_voltage{L=<%=l%>} <%=measurements["voltage_l#{l}_n".to_sym]%>
-genset_current{L=<%=l%>} <%=measurements["current_l#{l}".to_sym]%>
-genset_kva{L=<%=l%>} <%=measurements["kva_l#{l}".to_sym]%>
-genset_kw{L=<%=l%>} <%=measurements["kw_l#{l}".to_sym]%>
-genset_pf{L=<%=l%>} <%=measurements["pf_l#{l}".to_sym]%>
+genset_voltage{L="<%=l%>"} <%=measurements["voltage_l#{l}_n".to_sym]%>
+genset_current{L="<%=l%>"} <%=measurements["current_l#{l}".to_sym]%>
+genset_kva{L="<%=l%>"} <%=measurements["kva_l#{l}".to_sym]%>
+genset_kw{L="<%=l%>"} <%=measurements["kw_l#{l}".to_sym]%>
+genset_pf{L="<%=l%>"} <%=measurements["pf_l#{l}".to_sym]%>
 <%end%>
 
 # TYPE genset_frequency gauge

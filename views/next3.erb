@@ -32,15 +32,15 @@ acsource_frequency <%=next3.acsource.frequency%>
 # TYPE acsource_power_factor gauge
 <%[1, 2, 3].each do |l|%>
 acload_current{L=<%=l%>} <%=next3.acload.current(l)%>
-acload_voltage{L=<%=l%> <%=next3.acload.voltage(l)%>
-acload_active_power{L=<%=l%> <%=next3.acload.active_power(l)%>
-acload_reactive_power{L=<%=l%> <%=next3.acload.reactive_power(l)%>
-acload_apparent_power{L=<%=l%> <%=next3.acload.apparent_power(l)%>
-acload_power_factor{L=<%=l%> <%=next3.acload.power_factor(l)%>
-acload_day_consumed_energy{L=<%=l%> <%=next3.acload.day_consumed_energy(l)%>
-acsource_voltage{L=<%=l%> <%=next3.acsource.voltage(l)%>
-acsource_current{L=<%=l%> <%=next3.acsource.current(l)%>
-acsource_power_factor{L=<%=l%> <%=next3.acsource.power_factor(l)%>
+acload_voltage{L="<%=l%>"} <%=next3.acload.voltage(l)%>
+acload_active_power{L="<%=l%>"} <%=next3.acload.active_power(l)%>
+acload_reactive_power{L="<%=l%>"} <%=next3.acload.reactive_power(l)%>
+acload_apparent_power{L="<%=l%>"} <%=next3.acload.apparent_power(l)%>
+acload_power_factor{L="<%=l%>"} <%=next3.acload.power_factor(l)%>
+acload_day_consumed_energy{L="<%=l%>"} <%=next3.acload.day_consumed_energy(l)%>
+acsource_voltage{L="<%=l%>"} <%=next3.acsource.voltage(l)%>
+acsource_current{L="<%=l%>"} <%=next3.acsource.current(l)%>
+acsource_power_factor{L="<%=l%>"} <%=next3.acsource.power_factor(l)%>
 <%end%>
 
 # TYPE solar_power gauge
@@ -51,11 +51,11 @@ acsource_power_factor{L=<%=l%> <%=next3.acsource.power_factor(l)%>
 # TYPE solar_day_sunshine counter
 # TYPE solar_power_limit gauge
 <%[1, 2].each do |array|%>
-solar_power{array=<%=array%>} <%=next3.solar.power(array)%>
-solar_max_power_limit{array=<%=array%>} <%=next3.solar.max_power_limit(array)%>
-solar_day_energy{array=<%=array%>} <%=next3.solar.day_energy(array)%>
-solar_voltage{array=<%=array%>} <%=next3.solar.voltage(array)%>
-solar_current{array=<%=array%>} <%=next3.solar.current(array)%>
-solar_day_sunshine{array=<%=array%>} <%=next3.solar.day_sunshine(array)%>
-solar_power_limit{array=<%=array%>} <%=next3.solar.power_limit(array)%>
+solar_power{array="<%=array%>"} <%=next3.solar.power(array)%>
+solar_max_power_limit{array="<%=array%>"} <%=next3.solar.max_power_limit(array)%>
+solar_day_energy{array="<%=array%>"} <%=next3.solar.day_energy(array)%>
+solar_voltage{array="<%=array%>"} <%=next3.solar.voltage(array)%>
+solar_current{array="<%=array%>"} <%=next3.solar.current(array)%>
+solar_day_sunshine{array="<%=array%>"} <%=next3.solar.day_sunshine(array)%>
+solar_power_limit{array="<%=array%>"} <%=next3.solar.power_limit(array)%>
 <%end%>
