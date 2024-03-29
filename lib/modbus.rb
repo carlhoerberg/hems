@@ -156,7 +156,12 @@ module Modbus
 
       # Converts two 16-bit values to one 32-bit integer
       def to_i32
-        pack("nn").unpack1("N")
+        pack("nn").unpack1("l>")
+      end
+
+      # Converts two 16-bit values to one 32-bit unsigned integer
+      def to_u32
+        pack("nn").unpack1("L>")
       end
     end
   end

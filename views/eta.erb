@@ -1,46 +1,45 @@
 # TYPE eta_pellets_in_storage gauge
-eta_pellets_in_storage <%=eta.pellets%> <%=unix_ms%>
+eta_pellets_in_storage <%=eta.pellets%>
 
 # TYPE eta_stallet_temp gauge
-eta_stallet_temp <%=eta.stallet_temp%> <%=unix_ms%>
+eta_stallet_temp <%=eta.stallet_temp%>
 
 # TYPE eta_stallet_should_temp gauge
-eta_stallet_should_temp <%=eta.stallet_should_temp%> <%=unix_ms%>
+eta_stallet_should_temp <%=eta.stallet_should_temp%>
 
 # TYPE eta_vvx_primary_temp gauge
-eta_vvx_primary_temp <%=eta.vvx_primary_temp%> <%=unix_ms%>
+eta_vvx_primary_temp <%=eta.vvx_primary_temp%>
 
 # TYPE eta_vvx_primary_should_temp gauge
-eta_vvx_primary_should_temp <%=eta.vvx_primary_should_temp%> <%=unix_ms%>
+eta_vvx_primary_should_temp <%=eta.vvx_primary_should_temp%>
 
 # TYPE eta_vvx_primary_return_temp gauge
-eta_vvx_primary_return_temp <%=eta.vvx_primary_return_temp%> <%=unix_ms%>
+eta_vvx_primary_return_temp <%=eta.vvx_primary_return_temp%>
 
 # TYPE eta_vvx_secondary_temp gauge
-eta_vvx_secondary_temp <%=eta.vvx_secondary_temp%> <%=unix_ms%>
+eta_vvx_secondary_temp <%=eta.vvx_secondary_temp%>
 
 # TYPE eta_outdoor_temp gauge
-eta_outdoor_temp <%=eta.outdoor_temp%> <%=unix_ms%>
+eta_outdoor_temp <%=eta.outdoor_temp%>
 
-# TYPE eta_boiler_1_temp gauge
-eta_boiler_1_temp <%=eta.boiler_temp(1)%> <%=unix_ms%>
+# TYPE eta_boiler_temp gauge
+# TYPE eta_boiler_return_temp gauge
+# TYPE eta_boiler_pump_speed gauge
+# TYPE eta_boiler_total_consumption counter
+<%[1, 2].each do |b|%>
+eta_boiler_temp{boiler=<%=b%>} <%=eta.boiler_temp(b)%>
+eta_boiler_return_temp{boiler=<%=b%>} <%=eta.boiler_return_temp(b)%>
+eta_boiler_pump_speed{boiler=<%=b%>} <%=eta.boiler_pump_speed(b)%>
+eta_boiler_total_consumption{boiler=<%=b%>} <%=eta.boiler_total_consumption(b)%>
+<%end%>
 
-# TYPE eta_boiler_1_return_temp gauge
-eta_boiler_1_return_temp <%=eta.boiler_return_temp(1)%> <%=unix_ms%>
-
-# TYPE eta_boiler_2_temp gauge
-eta_boiler_2_temp <%=eta.boiler_temp(2)%> <%=unix_ms%>
-
-# TYPE eta_boiler_2_return_temp gauge
-eta_boiler_2_return_temp <%=eta.boiler_return_temp(2)%> <%=unix_ms%>
-
-<% eta.tank_temps.each_with_index do |temp, tank| %>
-# TYPE eta_tank_temp_<%=tank + 1%> gauge
-eta_tank_temp_<%=tank + 1%> <%=temp%> <%=unix_ms%>
+# TYPE eta_tank_temp gauge
+<%[1,2,3,4,5].each do |sensor|%>
+eta_tank_temp{sensor=<%=sensor%>} <%=eta.tank_temp(sensor)%>
 <% end %>
 
 # TYPE eta_tank_should_temp gauge
-eta_tank_should_temp <%=eta.tank_should_temp%> <%=unix_ms%>
+eta_tank_should_temp <%=eta.tank_should_temp%>
 
 # TYPE eta_tank_return_temp gauge
-eta_tank_return_temp <%=eta.tank_return_temp%> <%=unix_ms%>
+eta_tank_return_temp <%=eta.tank_return_temp%>

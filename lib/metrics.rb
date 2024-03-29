@@ -13,28 +13,19 @@ class PrometheusMetrics
       res.content_type = "text/plain"
       metrics = ""
       begin
-        metrics += next3.result_with_hash({
-          unix_ms: DateTime.now.strftime("%Q"),
-          next3: devices.next3,
-        })
+        metrics << next3.result_with_hash({ next3: devices.next3 })
       rescue => ex
         STDERR.puts "Could not fetch next3 metrics: #{ex.inspect}"
         ex.backtrace.each { |l| STDERR.print "\t", l, "\n" }
       end
       begin
-        metrics += genset.result_with_hash({
-          unix_ms: DateTime.now.strftime("%Q"),
-          genset_measurements: devices.genset.measurements,
-        })
+        metrics << genset.result_with_hash({ measurements: devices.genset.measurements })
       rescue => ex
         STDERR.puts "Could not fetch genset metrics: #{ex.inspect}"
         ex.backtrace.each { |l| STDERR.print "\t", l, "\n" }
       end
       begin
-        metrics += eta.result_with_hash({
-          unix_ms: DateTime.now.strftime("%Q"),
-          eta: devices.eta,
-        })
+        metrics << eta.result_with_hash({ eta: devices.eta })
       rescue => ex
         STDERR.puts "Could not fetch ETA metrics: #{ex.inspect}"
         ex.backtrace.each { |l| STDERR.print "\t", l, "\n" }

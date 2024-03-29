@@ -157,33 +157,38 @@ class Devices
       end
     end
 
+    # Each solar MPPT has two arrays, 1 and 2
     class Solar
       def initialize(unit)
         @unit = unit
       end
 
-      def array1_power
-        @unit.read_holding_registers(6005, 2).to_f32
+      def power(array)
+        @unit.read_holding_registers(6005 + (array - 1) * 300, 2).to_f32
       end
 
-      def array1_max_power_limit
-        @unit.read_holding_registers(6009, 2).to_f32
+      def max_power_limit(array)
+        @unit.read_holding_registers(6009 + (array - 1) * 300, 2).to_u32
       end
 
-      def array1_day_energy
-        @unit.read_holding_registers(6011, 2).to_f32
+      def day_energy(array)
+        @unit.read_holding_registers(6011 + (array - 1) * 300, 2).to_f32
       end
 
-      def array2_power
-        @unit.read_holding_registers(6305, 2).to_f32
+      def voltage(array)
+        @unit.read_holding_registers(7200 + (array - 1) * 300, 2).to_f32
       end
 
-      def array2_max_power_limit
-        @unit.read_holding_registers(6309, 2).to_f32
+      def current(array)
+        @unit.read_holding_registers(7202 + (array - 1) * 300, 2).to_f32
       end
 
-      def array2_day_energy
-        @unit.read_holding_registers(6311, 2).to_f32
+      def day_sunshine(array)
+        @unit.read_holding_registers(7204 + (array - 1) * 300, 2).to_u32
+      end
+
+      def power_limit(array)
+        @unit.read_holding_registers(7222 + (array - 1) * 300, 2).to_f32
       end
     end
   end

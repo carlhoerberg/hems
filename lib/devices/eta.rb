@@ -13,14 +13,12 @@ class Devices
       @lock = Mutex.new
     end
 
-    def tank_temps
-      5.times.map do |i|
-        get("/user/var/123/10601/0/#{11327 + i}/0")
-      end
+    def tank_sensors
+      5
     end
 
     def tank_temp(i)
-      raise ArgumentError, "Tank has 5 temperature gauges" unless [1..5].include?(i)
+      raise ArgumentError, "Tank has 5 temperature sensors" unless [1..5].include?(i)
       get("/user/var/123/10601/0/#{11326 + i}/0")
     end
 
@@ -42,6 +40,14 @@ class Devices
 
     def boiler_return_temp(number)
       get("/user/var/4#{number}/10021/0/11160/0")
+    end
+
+    def boiler_total_consumption(number)
+      get("/user/var/4#{number}/10021/0/0/12016")
+    end
+
+    def boiler_pump_speed(number)
+      get("/user/var/4#{number}/10021/0/11123/0")
     end
 
     def pellets
