@@ -62,6 +62,10 @@ class Devices
       get("/user/var/124/10101/0/11125/2120")
     end
 
+    def stallet_pump
+      get("/user/var/124/10101/0/11124/0")
+    end
+
     def vvx_primary_temp
       get("/user/var/124/10581/0/11410/0")
     end
