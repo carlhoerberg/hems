@@ -18,7 +18,7 @@ class Devices
     end
 
     def tank_temp(i)
-      raise ArgumentError, "Tank has 5 temperature sensors" unless [1..5].include?(i)
+      raise ArgumentError, "Tank has 5 temperature sensors" unless (1..5).include?(i)
       get("/user/var/123/10601/0/#{11326 + i}/0")
     end
 
