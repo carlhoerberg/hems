@@ -31,7 +31,7 @@ acsource_frequency <%=next3.acsource.frequency%>
 # TYPE acsource_current gauge
 # TYPE acsource_power_factor gauge
 <%[1, 2, 3].each do |l|%>
-acload_current{L=<%=l%>} <%=next3.acload.current(l)%>
+acload_current{L="<%=l%>"} <%=next3.acload.current(l)%>
 acload_voltage{L="<%=l%>"} <%=next3.acload.voltage(l)%>
 acload_active_power{L="<%=l%>"} <%=next3.acload.active_power(l)%>
 acload_reactive_power{L="<%=l%>"} <%=next3.acload.reactive_power(l)%>
