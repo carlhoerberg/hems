@@ -50,6 +50,10 @@ class Devices
       get("/user/var/4#{number}/10021/0/11123/0")
     end
 
+    def boiler_flue_gas_fan_rpm(number)
+      get("/user/var/4#{number}/10021/0/0/12165")
+    end
+
     def pellets
       get("/user/var/41/10201/0/0/12015")
     end

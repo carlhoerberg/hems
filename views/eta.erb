@@ -29,11 +29,13 @@ eta_outdoor_temp <%=eta.outdoor_temp%>
 # TYPE eta_boiler_return_temp gauge
 # TYPE eta_boiler_pump_speed gauge
 # TYPE eta_boiler_total_consumption counter
+# TYPE eta_boiler_flue_gas_fan_rpm gauge
 <%[1, 2].each do |b|%>
 eta_boiler_temp{boiler="<%=b%>"} <%=eta.boiler_temp(b)%>
 eta_boiler_return_temp{boiler="<%=b%>"} <%=eta.boiler_return_temp(b)%>
 eta_boiler_pump_speed{boiler="<%=b%>"} <%=eta.boiler_pump_speed(b)%>
 eta_boiler_total_consumption{boiler="<%=b%>"} <%=eta.boiler_total_consumption(b)%>
+eta_boiler_flue_gas_fan_rpm{boiler="<%=b%>"} <%=eta.boiler_flue_gas_fan_rpm(b)%>
 <%end%>
 
 # TYPE eta_tank_temp gauge
