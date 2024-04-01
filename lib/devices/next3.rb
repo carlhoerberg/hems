@@ -25,6 +25,10 @@ class Devices
         @unit.read_holding_registers(26, 2).to_f32
       end
 
+      def voltage
+        @unit.read_holding_registers(318, 2).to_f32
+      end
+
       def cycles
         @unit.read_holding_registers(322, 4).to_f64
       end
@@ -37,8 +41,12 @@ class Devices
         @unit.read_holding_registers(329, 2).to_f32
       end
 
-      def voltage
-        @unit.read_holding_registers(318, 2).to_f32
+      def target_voltage_max
+        @unit.read_holding_registers(314, 2).to_f32
+      end
+
+      def target_voltage_min
+        @unit.read_holding_registers(316, 2).to_f32
       end
 
       def charging_current
@@ -63,6 +71,10 @@ class Devices
 
       def bms_recommended_charging_current
         @unit.read_holding_registers(427, 2).to_f32
+      end
+
+      def bms_recommended_discharging_current
+        @unit.read_holding_registers(429, 2).to_f32
       end
     end
 
