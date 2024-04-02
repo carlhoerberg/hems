@@ -188,19 +188,19 @@ class Devices
       end
 
       def voltage(array)
-        @unit.read_holding_registers(7200 + (array - 1) * 300, 2).to_f32
+        @unit.read_holding_registers(6900 + (array - 1) * 300, 2).to_f32
       end
 
       def current(array)
-        @unit.read_holding_registers(7202 + (array - 1) * 300, 2).to_f32
+        @unit.read_holding_registers(6902 + (array - 1) * 300, 2).to_f32
       end
 
       def day_sunshine(array)
-        @unit.read_holding_registers(7204 + (array - 1) * 300, 2).to_u32
+        @unit.read_holding_registers(6904 + (array - 1) * 300, 2).to_u32
       end
 
       def power_limit(array)
-        @unit.read_holding_registers(7222 + (array - 1) * 300, 2).to_f32
+        @unit.read_holding_registers(6922 + (array - 1) * 300, 2).to_f32
       end
     end
   end
