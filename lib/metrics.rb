@@ -6,6 +6,7 @@ class PrometheusMetrics
     next3 = ERB.new(File.read(File.join(__dir__, "..", "views", "next3.erb")))
     genset = ERB.new(File.read(File.join(__dir__, "..", "views", "genset.erb")))
     eta = ERB.new(File.read(File.join(__dir__, "..", "views", "eta.erb")))
+    starlink = ERB.new(File.read(File.join(__dir__, "..", "views", "starlink.erb")))
     @server = WEBrick::HTTPServer.new(
       Port: ENV.fetch("PORT", 8000).to_i,
       AccessLog: [[STDOUT, "#{WEBrick::AccessLog::COMMON_LOG_FORMAT} %T"]])
@@ -28,6 +29,12 @@ class PrometheusMetrics
         metrics << eta.result_with_hash({ eta: devices.eta })
       rescue => ex
         STDERR.puts "Could not fetch ETA metrics: #{ex.inspect}"
+        ex.backtrace.each { |l| STDERR.print "\t", l, "\n" }
+      end
+      begin
+        metrics << starlink.result_with_hash({ status: devices.starlink.status })
+      rescue => ex
+        STDERR.puts "Could not fetch starlink metrics: #{ex.inspect}"
         ex.backtrace.each { |l| STDERR.print "\t", l, "\n" }
       end
       if req.accept_encoding.include? "gzip"
