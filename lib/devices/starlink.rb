@@ -1,6 +1,6 @@
 require "json"
 
-module Devices
+class Devices
   class Starlink
     def status
       json = `grpcurl -plaintext -d '{"get_status": {}}' 192.168.100.1:9200 SpaceX.API.Device.Device/Handle`
