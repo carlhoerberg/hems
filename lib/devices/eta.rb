@@ -62,7 +62,7 @@ class Devices
       get("/user/var/4#{number}/10021/0/0/12165")
     end
 
-    def boiler_gas_temp(number)
+    def boiler_flue_gas_temp(number)
       get("/user/var/4#{number}/10021/0/11110/0")
     end
 

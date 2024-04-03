@@ -33,7 +33,7 @@ eta_outdoor_temp <%=eta.outdoor_temp%>
 # TYPE eta_boiler_pump_speed gauge
 # TYPE eta_boiler_total_consumption counter
 # TYPE eta_boiler_flue_gas_fan_rpm gauge
-# TYPE eta_boiler_gas_temp gauge
+# TYPE eta_boiler_flue_gas_temp gauge
 # TYPE eta_boiler_pressure gauge
 # TYPE eta_boiler_air_valve gauge
 # TYPE eta_boiler_requested_power gauge
@@ -44,7 +44,7 @@ eta_boiler_return_temp{boiler="<%=b%>"} <%=eta.boiler_return_temp(b)%>
 eta_boiler_pump_speed{boiler="<%=b%>"} <%=eta.boiler_pump_speed(b)%>
 eta_boiler_total_consumption{boiler="<%=b%>"} <%=eta.boiler_total_consumption(b)%>
 eta_boiler_flue_gas_fan_rpm{boiler="<%=b%>"} <%=eta.boiler_flue_gas_fan_rpm(b)%>
-eta_boiler_gas_temp{boiler="<%=b%>"} <%=eta.boiler_gas_temp(b)%>
+eta_boiler_flue_gas_temp{boiler="<%=b%>"} <%=eta.boiler_flue_gas_temp(b)%>
 eta_boiler_pressure{boiler="<%=b%>"} <%=eta.boiler_pressure(b)%>
 eta_boiler_air_valve{boiler="<%=b%>"} <%=eta.boiler_air_valve(b)%>
 eta_boiler_requested_power{boiler="<%=b%>"} <%=eta.boiler_requested_power(b)%>
