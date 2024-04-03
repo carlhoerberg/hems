@@ -38,6 +38,10 @@ class Devices
       get("/user/var/123/10601/0/0/12528")
     end
 
+    def tank_consumers_requested_temp
+      get("/user/var/123/10601/0/0/13203")
+    end
+
     def outdoor_temp
       get("/user/var/123/10601/0/0/12197")
     end
