@@ -74,11 +74,11 @@ class Devices
       get("/user/var/4#{number}/10021/0/11115/0")
     end
 
-    def boiler_reqested_power(number)
+    def boiler_requested_power(number)
       get("/user/var/4#{number}/10021/0/0/12077")
     end
 
-    def boiler_reqested_temp(number)
+    def boiler_requested_temp(number)
       get("/user/var/4#{number}/10021/0/0/12006")
     end
 
