@@ -35,7 +35,7 @@ class Devices
     end
 
     def tank_charge_status
-      get("/user/var/123/10601/0/0/12077")
+      get("/user/var/123/10601/0/0/12528")
     end
 
     def outdoor_temp
