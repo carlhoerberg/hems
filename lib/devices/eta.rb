@@ -82,8 +82,12 @@ class Devices
       get("/user/var/4#{number}/10021/0/0/12006")
     end
 
-    def pellets
+    def pellets_in_storage
       get("/user/var/41/10201/0/0/12015")
+    end
+
+    def pellets_feed_screw_current
+      get("/user/var/41/10201/0/11029/2091")
     end
 
     def stallet_temp
