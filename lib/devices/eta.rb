@@ -30,6 +30,14 @@ class Devices
       get("/user/var/123/10601/0/0/12520")
     end
 
+    def tank_requested_power
+      get("/user/var/123/10601/0/0/12077")
+    end
+
+    def tank_charge_status
+      get("/user/var/123/10601/0/0/12077")
+    end
+
     def outdoor_temp
       get("/user/var/123/10601/0/0/12197")
     end
@@ -52,6 +60,26 @@ class Devices
 
     def boiler_flue_gas_fan_rpm(number)
       get("/user/var/4#{number}/10021/0/0/12165")
+    end
+
+    def boiler_gas_temp(number)
+      get("/user/var/4#{number}/10021/0/11110/0")
+    end
+
+    def boiler_pressure(number)
+      get("/user/var/4#{number}/10021/0/0/12180")
+    end
+
+    def boiler_air_valve(number)
+      get("/user/var/4#{number}/10021/0/11115/0")
+    end
+
+    def boiler_reqested_power(number)
+      get("/user/var/4#{number}/10021/0/0/12077")
+    end
+
+    def boiler_reqested_temp(number)
+      get("/user/var/4#{number}/10021/0/0/12006")
     end
 
     def pellets
