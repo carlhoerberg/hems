@@ -9,7 +9,7 @@ class Devices
   def initialize
     @next3 = Next3.new
     @genset = Genset.new
-    @eta = ETA.new("192.168.1.11")
+    @eta = ETA.new("192.168.0.11")
     @starlink = Starlink.new
   end
 end
