@@ -36,7 +36,7 @@ module Modbus
           result
         rescue ProtocolException => ex
           close
-          retry if (try += 1) < 3
+          retry if (try += 1) < 1
           raise ex
         end
       end
