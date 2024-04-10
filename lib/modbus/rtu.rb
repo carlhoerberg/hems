@@ -30,9 +30,7 @@ module Modbus
           check_exception!(function)
           result = yield
           read(2) # crc16 bytes
-          unless CRC16.valid?(@response)
-            raise ProtocolException, "Invalid CRC16"
-          end
+          STDERR.puts("Invalid CRC16") unless CRC16.valid?(@response)
           result
         rescue ProtocolException => ex
           close
