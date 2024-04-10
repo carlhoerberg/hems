@@ -105,9 +105,8 @@ class Devices
     def measurements
       m = []
       m.concat(
-        @genset.read_input_registers(0, 26),
-        [0, 0, 0, 0],
-        @genset.read_input_registers(30, 11)
+        @genset.read_input_registers(0, 32),
+        Array.new(9, 0)
       )
       power_reading_precision = 10.0
       {
