@@ -106,8 +106,8 @@ class Devices
       m = []
       m.concat(
         @genset.read_input_registers(0, 26),
-        [0, 0, 0],
-        @genset.read_input_registers(29, 12)
+        [0, 0, 0, 0],
+        @genset.read_input_registers(30, 11)
       )
       power_reading_precision = 10.0
       {
