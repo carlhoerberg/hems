@@ -15,27 +15,29 @@ class PrometheusMetrics
       metrics = ""
       begin
         metrics << next3.result_with_hash({ next3: devices.next3 })
-      rescue => ex
-        STDERR.puts "Could not fetch next3 metrics: #{ex.inspect}"
-        ex.backtrace.each { |l| STDERR.print "\t", l, "\n" }
+      rescue => e
+        warn "Could not fetch next3 metrics: #{e.inspect}"
+        e.backtrace.each { |l| warn "\t", l }
       end
       begin
         metrics << genset.result_with_hash({ measurements: devices.genset.measurements })
-      rescue => ex
-        STDERR.puts "Could not fetch genset metrics: #{ex.inspect}"
-        ex.backtrace.each { |l| STDERR.print "\t", l, "\n" }
+      rescue EOFError
+        warn "genset offline"
+      rescue => e
+        warn "Could not fetch genset metrics: #{e.inspect}"
+        e.backtrace.each { |l| warn "\t", l }
       end
       begin
         metrics << eta.result_with_hash({ eta: devices.eta })
-      rescue => ex
-        STDERR.puts "Could not fetch ETA metrics: #{ex.inspect}"
-        ex.backtrace.each { |l| STDERR.print "\t", l, "\n" }
+      rescue => e
+        warn "Could not fetch ETA metrics: #{e.inspect}"
+        e.backtrace.each { |l| warn "\t#{l}" }
       end
       begin
         metrics << starlink.result_with_hash({ status: devices.starlink.status })
-      rescue => ex
-        STDERR.puts "Could not fetch starlink metrics: #{ex.inspect}"
-        ex.backtrace.each { |l| STDERR.print "\t", l, "\n" }
+      rescue => e
+        warn "Could not fetch starlink metrics: #{e.inspect}"
+        e.backtrace.each { |l| warn "\t#{l}" }
       end
       if req.accept_encoding.include? "gzip"
         res["content-encoding"] = "gzip"
