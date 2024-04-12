@@ -2,7 +2,7 @@ require "socket"
 require "json"
 require_relative "./devices/shelly_ht"
 
-class ShellyUDP
+class ShellyUDPServer
   def initialize
     @udp = UDPSocket.new
     @udp.bind("0.0.0.0", 4913)
