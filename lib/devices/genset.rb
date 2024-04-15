@@ -108,7 +108,8 @@ class Devices
         @genset.read_input_registers(0, 26),
         Array.new(2, 0),
         @genset.read_input_registers(28, 6),
-        @genset.read_input_registers(34, 7)
+        @genset.read_input_registers(34, 7),
+        @genset.read_input_registers(41, 4)
       )
       power_reading_precision = 10.0
       {
@@ -150,7 +151,11 @@ class Devices
         start_counter: m[36],
         serial_number: [m[37], m[38]].to_i32,
         sw_version: m[39],
-        sw_patch_version: m[40]
+        sw_patch_version: m[40],
+        unknown1: m[41],
+        unknown2: m[42],
+        unknown3: m[43],
+        unknown4: m[44],
       }.freeze
     end
   end
