@@ -13,38 +13,48 @@ class PrometheusMetrics
       AccessLog: [[STDOUT, "#{WEBrick::AccessLog::COMMON_LOG_FORMAT} %T"]])
     @server.mount_proc("/metrics") do |req, res|
       res.content_type = "text/plain"
+      threads = [
+        Thread.new do
+          next3.result_with_hash({ next3: devices.next3 })
+        rescue => e
+          warn "Could not fetch next3 metrics: #{e.inspect}"
+          e.backtrace.each { |l| warn "\t#{l}" }
+          nil
+        end,
+        Thread.new do
+          genset.result_with_hash({ measurements: devices.genset.measurements })
+        rescue EOFError
+          warn "genset offline"
+        rescue => e
+          warn "Could not fetch genset metrics: #{e.inspect}"
+          e.backtrace.each { |l| warn "\t#{l}" }
+          nil
+        end,
+        Thread.new do
+          eta.result_with_hash({ eta: devices.eta })
+        rescue => e
+          warn "Could not fetch ETA metrics: #{e.inspect}"
+          e.backtrace.each { |l| warn "\t#{l}" }
+          nil
+        end,
+        Thread.new do
+          starlink.result_with_hash({ status: devices.starlink.status })
+        rescue => e
+          warn "Could not fetch starlink metrics: #{e.inspect}"
+          e.backtrace.each { |l| warn "\t#{l}" }
+          nil
+        end,
+        Thread.new do
+          shelly.result_with_hash({ plugs: devices.shelly.plugs })
+        rescue => e
+          warn "Could not fetch starlink metrics: #{e.inspect}"
+          e.backtrace.each { |l| warn "\t#{l}" }
+          nil
+        end
+      ]
       metrics = ""
-      begin
-        metrics << next3.result_with_hash({ next3: devices.next3 })
-      rescue => e
-        warn "Could not fetch next3 metrics: #{e.inspect}"
-        e.backtrace.each { |l| warn "\t#{l}" }
-      end
-      begin
-        metrics << genset.result_with_hash({ measurements: devices.genset.measurements })
-      rescue EOFError
-        warn "genset offline"
-      rescue => e
-        warn "Could not fetch genset metrics: #{e.inspect}"
-        e.backtrace.each { |l| warn "\t#{l}" }
-      end
-      begin
-        metrics << eta.result_with_hash({ eta: devices.eta })
-      rescue => e
-        warn "Could not fetch ETA metrics: #{e.inspect}"
-        e.backtrace.each { |l| warn "\t#{l}" }
-      end
-      begin
-        metrics << starlink.result_with_hash({ status: devices.starlink.status })
-      rescue => e
-        warn "Could not fetch starlink metrics: #{e.inspect}"
-        e.backtrace.each { |l| warn "\t#{l}" }
-      end
-      begin
-        metrics << shelly.result_with_hash({ plugs: devices.shelly.plugs })
-      rescue => e
-        warn "Could not fetch starlink metrics: #{e.inspect}"
-        e.backtrace.each { |l| warn "\t#{l}" }
+      threads.each do |t|
+        metrics << (t.value || "")
       end
       if req.accept_encoding.include? "gzip"
         res["content-encoding"] = "gzip"
