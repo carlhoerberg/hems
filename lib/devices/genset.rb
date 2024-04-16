@@ -106,6 +106,7 @@ class Devices
       m = @genset.read_input_registers(0, 26)
       m << 0 # binary input can't be read when running
       m.concat @genset.read_input_registers(27, 3)
+      p m.size, m, m[22]
       m << (m[22].zero? ? @genset.read_input_register(30) : 0) # fuel level
       m.concat @genset.read_input_registers(31, 14)
       power_reading_precision = 10.0
