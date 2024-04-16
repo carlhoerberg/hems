@@ -123,5 +123,3 @@ class Devices
     end
   end
 end
-
-#pp Devices::ShellyPlusPlugS.new("shellyplusplugs-fcb4670cf7fc").status
