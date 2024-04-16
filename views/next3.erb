@@ -1,3 +1,4 @@
+<%t = Process.clock_gettime(Process::CLOCK_MONOTONIC)%>
 # TYPE battery_soc gauge
 battery_soc <%=next3.battery.soc%>
 # TYPE battery_temperature gauge
@@ -69,3 +70,6 @@ solar_day_energy{array="<%=array%>"} <%=next3.solar.day_energy(array)%>
 solar_voltage{array="<%=array%>"} <%=next3.solar.voltage(array)%>
 solar_current{array="<%=array%>"} <%=next3.solar.current(array)%>
 <%end%>
+
+# TYPE metrics_gather_time gauge
+metrics_gather_time{device="next3"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>

@@ -1,3 +1,5 @@
+<%t = Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>
+
 # TYPE eta_pellets_in_storage gauge
 eta_pellets_in_storage <%=eta.pellets_in_storage%>
 
@@ -70,3 +72,6 @@ eta_tank_charge_status <%=eta.tank_charge_status%>
 
 # TYPE eta_tank_consumers_requested_temp gauge
 eta_tank_consumers_requested_temp <%=eta.tank_consumers_requested_temp%>
+
+# TYPE metrics_gather_time gauge
+metrics_gather_time{device="eta"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>
