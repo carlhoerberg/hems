@@ -103,14 +103,11 @@ class Devices
     end
 
     def measurements
-      m = []
-      m.concat(
-        @genset.read_input_registers(0, 26),
-        Array.new(1, 0), # binary input, crc16 error
-        @genset.read_input_registers(27, 3),
-        @genset.read_input_registers(30, 1), # fuel level, crc16 error when running
-        @genset.read_input_registers(31, 14)
-      )
+      m = @genset.read_input_registers(0, 26)
+      m << 0 # binary input can't be read when running
+      m.concat @genset.read_input_registers(27, 3)
+      m << m[22].zero? ? @genset.read_input_register(30) : 0 # fuel level
+      m.concat @genset.read_input_registers(31, 14)
       power_reading_precision = 10.0
       {
         voltage_l1_n: m[0],
