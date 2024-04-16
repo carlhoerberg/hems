@@ -20,23 +20,21 @@ module Modbus
     def request(request)
       try = 0
       @lock.synchronize do
-        begin
-          @response = ""
-          serial.write request, CRC16.crc16(request)
-          unit, function = read(2).unpack("CC")
-          request_unit, request_function = request[0..1].unpack("CC")
-          raise ProtocolException, "Invalid unit response" if unit != request_unit
-          raise ProtocolException, "Invalid function response" if function != request_function
-          check_exception!(function)
-          result = yield
-          read(2) # crc16 bytes
-          STDERR.puts("Invalid CRC16") unless CRC16.valid?(@response)
-          result
-        rescue ProtocolException => ex
-          close
-          retry if (try += 1) < 1
-          raise ex
-        end
+        @response = ""
+        serial.write request, CRC16.crc16(request)
+        unit, function = read(2).unpack("CC")
+        request_unit, request_function = request[0..1].unpack("CC")
+        raise ProtocolException, "Invalid unit response" if unit != request_unit
+        raise ProtocolException, "Invalid function response" if function != request_function
+        check_exception!(function)
+        result = yield
+        read(2) # crc16 bytes
+        raise ProtocolException, "Invalid CRC16" unless CRC16.valid?(@response)
+        result
+      rescue ProtocolException, EOFError => e
+        close
+        retry if (try += 1) < 1
+        raise e
       end
     end
 
