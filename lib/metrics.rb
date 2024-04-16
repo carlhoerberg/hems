@@ -14,11 +14,11 @@ class PrometheusMetrics
     @server.mount_proc("/metrics") do |req, res|
       res.content_type = "text/plain"
       threads = [
-        Thread.new { next3.result_with_hash({ next3: devices.next3 }) },
-        Thread.new { genset.result_with_hash({ measurements: devices.genset.measurements }) },
-        Thread.new { eta.result_with_hash({ eta: devices.eta }) },
-        Thread.new { starlink.result_with_hash({ status: devices.starlink.status }) },
-        Thread.new { shelly.result_with_hash({ plugs: devices.shelly.plugs }) },
+        Thread.new { next3.result_with_hash({ t: t, next3: devices.next3 }) },
+        Thread.new { genset.result_with_hash({ t: t, measurements: devices.genset.measurements }) },
+        Thread.new { eta.result_with_hash({ t: t, eta: devices.eta }) },
+        Thread.new { starlink.result_with_hash({ t: t, status: devices.starlink.status }) },
+        Thread.new { shelly.result_with_hash({ t: t, plugs: devices.shelly.plugs }) },
       ]
       metrics = ""
       threads.each do |t|
@@ -38,6 +38,10 @@ class PrometheusMetrics
       res.content_type = "application/xml"
       res.body = devices.eta.menu
     end
+  end
+
+  def t
+    Process.clock_gettime(Process::CLOCK_MONOTONIC)
   end
 
   def start
