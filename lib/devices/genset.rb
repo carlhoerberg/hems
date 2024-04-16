@@ -106,10 +106,10 @@ class Devices
       m = []
       m.concat(
         @genset.read_input_registers(0, 26),
-        Array.new(2, 0),
-        @genset.read_input_registers(28, 6),
-        @genset.read_input_registers(34, 7),
-        @genset.read_input_registers(41, 4)
+        Array.new(1, 0), # binary input, crc16 error
+        @genset.read_input_registers(27, 3),
+        @genset.read_input_registers(30, 1), # fuel level, crc16 error when running
+        @genset.read_input_registers(31, 14)
       )
       power_reading_precision = 10.0
       {
@@ -139,12 +139,12 @@ class Devices
         frequency: m[23] / 10.0,
         power_reading_precision: m[24],
         battery_voltage: m[25] / 10.0,
-        binary_input: m[26],
+        binary_input: m[26], # CRC16 error when genset is running
         binary_output: m[27],
         oil_pressure: m[28] / power_reading_precision,
         coolant_temperature: m[29],
-        fuel_level: m[30],
-        unit_system: m[31] == 0 ? :metric : :imperial,
+        fuel_level: m[30], # CRC16 error when genset is running
+        unit_system: m[31].zero? ? :metric : :imperial,
         d_plus: m[32] / 10.0,
         kWh: [m[33], m[34]].to_i32,
         maintenance_timer: m[35],
