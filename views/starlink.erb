@@ -4,3 +4,5 @@ starlink_latency <%=status.dig("dishGetStatus", "popPingLatencyMs")%>
 starlink_downlink_bps <%=status.dig("dishGetStatus", "downlinkThroughputBps")%>
 # TYPE starlink_uplink_bps gauge
 starlink_uplink_bps <%=status.dig("dishGetStatus", "uplinkThroughputBps")%>
+# TYPE metrics_gather_time gauge
+metrics_gather_time{device="starlink"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>
