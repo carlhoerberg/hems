@@ -79,7 +79,7 @@ class Devices
         @current = c
       end
       if (p = params.dig("switch:0", "voltage"))
-        @apower = p
+        @voltage = p
       end
       if (p = params.dig("switch:0", "apower"))
         @apower = p
