@@ -51,7 +51,7 @@ class Devices
     end
 
     def rpc(method, params)
-      request = { id: rand(2**16), method:, params:}
+      request = { id: rand(2**16), method:, params: }
       @@lock.synchronize do
         @@udp.send(request.to_json, 0, @host, @port)
         bytes, _from = @@udp.recvfrom(4096)
@@ -71,7 +71,7 @@ class Devices
     def initialize(device_id, port = 1010)
       super(device_id, port)
       @device_id = device_id
-      update_status_loop
+      update_status
     end
 
     def notify_status(params)
@@ -101,6 +101,10 @@ class Devices
       rpc("Switch.Set", { id: 0, on: false })
     end
 
+    def reset_counter
+      rpc("Switch.ResetCounters", { id: 0, type: ["aenergy"] })
+    end
+
     private
 
     def update_status
@@ -109,14 +113,6 @@ class Devices
       @apower = s["apower"]
       @voltage = s["voltage"]
       @aenergy_total = s.dig("aenergy", "total")
-    end
-
-    def update_status_loop
-      Thread.new do
-        Thread.current.name = "Shelly Plug update status loop #{@device_id}"
-        update_status
-        sleep 5
-      end
     end
   end
 
