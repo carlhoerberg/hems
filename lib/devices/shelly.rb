@@ -113,7 +113,7 @@ class Devices
 
     def update_status_loop
       Thread.new do
-        Thread.name = "Shelly Plug update status loop #{@device_id}"
+        Thread.current.name = "Shelly Plug update status loop #{@device_id}"
         update_status
         sleep 5
       end
