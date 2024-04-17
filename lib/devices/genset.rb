@@ -143,7 +143,7 @@ class Devices
         fuel_level: m[30], # CRC16 error when genset is running
         unit_system: m[31].zero? ? :metric : :imperial,
         d_plus: m[32] / 10.0,
-        kWh: [m[33], m[34]].to_i32,
+        kWh: [m[33], m[34]].to_i32 / power_reading_precision,
         maintenance_timer: m[35],
         start_counter: m[36],
         serial_number: [m[37], m[38]].to_i32,
