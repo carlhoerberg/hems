@@ -69,7 +69,7 @@ class Devices
     attr_reader :device_id, :current, :apower, :aenergy_total, :voltage
 
     def initialize(device_id, port = 1010)
-      super("#{device_id}.local", port)
+      super(device_id, port)
       @device_id = device_id
       s = status
       @current = s["current"]
