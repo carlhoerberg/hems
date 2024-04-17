@@ -71,7 +71,7 @@ class Devices
     def initialize(device_id, port = 1010)
       super(device_id, port)
       @device_id = device_id
-      update_status
+      update_status_loop
     end
 
     def notify_status(params)
@@ -86,12 +86,6 @@ class Devices
       end
       if (p = params.dig("switch:0", "aenergy", "total"))
         @aenergy_total = p
-      end
-      if params.dig("switch:0", "output") # want new voltage
-        Thread.new do
-          sleep 2
-          update_status
-        end
       end
     end
 
@@ -115,6 +109,14 @@ class Devices
       @apower = s["apower"]
       @voltage = s["voltage"]
       @aenergy_total = s.dig("aenergy", "total")
+    end
+
+    def update_status_loop
+      Thread.new do
+        Thread.name = "Shelly Plug update status loop #{@device_id}"
+        update_status
+        sleep 5
+      end
     end
   end
 
