@@ -149,8 +149,7 @@ class Devices
         serial_number: [m[37], m[38]].to_i32,
         sw_version: m[39],
         sw_patch_version: m[40],
-        unknown1: m[41],
-        unknown2: m[42],
+        hours: [m[41], m[42]].to_i32 / power_reading_precision,
         unknown3: m[43],
         unknown4: m[44],
       }.freeze
