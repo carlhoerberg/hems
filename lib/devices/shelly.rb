@@ -87,7 +87,12 @@ class Devices
       if (p = params.dig("switch:0", "aenergy", "total"))
         @aenergy_total = p
       end
-      update_status if params.dig("switch:0", "output") # want new voltage
+      if params.dig("switch:0", "output") # want new voltage
+        Thread.new do
+          sleep 2
+          update_status
+        end
+      end
     end
 
     def status
