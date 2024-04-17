@@ -105,9 +105,7 @@ class Devices
     def measurements
       m = @genset.read_input_registers(0, 26)
       m << 0 # binary input can't be read when running
-      m.concat @genset.read_input_registers(27, 3)
-      m << 0 # fuel level m[22].zero? ? @genset.read_input_register(30) : 0 # fuel level
-      m.concat @genset.read_input_registers(31, 14)
+      m.concat @genset.read_input_registers(27, 18)
       power_reading_precision = 10.0
       {
         voltage_l1_n: m[0],
