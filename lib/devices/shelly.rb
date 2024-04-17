@@ -31,11 +31,11 @@ class Devices
       loop do
         json, _from = @udp.recvfrom(4096)
         begin
-          pp data = JSON.parse(json)
+          p data = JSON.parse(json)
           device = @devices[data["src"]] ||= Shelly.from_device_id(data["src"])
           device.notify_status(data["params"])
         rescue => e
-          STDERR.puts "ShellyUDPServer error: #{e.inspect}", json.inspect
+          warn "ShellyUDPServer error: #{e.inspect}", json.inspect
         end
       end
     end
@@ -71,11 +71,7 @@ class Devices
     def initialize(device_id, port = 1010)
       super(device_id, port)
       @device_id = device_id
-      s = status
-      @current = s["current"]
-      @apower = s["apower"]
-      @voltage = s["voltage"]
-      @aenergy_total = s.dig("aenergy", "total")
+      update_status
     end
 
     def notify_status(params)
@@ -88,9 +84,10 @@ class Devices
       if (p = params.dig("switch:0", "apower"))
         @apower = p
       end
-      if (t = params.dig("switch:0", "aenergy", "total"))
-        @aenergy_total = t
+      if (p = params.dig("switch:0", "aenergy", "total"))
+        @aenergy_total = p
       end
+      update_status if params.dig("switch:0", "output") # want new voltage
     end
 
     def status
@@ -103,6 +100,16 @@ class Devices
 
     def switch_off
       rpc("Switch.Set", { id: 0, on: false })
+    end
+
+    private
+
+    def update_status
+      s = status
+      @current = s["current"]
+      @apower = s["apower"]
+      @voltage = s["voltage"]
+      @aenergy_total = s.dig("aenergy", "total")
     end
   end
 
