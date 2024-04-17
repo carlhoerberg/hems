@@ -36,10 +36,14 @@ class PrometheusMetrics
       res.content_type = "text/plain"
       threads = [
         Thread.new { @@next3.result_with_hash({ t:, next3: @devices.next3 }) },
-        Thread.new { @@genset.result_with_hash({ t:, measurements: @devices.genset.measurements }) },
         Thread.new { @@eta.result_with_hash({ t:, eta: @devices.eta }) },
         Thread.new { @@starlink.result_with_hash({ t:, status: @devices.starlink.status }) },
         Thread.new { @@shelly.result_with_hash({ t:, plugs: @devices.shelly.plugs }) },
+        Thread.new do
+          @@genset.result_with_hash({ t:, measurements: @devices.genset.measurements })
+        rescue EOFError
+          warn "Genset offline"
+        end,
       ]
       metrics = ""
       threads.each do |t|
