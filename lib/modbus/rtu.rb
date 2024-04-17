@@ -28,8 +28,8 @@ module Modbus
         raise ProtocolException, "Invalid function response" if function != request_function
         check_exception!(function)
         result = yield
-        read(2) # crc16 bytes
-        raise ProtocolException, "Invalid CRC16" unless CRC16.valid?(@response)
+        checksum = @serial.readpartial(2) # crc16 bytes
+        warn "Invalid CRC16" if checksum != CRC16.crc16(@response)
         result
       rescue ProtocolException, EOFError => e
         close
