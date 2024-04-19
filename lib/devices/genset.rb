@@ -105,7 +105,7 @@ class Devices
     def measurements
       m = []
       15.times do |i|
-        m << @genset.read_input_registers(i * 3, 3)
+        m.concat @genset.read_input_registers(i * 3, 3)
       end
       power_reading_precision = 10.0
       {
