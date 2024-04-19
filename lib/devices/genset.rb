@@ -103,9 +103,10 @@ class Devices
     end
 
     def measurements
-      m = @genset.read_input_registers(0, 26)
-      m << 0 # binary input can't be read when running
-      m.concat @genset.read_input_registers(27, 18)
+      m = []
+      15.times do |i|
+        m << @genset.read_input_registers(i * 3, 3)
+      end
       power_reading_precision = 10.0
       {
         voltage_l1_n: m[0],
