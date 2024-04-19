@@ -20,11 +20,11 @@ class Devices
     end
 
     def plugs
-      @devices.each_value.select { |d| Devices::ShellyPlusPlugS === d }
+      @devices.each_value.grep(ShellyPlusPlugS)
     end
 
     def termometers
-      @devices.each_value.select { |d| Devices::ShellyHTG3 === d }
+      @devices.each_value.grep(ShellyHTG3)
     end
 
     def start
