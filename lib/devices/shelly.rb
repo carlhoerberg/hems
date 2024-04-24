@@ -42,7 +42,7 @@ class Devices
   end
 
   class ShellyUDP
-    @@udp = UDPSocket.new.tap { |u| u.read_timeout = 1 }
+    @@udp = UDPSocket.new
     @@lock = Mutex.new
 
     def initialize(host, port)
