@@ -117,6 +117,21 @@ class Devices
         raise ArgumentError.new("Phase 1, 2 or 3") unless [1,2,3].include? phase
         @unit.read_holding_registers(300 * phase + 10, 2).to_f32
       end
+
+      def day_consumed_energy(phase)
+        raise ArgumentError.new("Phase 1, 2 or 3") unless [1,2,3].include? phase
+        @unit.read_holding_registers(300 * phase + 28, 2).to_f32
+      end
+
+      def active_power(phase)
+        raise ArgumentError.new("Phase 1, 2 or 3") unless [1,2,3].include? phase
+        @unit.read_holding_registers(300 * phase + 4, 2).to_f32
+      end
+
+      def reactive_power(phase)
+        raise ArgumentError.new("Phase 1, 2 or 3") unless [1,2,3].include? phase
+        @unit.read_holding_registers(300 * phase + 6, 2).to_f32
+      end
     end
 
     class AcLoad
