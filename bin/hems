@@ -5,11 +5,14 @@ require_relative "../lib/energy_management"
 
 $stdout.sync = true
 devices = Devices.new
-em = EnergyManagement.new(devices)
+#em = EnergyManagement.new(devices)
 metrics = PrometheusMetrics.new(devices)
 
-trap('INT') { em.stop; metrics.stop }
-trap('TERM') { em.stop; metrics.stop}
-em_thread = Thread.new { em.start }
+#trap('INT') { em.stop; metrics.stop }
+#trap('TERM') { em.stop; metrics.stop}
+trap('INT') { metrics.stop }
+trap('TERM') { metrics.stop }
+#em_thread = Thread.new { em.start }
+#metrics_thread = Thread.new { metrics.start }
 metrics.start
-em_thread.join
+#[em_thread, metrics_thread].each(&:join)
