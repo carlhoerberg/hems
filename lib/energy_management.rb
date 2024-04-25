@@ -36,10 +36,15 @@ class EnergyManagement
   end
 
   def charge_from_genset
+    puts "Opening air vents, takes 2:30"
+    @devices.relay.open_air_vents
+    sleep 150 # it takes 2:30 for the vents to fully open
+    puts "Air vents should be fully open"
+
     genset = @devices.genset
     puts "Starting genset"
     genset.auto
-    sleep 3 # should have started in this time
+    sleep 1 # should have started in this time
     unless genset.status[:running]
       puts "Genset didn't start", "Status: #{genset.status}"
       raise "Genset didn't start"

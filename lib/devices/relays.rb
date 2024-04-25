@@ -25,5 +25,31 @@ class Devices
     def version
       @modbus.read_holding_register(0x8000)
     end
+
+    def start_9kw_heater
+      activate(0)
+    end
+
+    def stop_9kw_heater
+      deactivate(0)
+    end
+
+    def start_6kw_heater
+      activate(1)
+    end
+
+    def stop_6kw_heater
+      deactivate(1)
+    end
+
+    def open_air_vents
+      activate(3)
+      activate(4)
+    end
+
+    def close_air_vents
+      deactivate(3)
+      deactivate(4)
+    end
   end
 end
