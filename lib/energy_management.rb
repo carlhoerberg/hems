@@ -8,7 +8,6 @@ class EnergyManagement
   def start
     until @stopped
       soc = @devices.next3.battery.soc
-      puts "SOC: #{soc}%"
       genset_support(soc)
       load_shedding(soc)
       sleep 5
@@ -28,13 +27,13 @@ class EnergyManagement
       if soc < 85
         puts "SOC #{soc}%, turning off 9kw heater"
         @devices.relays.heater_9kw = false
-      elsif (tp = @devices.next3.acloads.total_apparent_power) > 16_000
+      elsif (tp = @devices.next3.acload.total_apparent_power) > 16_000
         puts "Total power #{tp}, turning off 9kw heater"
         @devices.relays.heater_9kw = false
       end
     else
       if @devices.next3.solar.excess? &&
-          15_000 - @devices.next3.acloads.total_apparent_power > 9_000
+          15_000 - @devices.next3.acload.total_apparent_power > 9_000
         puts "Solar excess, turning on 9kw heater"
         @devices.relays.heater_9kw = true
       end
@@ -42,16 +41,19 @@ class EnergyManagement
   end
 
   def genset_support(soc = @devices.next3.battery.soc)
-    if soc <= 10
-      start_genset
-    elsif soc >= 80
-      stop_genset
+    if @devices.genset.is_running?
+      if soc >= 80
+        stop_genset
+      end
+    else # genset is not running
+      if soc <= 10
+        start_genset
+      end
     end
   end
 
   def start_genset
     @devices.relay.open_air_vents
-    return if @devices.genset.is_running?
     puts "Opening air vents, takes 2:30"
     sleep 150 # it takes 2:30 for the vents to fully open
     puts "Air vents should be fully open"
@@ -67,7 +69,6 @@ class EnergyManagement
   end
 
   def stop_genset
-    return unless @devices.genset.is_running?
     puts "Stopping genset"
     @devices.genset.stop
     sleep 3
