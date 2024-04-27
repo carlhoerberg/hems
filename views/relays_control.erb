@@ -1,0 +1,13 @@
+<html>
+  <head>
+    <title>Relay control</title>
+  </head>
+  <body>
+    <h1>Relay control</h1>
+    <form method="post">
+      <%status.each.with_index do |active, id|%>
+        <button name="id" value="<%=id%>">Relay <%=id%> <%=active ? 'ON' : 'OFF'%></button>
+      <%end%>
+    </form>
+  </body>
+</html>
