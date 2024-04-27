@@ -5,7 +5,7 @@ class EnergyManagement
     @stopped = false
   end
 
-  def run
+  def start
     until @stopped
       soc = @devices.next3.battery.soc
       puts "SOC: #{soc}%"
