@@ -1,6 +1,6 @@
 require_relative "../modbus"
 require_relative "./crc16"
-require "serialport"
+require "uart"
 
 # https://modbus.org/docs/Modbus_Application_Protocol_V1_1b.pdf
 module Modbus
@@ -55,9 +55,7 @@ module Modbus
       @serial ||=
         begin
           device = Dir.glob("/dev/ttyACM?").first || raise("No serial device found")
-          SerialPort.new(device, baud: 9600, data_bits: 8, stop_bits: 1, parity: SerialPort::NONE).tap do |s|
-            s.read_timeout = 1000
-          end
+          UART.open(device)
         end
     end
   end
