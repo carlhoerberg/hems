@@ -14,6 +14,10 @@ class Devices
       @modbus.write_coil(id, false)
     end
 
+    def toggle(id)
+      @modbus.write_coil(id, 0x5500)
+    end
+
     def status
       @modbus.read_coils(0, 8)
     end

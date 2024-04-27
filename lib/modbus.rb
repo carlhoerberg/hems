@@ -53,10 +53,14 @@ module Modbus
 
     # FC05
     def write_coil(addr, value, unit = 255)
-      raise ArgumentError.new "Boolean value required" if value != true && value != false
       function = 5
-      value = value ? 0xFF00 : 0x0000
-      request([unit, function, addr, value].pack("CCnn")) do
+      v = case value
+          when true then 0xFF00
+          when false then 0
+          when Integer then value
+          else raise ArgumentError, "Boolean or Integer value required"
+          end
+      request([unit, function, addr, v].pack("CCnn")) do
         raddr, rvalue = read(4).unpack("nn")
         raddr == addr && rvalue == value
       end
