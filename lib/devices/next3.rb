@@ -10,15 +10,15 @@ class Devices
       host = ENV.fetch("NEXT3_HOST", "studer-next")
       port = ENV.fetch("NEXT3_PORT", 502).to_i
       next3 = Modbus::TCP.new(host, port)
-      @acload = AcLoad.new next3.unit(1)
-      @battery = Battery.new next3.unit(2)
-      @acsource = AcSource.new next3.unit(7)
-      @solar = Solar.new next3.unit(14)
+      @acload = AcLoad.new next3
+      @battery = Battery.new next3
+      @acsource = AcSource.new next3
+      @solar = Solar.new next3
     end
 
     class Battery
-      def initialize(unit)
-        @unit = unit
+      def initialize(next3)
+        @unit = next3.unit(2)
       end
 
       def soc
@@ -79,8 +79,8 @@ class Devices
     end
 
     class AcSource
-      def initialize(unit)
-        @unit = unit
+      def initialize(next3)
+        @unit = next3.unit(7)
       end
 
       def enable
@@ -135,12 +135,16 @@ class Devices
     end
 
     class AcLoad
-      def initialize(unit)
-        @unit = unit
+      def initialize(next3)
+        @unit = next3.unit(1)
       end
 
       def frequency
         @unit.read_holding_registers(3900, 2).to_f32
+      end
+
+      def total_apparent_power
+        @unit.read_holding_registers(3910, 2).to_f32
       end
 
       def voltage(phase)
@@ -173,11 +177,6 @@ class Devices
         @unit.read_holding_registers(3910 + 300 * phase, 2).to_f32
       end
 
-      def day_produced_energy
-        raise ArgumentError.new("Phase 1, 2 or 3") unless [1,2,3].include? phase
-        @unit.read_holding_registers(3928, 2).to_f32
-      end
-
       def day_consumed_energy(phase)
         raise ArgumentError.new("Phase 1, 2 or 3") unless [1,2,3].include? phase
         @unit.read_holding_registers(3928 + 300 * phase, 2).to_f32
@@ -186,8 +185,8 @@ class Devices
 
     # Each solar MPPT has two arrays, 1 and 2
     class Solar
-      def initialize(unit)
-        @unit = unit
+      def initialize(next3)
+        @unit = next3.unit(14)
       end
 
       def power(array)
@@ -216,6 +215,17 @@ class Devices
 
       def power_limit(array)
         @unit.read_holding_registers(6922 + (array - 1) * 300, 2).to_f32
+      end
+
+      # At least one array in solar excess state
+      def excess?
+        status_enum = @unit.read_holding_registers(6602, 2).to_u32
+        status_enum & 256 != 0
+      end
+
+      # Currently produced power (kW) by all arrays
+      def total_power
+        @unit.read_holding_registers(5705, 2).to_f32
       end
     end
   end
