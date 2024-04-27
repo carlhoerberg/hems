@@ -48,6 +48,10 @@ class Devices
       @genset.read_discrete_input(0x0025)
     end
 
+    def is_running?
+      @genset.read_discrete_input(0x0027)
+    end
+
     def frequency
       @genset.read_input_register(23) / 10.0
     end

@@ -26,20 +26,24 @@ class Devices
       @modbus.read_holding_register(0x8000)
     end
 
-    def start_9kw_heater
-      activate(0)
+    def any_heater_on?
+      status[0..1].any?
     end
 
-    def stop_9kw_heater
-      deactivate(0)
+    def heater_9kw?
+      status[0]
     end
 
-    def start_6kw_heater
-      activate(1)
+    def heater_9kw=(on_off)
+      @modbus.write_coil(0, on_off)
     end
 
-    def stop_6kw_heater
-      deactivate(1)
+    def heater_6kw?
+      status[1]
+    end
+
+    def heater_6kw=(on_off)
+      @modbus.write_coil(1, on_off)
     end
 
     def open_air_vents
