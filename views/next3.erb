@@ -66,12 +66,14 @@ acsource_day_consumed_energy{L="<%=l%>"} <%=next3.acsource.day_consumed_energy(l
 # TYPE solar_voltage gauge
 # TYPE solar_current gauge
 # TYPE solar_day_sunshine counter
+# TYPE solar_max_power_limit gauge
 <%[1, 2].each do |array|%>
 solar_power{array="<%=array%>"} <%=next3.solar.power(array)%>
 solar_voltage{array="<%=array%>"} <%=next3.solar.voltage(array)%>
 solar_current{array="<%=array%>"} <%=next3.solar.current(array)%>
 solar_day_energy{array="<%=array%>"} <%=next3.solar.day_energy(array)%>
 solar_day_sunshine{array="<%=array%>"} <%=next3.solar.day_sunshine(array)%>
+solar_max_power_limit{array="<%=array%>"} <%=next3.solar.max_power_limit(array)%>
 <%end%>
 
 # TYPE metrics_gather_time gauge
