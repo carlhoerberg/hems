@@ -217,10 +217,10 @@ class Devices
         @unit.read_holding_registers(6922 + (array - 1) * 300, 2).to_f32
       end
 
-      # At least one array in solar excess state
+      # At least one array in solar excess state or power limited
       def excess?
         status_enum = @unit.read_holding_registers(6602, 2).to_u32
-        status_enum & 256 != 0
+        status_enum & 384 != 0
       end
 
       # Currently produced power (kW) by all arrays
