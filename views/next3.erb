@@ -29,8 +29,6 @@ battery_target_voltage_min <%=next3.battery.target_voltage_min%>
 
 # TYPE acload_frequency gauge
 acload_frequency <%=next3.acload.frequency%>
-# TYPE acsource_frequency gauge
-acsource_frequency <%=next3.acsource.frequency%>
 
 # TYPE acload_current gauge
 # TYPE acload_voltage gauge
@@ -66,14 +64,12 @@ acsource_day_consumed_energy{L="<%=l%>"} <%=next3.acsource.day_consumed_energy(l
 # TYPE solar_voltage gauge
 # TYPE solar_current gauge
 # TYPE solar_day_sunshine counter
-# TYPE solar_max_power_limit gauge
 <%[1, 2].each do |array|%>
 solar_power{array="<%=array%>"} <%=next3.solar.power(array)%>
 solar_voltage{array="<%=array%>"} <%=next3.solar.voltage(array)%>
 solar_current{array="<%=array%>"} <%=next3.solar.current(array)%>
 solar_day_energy{array="<%=array%>"} <%=next3.solar.day_energy(array)%>
 solar_day_sunshine{array="<%=array%>"} <%=next3.solar.day_sunshine(array)%>
-solar_max_power_limit{array="<%=array%>"} <%=next3.solar.max_power_limit(array)%>
 <%end%>
 
 # TYPE metrics_gather_time gauge
