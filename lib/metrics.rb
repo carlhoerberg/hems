@@ -3,8 +3,7 @@ require "zlib"
 
 class PrometheusMetrics
   def initialize(devices)
-    @server = WEBrick::HTTPServer.new(Port: ENV.fetch("PORT", 8000).to_i,
-                                      AccessLog: [[$stdout, "#{WEBrick::AccessLog::COMMON_LOG_FORMAT} %T"]])
+    @server = WEBrick::HTTPServer.new(Port: ENV.fetch("PORT", 8000).to_i)
     @server.mount "/metrics", Metrics, devices
     @server.mount_proc("/eta") do |_req, res|
       res.content_type = "application/xml"
