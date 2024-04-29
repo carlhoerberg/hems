@@ -10,10 +10,10 @@ class Devices
       host = ENV.fetch("NEXT3_HOST", "studer-next")
       port = ENV.fetch("NEXT3_PORT", 502).to_i
       next3 = Modbus::TCP.new(host, port)
-      @acload = AcLoad.new next3
-      @battery = Battery.new next3
-      @acsource = AcSource.new next3
-      @solar = Solar.new next3
+      @acload = AcLoad.new next3.dup
+      @battery = Battery.new next3.dup
+      @acsource = AcSource.new next3.dup
+      @solar = Solar.new next3.dup
     end
 
     class Battery
