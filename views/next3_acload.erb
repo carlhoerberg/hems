@@ -17,3 +17,6 @@ acload_apparent_power{L="<%=l%>"} <%=acload.apparent_power(l)%>
 acload_power_factor{L="<%=l%>"} <%=acload.power_factor(l)%>
 acload_day_consumed_energy{L="<%=l%>"} <%=acload.day_consumed_energy(l)%>
 <%end%>
+
+# TYPE metrics_gather_time gauge
+metrics_gather_time{device="next3-acload"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>
