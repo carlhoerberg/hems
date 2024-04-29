@@ -12,9 +12,6 @@ class Devices
     end
 
     def initialize
-      @udp = UDPSocket.new
-      @udp.bind("0.0.0.0", 4913)
-      puts "Shelly UDP server listening on #{@udp.local_address.inspect_sockaddr}"
       @devices = {}
       Thread.new { start }
     end
@@ -28,8 +25,11 @@ class Devices
     end
 
     def start
+      udp = UDPSocket.new
+      udp.bind("0.0.0.0", 4913)
+      puts "Shelly UDP server listening on #{udp.local_address.inspect_sockaddr}"
       loop do
-        json, _from = @udp.recvfrom(4096)
+        json, _from = udp.recvfrom(4096)
         begin
           p data = JSON.parse(json)
           device = @devices[data["src"]] ||= Shelly.from_device_id(data["src"])
