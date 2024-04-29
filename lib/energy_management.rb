@@ -1,7 +1,9 @@
+require_relative "./devices"
+
 # Hållfjället energy management system
 class EnergyManagement
-  def initialize(devices)
-    @devices = devices
+  def initialize
+    @devices = Devices.new
     @stopped = false
   end
 
