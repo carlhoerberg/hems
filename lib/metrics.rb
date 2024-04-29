@@ -48,7 +48,10 @@ class PrometheusMetrics
       @devices = devices
     end
 
-    @@next3 = ERB.new(File.read(File.join(__dir__, "..", "views", "next3.erb")))
+    @@next3_battery = ERB.new(File.read(File.join(__dir__, "..", "views", "next3_battery.erb")))
+    @@next3_acload = ERB.new(File.read(File.join(__dir__, "..", "views", "next3_acload.erb")))
+    @@next3_acsource = ERB.new(File.read(File.join(__dir__, "..", "views", "next3_acsource.erb")))
+    @@next3_solar = ERB.new(File.read(File.join(__dir__, "..", "views", "next3_solar.erb")))
     @@genset = ERB.new(File.read(File.join(__dir__, "..", "views", "genset.erb")))
     @@eta = ERB.new(File.read(File.join(__dir__, "..", "views", "eta.erb")))
     @@starlink = ERB.new(File.read(File.join(__dir__, "..", "views", "starlink.erb")))
@@ -57,7 +60,10 @@ class PrometheusMetrics
     def do_GET(req, res)
       res.content_type = "text/plain"
       threads = [
-        Thread.new { @@next3.result_with_hash({ t:, next3: @devices.next3 }) },
+        Thread.new { @@next3_battery.result_with_hash({ t:, battery: @devices.next3.battery }) },
+        Thread.new { @@next3_acload.result_with_hash({ t:, acload: @devices.next3.acload }) },
+        Thread.new { @@next3_acsource.result_with_hash({ t:, acsource: @devices.next3.acsource }) },
+        Thread.new { @@next3_solar.result_with_hash({ t:, solar: @devices.next3.solar }) },
         Thread.new { @@eta.result_with_hash({ t:, eta: @devices.eta }) },
         Thread.new { @@starlink.result_with_hash({ t:, status: @devices.starlink.status }) },
         Thread.new { @@shelly.result_with_hash({ t:, shelly: @devices.shelly }) },

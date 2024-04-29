@@ -1,0 +1,31 @@
+# TYPE battery_soc gauge
+battery_soc <%=battery.soc%>
+# TYPE battery_temperature gauge
+battery_temperature <%=battery.temp%>
+# TYPE battery_cycles counter
+battery_cycles <%=battery.cycles%>
+# TYPE battery_state_of_health gauge
+battery_state_of_health <%=battery.state_of_health%>
+# TYPE battery_charging_current gauge
+battery_charging_current <%=battery.charging_current%>
+# TYPE battery_charging_power gauge
+battery_charging_power <%=battery.charging_power%>
+# TYPE battery_day_charging_energy counter
+battery_day_charging_energy <%=battery.day_charging_energy%>
+# TYPE battery_day_discharging_energy counter
+battery_day_discharging_energy <%=battery.day_discharging_energy%>
+# TYPE battery_bms_recommended_charging_current gauge
+battery_bms_recommended_charging_current <%=battery.bms_recommended_charging_current%>
+# TYPE battery_bms_recommended_charging_current gauge
+battery_bms_recommended_discharging_current <%=battery.bms_recommended_discharging_current%>
+# TYPE battery_charging_current_high_limit gauge
+battery_charging_current_high_limit <%=battery.charging_current_high_limit%>
+# TYPE battery_voltage gauge
+battery_voltage <%=battery.voltage%>
+# TYPE battery_target_voltage_max gauge
+battery_target_voltage_max <%=battery.target_voltage_max%>
+# TYPE battery_target_voltage_min gauge
+battery_target_voltage_min <%=battery.target_voltage_min%>
+
+# TYPE metrics_gather_time gauge
+metrics_gather_time{device="next3-battery"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>

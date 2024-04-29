@@ -1,0 +1,20 @@
+# TYPE acsource_frequency gauge
+acsource_frequency <%=acsource.frequency%>
+
+# TYPE acsource_voltage gauge
+# TYPE acsource_current gauge
+# TYPE acsource_power_factor gauge
+# TYPE acsource_active_power gauge
+# TYPE acsource_reactive_power gauge
+# TYPE acsource_day_consumed_energy counter
+<%[1, 2, 3].each do |l|%>
+acsource_voltage{L="<%=l%>"} <%=acsource.voltage(l)%>
+acsource_current{L="<%=l%>"} <%=acsource.current(l)%>
+acsource_power_factor{L="<%=l%>"} <%=acsource.power_factor(l)%>
+acsource_active_power{L="<%=l%>"} <%=acsource.active_power(l)%>
+acsource_reactive_power{L="<%=l%>"} <%=acsource.reactive_power(l)%>
+acsource_day_consumed_energy{L="<%=l%>"} <%=acsource.day_consumed_energy(l)%>
+<%end%>
+
+# TYPE metrics_gather_time gauge
+metrics_gather_time{device="next3-acsource"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>

@@ -1,0 +1,15 @@
+# TYPE solar_power gauge
+# TYPE solar_day_energy counter
+# TYPE solar_voltage gauge
+# TYPE solar_current gauge
+# TYPE solar_day_sunshine counter
+<%[1, 2].each do |array|%>
+solar_power{array="<%=array%>"} <%=solar.power(array)%>
+solar_voltage{array="<%=array%>"} <%=solar.voltage(array)%>
+solar_current{array="<%=array%>"} <%=solar.current(array)%>
+solar_day_energy{array="<%=array%>"} <%=solar.day_energy(array)%>
+solar_day_sunshine{array="<%=array%>"} <%=solar.day_sunshine(array)%>
+<%end%>
+
+# TYPE metrics_gather_time gauge
+metrics_gather_time{device="next3-solar"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>
