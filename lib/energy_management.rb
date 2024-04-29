@@ -65,7 +65,6 @@ class EnergyManagement
       puts "Genset didn't start", "Status: #{@devices.genset.status}"
       raise "Genset didn't start"
     end
-    genset
   end
 
   def stop_genset
