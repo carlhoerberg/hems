@@ -53,7 +53,7 @@ class EnergyManagement
   end
 
   def start_genset
-    @devices.relay.open_air_vents
+    @devices.relays.open_air_vents
     puts "Opening air vents, takes 2:30"
     sleep 150 # it takes 2:30 for the vents to fully open
     puts "Air vents should be fully open"
@@ -77,6 +77,6 @@ class EnergyManagement
       raise "Genset didn't stop"
     end
     puts "Closing air vents"
-    @devices.relay.close_air_vents
+    @devices.relays.close_air_vents
   end
 end
