@@ -3,28 +3,18 @@ require "json"
 
 class Devices
   class Shelly
-    def self.from_device_id(device_id)
-      case device_id
-      when /^shellyhtg3-/      then ShellyHTG3.new(device_id)
-      when /^shellyplusplugs-/ then ShellyPlusPlugS.new(device_id)
-      else                     raise "Unknown device id #{device_id}"
-      end
-    end
-
-    def initialize
-      @devices = {}
-      Thread.new { start }
-    end
+    @@devices = {}
+    @@server = Thread.new { Shelly.listen }
 
     def plugs
-      @devices.each_value.grep(ShellyPlusPlugS)
+      @@devices.each_value.grep(ShellyPlusPlugS)
     end
 
     def termometers
-      @devices.each_value.grep(ShellyHTG3)
+      @@devices.each_value.grep(ShellyHTG3)
     end
 
-    def start
+    def self.listen
       udp = UDPSocket.new
       udp.bind("0.0.0.0", 4913)
       puts "Shelly UDP server listening on #{udp.local_address.inspect_sockaddr}"
@@ -32,11 +22,19 @@ class Devices
         json, _from = udp.recvfrom(4096)
         begin
           p data = JSON.parse(json)
-          device = @devices[data["src"]] ||= Shelly.from_device_id(data["src"])
+          device = @@devices[data["src"]] ||= Shelly.from_device_id(data["src"])
           device.notify_status(data["params"])
         rescue => e
           warn "ShellyUDPServer error: #{e.inspect}", json.inspect
         end
+      end
+    end
+
+    def self.from_device_id(device_id)
+      case device_id
+      when /^shellyhtg3-/      then ShellyHTG3.new(device_id)
+      when /^shellyplusplugs-/ then ShellyPlusPlugS.new(device_id)
+      else                     raise "Unknown device id #{device_id}"
       end
     end
   end
