@@ -9,10 +9,11 @@ class Devices
     def initialize
       host = ENV.fetch("NEXT3_HOST", "studer-next")
       port = ENV.fetch("NEXT3_PORT", 502).to_i
-      @acload = AcLoad.new Modbus::TCP.new(host, port)
-      @battery = Battery.new Modbus::TCP.new(host, port)
-      @acsource = AcSource.new Modbus::TCP.new(host, port)
-      @solar = Solar.new Modbus::TCP.new(host, port)
+      next3 = Modbus::TCP.new(host, port)
+      @acload = AcLoad.new next3
+      @battery = Battery.new next3
+      @acsource = AcSource.new next3
+      @solar = Solar.new next3
     end
 
     class Battery
