@@ -22,11 +22,10 @@ module Modbus
 
     def request(request, &)
       try = 0
-      transaction = 0 #rand(2**16)
-      length = request.bytesize
+      transaction = rand(2**16)
       @lock.synchronize do
         begin
-          socket.write [transaction, Protocol, length].pack("nnn"), request
+          socket.write [transaction, Protocol, request.bytesize].pack("nnn"), request
           header = read(8)
           rtransaction, rprotocol, _response_length, _unit, function = header.unpack("nnnCC")
           raise ProtocolException, "Invalid transaction (#{rtransaction} != #{transaction})" if rtransaction != transaction
