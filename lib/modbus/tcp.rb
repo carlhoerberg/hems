@@ -8,11 +8,7 @@ module Modbus
     def initialize(host, port = 502)
       @host = host
       @port = port
-      @socket = Socket.tcp(@host, @port)
-      @transactions = {}
-      @responses = {}
       @lock = Mutex.new
-      Thread.new { read_loop }
     end
 
     def close
@@ -24,36 +20,35 @@ module Modbus
 
     Protocol = 0
 
-    def request(request, &cb)
+    def request(request, &)
+      try = 0
       transaction = rand(2**16)
-      q = SizedQueue.new(1)
       @lock.synchronize do
-        @transactions[transaction] = cb
-        @responses[transaction] = q
-      end
-      @socket.write [transaction, Protocol, request.bytesize].pack("nnn"), request
-      result = q.pop
-      @lock.synchronize { @responses.delete(transaction) }
-      result
-    end
-
-    def read_loop
-      loop do
-        header = read(8)
-        rtransaction, rprotocol, _response_length, _unit, function = header.unpack("nnnCC")
-        raise ProtocolException, "Invalid protocol (#{rprotocol})" if rprotocol != Protocol
-        check_exception!(function)
-        if (cb = @lock.synchronize { @transactions.delete(rtransaction) })
-          result = cb.call
-          @lock.synchronize { @responses[rtransaction] << result }
-        else
-          raise "No request callback for transaction #{rtransaction} #{@transactions.inspect}"
+        begin
+          socket.write [transaction, Protocol, request.bytesize].pack("nnn"), request
+          header = read(8)
+          rtransaction, rprotocol, _response_length, _unit, function = header.unpack("nnnCC")
+          raise ProtocolException, "Invalid transaction (#{rtransaction} != #{transaction})" if rtransaction != transaction
+          raise ProtocolException, "Invalid protocol (#{rprotocol})" if rprotocol != Protocol
+          check_exception!(function)
+          yield
+        rescue SocketError, SystemCallError, IOError => ex
+          close
+          retry if (try += 1) < 2
+          raise ex
+        rescue ProtocolException => ex
+          close
+          raise ex
         end
       end
     end
 
     def read(count)
       @socket.read(count) || raise(EOFError.new)
+    end
+
+    def socket
+      @socket ||= Socket.tcp(@host, @port)
     end
   end
 end
