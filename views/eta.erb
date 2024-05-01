@@ -29,6 +29,7 @@ eta_vvx_secondary_temp <%=eta.vvx_secondary_temp%>
 eta_outdoor_temp <%=eta.outdoor_temp%>
 
 # TYPE eta_boiler_temp gauge
+# TYPE eta_boiler_should_temp gauge
 # TYPE eta_boiler_return_temp gauge
 # TYPE eta_boiler_pump_speed gauge
 # TYPE eta_boiler_total_consumption counter
@@ -40,6 +41,7 @@ eta_outdoor_temp <%=eta.outdoor_temp%>
 # TYPE eta_boiler_requested_temp gauge
 <%[1, 2].each do |b|%>
 eta_boiler_temp{boiler="<%=b%>"} <%=eta.boiler_temp(b)%>
+eta_boiler_should_temp{boiler="<%=b%>"} <%=eta.boiler_should_temp(b)%>
 eta_boiler_return_temp{boiler="<%=b%>"} <%=eta.boiler_return_temp(b)%>
 eta_boiler_pump_speed{boiler="<%=b%>"} <%=eta.boiler_pump_speed(b)%>
 eta_boiler_total_consumption{boiler="<%=b%>"} <%=eta.boiler_total_consumption(b)%>

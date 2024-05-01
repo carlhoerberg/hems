@@ -50,6 +50,10 @@ class Devices
       get("/user/var/4#{number}/10021/0/11109/0")
     end
 
+    def boiler_should_temp(number)
+      get("/user/var/4#{number}/10021/0/0/12001")
+    end
+
     def boiler_return_temp(number)
       get("/user/var/4#{number}/10021/0/11160/0")
     end
