@@ -42,6 +42,7 @@ acload_frequency <%=next3.acload.frequency%>
 # TYPE acsource_power_factor gauge
 # TYPE acsource_active_power gauge
 # TYPE acsource_reactive_power gauge
+# TYPE acsource_apparent_power gauge
 # TYPE acsource_day_consumed_energy counter
 <%[1, 2, 3].each do |l|%>
 acload_current{L="<%=l%>"} <%=next3.acload.current(l)%>
@@ -56,6 +57,7 @@ acsource_current{L="<%=l%>"} <%=next3.acsource.current(l)%>
 acsource_power_factor{L="<%=l%>"} <%=next3.acsource.power_factor(l)%>
 acsource_active_power{L="<%=l%>"} <%=next3.acsource.active_power(l)%>
 acsource_reactive_power{L="<%=l%>"} <%=next3.acsource.reactive_power(l)%>
+acsource_apparent_power{L="<%=l%>"} <%=next3.acsource.apparent_power(l)%>
 acsource_day_consumed_energy{L="<%=l%>"} <%=next3.acsource.day_consumed_energy(l)%>
 <%end%>
 

@@ -132,6 +132,11 @@ class Devices
         raise ArgumentError.new("Phase 1, 2 or 3") unless [1,2,3].include? phase
         @unit.read_holding_registers(300 * phase + 6, 2).to_f32
       end
+
+      def apparent_power(phase)
+        raise ArgumentError.new("Phase 1, 2 or 3") unless [1,2,3].include? phase
+        @unit.read_holding_registers(300 * phase + 8, 2).to_f32
+      end
     end
 
     class AcLoad
