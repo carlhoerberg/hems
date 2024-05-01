@@ -11,6 +11,7 @@ module Modbus
       @socket = Socket.tcp(@host, @port)
       @transactions = {}
       @responses = {}
+      @lock = Mutex.new
       Thread.new { read_loop }
     end
 
@@ -25,13 +26,14 @@ module Modbus
 
     def request(request, &cb)
       transaction = rand(2**16)
-      puts "request #{transaction}"
-      @transactions[transaction] = cb
       q = SizedQueue.new(1)
-      @responses[transaction] = q
+      @lock.synchronize do
+        @transactions[transaction] = cb
+        @responses[transaction] = q
+      end
       @socket.write [transaction, Protocol, request.bytesize].pack("nnn"), request
       result = q.pop
-      @responses.delete(transaction)
+      @lock.synchronize { @responses.delete(transaction) }
       result
     end
 
@@ -39,12 +41,11 @@ module Modbus
       loop do
         header = read(8)
         rtransaction, rprotocol, _response_length, _unit, function = header.unpack("nnnCC")
-        puts "response #{rtransaction}"
         raise ProtocolException, "Invalid protocol (#{rprotocol})" if rprotocol != Protocol
         check_exception!(function)
-        if (cb = @transactions.delete(rtransaction))
+        if (cb = @lock.synchronize { @transactions.delete(rtransaction) })
           result = cb.call
-          @responses[rtransaction] << result
+          @lock.synchronize { @responses[rtransaction] << result }
         else
           raise "No request callback for transaction #{rtransaction} #{@transactions.inspect}"
         end
