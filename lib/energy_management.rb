@@ -73,7 +73,7 @@ class EnergyManagement
         stop_genset
       end
     else # genset is not running
-      if soc <= 10
+      if soc <= 15
         start_genset
       end
     end
