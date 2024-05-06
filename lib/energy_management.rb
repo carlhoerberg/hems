@@ -9,10 +9,15 @@ class EnergyManagement
 
   def start
     until @stopped
-      soc = @devices.next3.battery.soc
-      genset_support(soc)
-      load_shedding(soc)
-      sleep 5
+      begin
+        sleep 5
+        soc = @devices.next3.battery.soc
+        genset_support(soc)
+        load_shedding(soc)
+      rescue => e
+        puts "[ERROR] #{e.inspect}"
+        e.backtrace.each { |l| print "\t", l, "\n" }
+      end
     end
   end
 
