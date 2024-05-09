@@ -167,5 +167,20 @@ class Devices
         get_children(ch, http)
       end
     end
+
+    def post(path, value)
+      @lock.synchronize do
+        @http.start unless @http.started?
+        res = @http.post(path, "value=#{value}")
+        case res
+        when Net::HTTPOK
+          doc = REXML::Document.new(res.body, ignore_whitespace_nodes: :all)
+          val = doc.root[0]
+          val.text.to_f / val["scaleFactor"].to_i
+        else
+          raise "HTTP response not 200 OK: #{res.inspect}"
+        end
+      end
+    end
   end
 end
