@@ -22,7 +22,7 @@ module Modbus
 
     def request(request, &)
       try = 0
-      transaction = rand(2**16)
+      transaction = 0 # the waveshare relay have trouble with transactions, rand(2**16)
       @lock.synchronize do
         begin
           socket.write [transaction, Protocol, request.bytesize].pack("nnn"), request
