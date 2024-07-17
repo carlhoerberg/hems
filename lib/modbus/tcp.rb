@@ -32,7 +32,7 @@ module Modbus
           raise ProtocolException, "Invalid protocol (#{rprotocol})" if rprotocol != Protocol
           check_exception!(function)
           yield
-        rescue SocketError, SystemCallError, IOError => ex
+        rescue SocketError, SystemCallError, IOError, Timeout::Error => ex
           close
           retry if (try += 1) < 2
           raise ex
@@ -43,12 +43,16 @@ module Modbus
       end
     end
 
-    def read(count)
-      @socket.read(count) || raise(EOFError.new)
+    def read(count, timeout = 1)
+      if IO.select([@socket], nil, nil, timeout)
+        @socket.read(count) || raise(EOFError.new)
+      else
+        raise Net::ReadTimeout.new(@socket)
+      end
     end
 
     def socket
-      @socket ||= Socket.tcp(@host, @port)
+      @socket ||= Socket.tcp(@host, @port, connect_timeout: 1)
     end
   end
 end
