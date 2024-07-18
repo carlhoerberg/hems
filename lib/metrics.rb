@@ -11,6 +11,7 @@ class PrometheusMetrics
       res.body = devices.eta.menu
     end
     @server.mount "/relays", RelaysControl, devices.relays
+    @server.mount "/genset", GensetControl, devices.genset
   end
 
   def start
@@ -37,6 +38,32 @@ class PrometheusMetrics
     def do_POST(req, res)
       form = URI.decode_www_form(req.body).to_h
       @relays.toggle(form["id"].to_i)
+      res.status = 303
+      res["location"] = req.path
+    end
+  end
+
+  class GensetControl < WEBrick::HTTPServlet::AbstractServlet
+    def initialize(server, genset)
+      super(server)
+      @genset = genset
+    end
+
+    @@view = ERB.new(File.read(File.join(__dir__, "..", "views", "genset_control.erb")))
+
+    def do_GET(req, res)
+      res.content_type = "text/html"
+      res.body = @@view.result_with_hash({ status: @genset.status,
+                                           measurements: @genset.measurements })
+    end
+
+    def do_POST(req, res)
+      form = URI.decode_www_form(req.body).to_h
+      case form["action"]
+      when "start" then @genset.start
+      when "stop" then @genset.stop
+      else raise "no action selected"
+      end
       res.status = 303
       res["location"] = req.path
     end

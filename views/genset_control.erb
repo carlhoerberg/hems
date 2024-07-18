@@ -1,0 +1,34 @@
+<html>
+  <head>
+    <title>Genset control</title>
+  </head>
+  <body>
+    <h1>Genset control</h1>
+    <form method="post">
+      <%if status[:running]%>
+        <button name="action" value="stop">Stop</button>
+      <%else%>
+        <button name="action" value="start">Start</button>
+      <%end%>
+    </form>
+    <h2>Status</h2>
+    <table>
+      <%status.each do |key, value|%>
+        <tr>
+          <td><%=key%></td>
+          <td><%=value%></td>
+        </tr>
+      <%end%>
+    </table>
+    <h2>Measurments</h2>
+    <table>
+      <%measurements.each do |key, value|%>
+        <tr>
+          <td><%=key%></td>
+          <td><%=value%></td>
+        </tr>
+      <%end%>
+    </table>
+  </body>
+</html>
+
