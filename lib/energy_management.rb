@@ -77,6 +77,8 @@ class EnergyManagement
     if @devices.genset.is_running?
       if soc >= 70 || overheated?
         stop_genset
+      else
+        keep_hz
       end
     else # genset is not running
       if soc <= 10
@@ -103,9 +105,13 @@ class EnergyManagement
       puts "Genset didn't start", "Status: #{@devices.genset.status}"
       raise "Genset didn't start"
     end
+    @genset_started_at = Time.now
   end
 
   def stop_genset
+    # puts "Turning of load to cool down"
+    # @devices.next3.acsource.disable
+    # sleep 60
     puts "Stopping genset"
     @devices.genset.stop
     sleep 3
@@ -113,7 +119,25 @@ class EnergyManagement
       puts "Genset did not stop", "Status: #{genset.status}"
       raise "Genset didn't stop"
     end
+    @genset_started_at = nil
+    puts "Restoring AC source values"
+    @devices.next3.acsource.rated_current = 18
+    # @devices.next3.acsource.enable
     puts "Closing air vents"
     @devices.relays.close_air_vents
+  end
+
+  def keep_hz
+    return if @genset_started_at.nil? # genset not started?
+    return if Time.now - @genset_started_at < 120 # genset is ramping up over 120s
+
+    hz = @devices.genset.frequency
+    if hz < 49.8
+      puts "hz=#{hz} adjusting current down"
+      @devices.next3.acsource.rated_current -= 1
+    elsif hz > 50.2
+      puts "hz=#{hz} adjusting current up"
+      @devices.next3.acsource.rated_current += 1
+    end
   end
 end
