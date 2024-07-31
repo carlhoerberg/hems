@@ -75,7 +75,7 @@ class EnergyManagement
 
   def genset_support(soc = @devices.next3.battery.soc)
     if @devices.genset.is_running?
-      if soc >= 70
+      if soc >= 70 || overheated?
         stop_genset
       end
     else # genset is not running
@@ -83,6 +83,11 @@ class EnergyManagement
         start_genset
       end
     end
+  end
+
+  def overheated?
+    temp = @devices.genset.coolant_temperature
+    100 < temp && temp < 200 # higher values are probably read errors
   end
 
   def start_genset

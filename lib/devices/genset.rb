@@ -56,6 +56,10 @@ class Devices
       @genset.read_input_register(23) / 10.0
     end
 
+    def coolant_temperature
+      @genset.read_input_register(29)
+    end
+
     def status
       v = @genset.read_discrete_inputs(0x0020, 40)
       {
