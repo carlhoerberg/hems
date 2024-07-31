@@ -96,7 +96,7 @@ class Devices
       end
 
       def rated_current
-        @unit.read_holding_register(1209, 2).to_f32
+        @unit.read_holding_registers(1209, 2).to_f32
       end
 
       def rated_current=(value)
