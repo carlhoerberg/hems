@@ -105,7 +105,6 @@ class EnergyManagement
       puts "Genset didn't start", "Status: #{@devices.genset.status}"
       raise "Genset didn't start"
     end
-    @genset_started_at = Time.now
   end
 
   def stop_genset
@@ -119,7 +118,6 @@ class EnergyManagement
       puts "Genset did not stop", "Status: #{genset.status}"
       raise "Genset didn't stop"
     end
-    @genset_started_at = nil
     puts "Restoring AC source values"
     @devices.next3.acsource.rated_current = 18
     # @devices.next3.acsource.enable
@@ -128,16 +126,17 @@ class EnergyManagement
   end
 
   def keep_hz
-    return if @genset_started_at.nil? # genset not started?
-    return if Time.now - @genset_started_at < 120 # genset is ramping up over 120s
-
     hz = @devices.genset.frequency
     if hz < 49.8
-      puts "hz=#{hz} adjusting current down"
-      @devices.next3.acsource.rated_current -= 1
+      rated_current = @devices.next3.acsource.rated_current
+      puts "hz=#{hz} adjusting current down from #{rated_current}"
+      @devices.next3.acsource.rated_current = rated_current - 1
     elsif hz > 50.2
-      puts "hz=#{hz} adjusting current up"
-      @devices.next3.acsource.rated_current += 1
+      rated_current = @devices.next3.acsource.rated_current
+      if rated_current < 18 # never try to draw more than 18A
+        puts "hz=#{hz} adjusting current up from #{rated_current}"
+        @devices.next3.acsource.rated_current = rated_current + 1
+      end
     end
   end
 end
