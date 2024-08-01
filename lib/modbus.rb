@@ -66,8 +66,13 @@ module Modbus
       end
     end
 
-    # FC16
+    # FC16, write 16 bit integers
     def write_holding_registers(addr, values, unit = 255)
+      values.each do |v|
+        unless -2**15 < v && v < 2**15
+          raise ArgumentError, "Values are not 16 bit integers: #{values.inspect}"
+        end
+      end
       function = 16
       count = values.size
       bytes = count * 2
@@ -75,6 +80,11 @@ module Modbus
         raddr, written = read(4).unpack("nn")
         raddr == addr && written == count
       end
+    end
+
+    # FC16, write 16 bit integer
+    def write_holding_register(addr, value, unit = 255)
+      write_holding_registers(addr, [value], unit)
     end
 
     def unit(id)
@@ -166,6 +176,18 @@ module Modbus
       # Converts two 16-bit values to one 32-bit unsigned integer
       def to_u32
         pack("nn").unpack1("L>")
+      end
+    end
+
+    refine Float do
+      def to_f32_to_i16s
+        [self].pack("g").unpack("nn")
+      end
+    end
+
+    refine Integer do
+      def to_f32_to_i16s
+        [self].pack("g").unpack("nn")
       end
     end
   end

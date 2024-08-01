@@ -100,7 +100,7 @@ class Devices
       end
 
       def rated_current=(value)
-        @unit.write_holding_registers(1209, [value].pack("g"))
+        @unit.write_holding_registers(1209, value.to_f32_to_i16s)
       end
 
       def voltage(phase)
