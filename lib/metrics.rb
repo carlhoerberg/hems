@@ -6,12 +6,13 @@ class PrometheusMetrics
     @server = WEBrick::HTTPServer.new(Port: ENV.fetch("PORT", 8000).to_i,
                                       AccessLog: [])
     @server.mount "/metrics", Metrics, devices
+    @server.mount "/relays", RelaysControl, devices.relays
+    @server.mount "/genset", GensetControl, devices.genset
+    @server.mount "/button1", ButtonControl, devices
     @server.mount_proc("/eta") do |_req, res|
       res.content_type = "application/xml"
       res.body = devices.eta.menu
     end
-    @server.mount "/relays", RelaysControl, devices.relays
-    @server.mount "/genset", GensetControl, devices.genset
   end
 
   def start
@@ -110,6 +111,28 @@ class PrometheusMetrics
 
     def t
       Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    end
+  end
+
+  class ButtonControl < WEBrick::HTTPServlet::AbstractServlet
+    def initialize(server, devices)
+      super(server)
+      @devices = devices
+    end
+
+    def do_GET(req, res)
+      case req.path
+      when %r(/1$)
+        devices.relays.open_air_vents
+      when %r(/2$)
+        devices.relays.close_air_vents
+      when %r(/3$)
+        devices.genset.start
+      when %r(/4$)
+        devices.genset.stop
+      else
+        raise HTTPStatus::NotFound, "not found."
+      end
     end
   end
 end
