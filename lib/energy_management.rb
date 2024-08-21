@@ -131,7 +131,7 @@ class EnergyManagement
       rated_current = @devices.next3.acsource.rated_current
       puts "hz=#{hz} adjusting current down from #{rated_current}"
       @devices.next3.acsource.rated_current = rated_current - 1
-    elsif hz > 50.2
+    elsif hz > 50.1
       rated_current = @devices.next3.acsource.rated_current
       if rated_current < 18 # never try to draw more than 18A
         puts "hz=#{hz} adjusting current up from #{rated_current}"
