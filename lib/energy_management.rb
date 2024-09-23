@@ -45,7 +45,7 @@ class EnergyManagement
         @devices.relays.heater_9kw = false
       end
     else # 9kw heater is off
-      if soc > 95 &&
+      if soc > 99 &&
           15_000 - @devices.next3.acload.total_apparent_power > 9_000 &&
           Time.now.hour < 18
         puts "Solar excess, turning on 9kw heater"
