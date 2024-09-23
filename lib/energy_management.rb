@@ -30,6 +30,12 @@ class EnergyManagement
   # Turn off when SOC < 85
   # Turn off if forecast doesn't expect us to reach 100% SOC at the end of the solar day
   def load_shedding(soc = @devices.next3.battery.soc)
+    if @devices.relays.heater_6kw?
+      if soc < 85
+        puts "SOC #{soc}%, turning off 9kw heater"
+        @devices.relays.heater_6kw = false
+      end
+    end
     if @devices.relays.heater_9kw?
       if soc < 85
         puts "SOC #{soc}%, turning off 9kw heater"
