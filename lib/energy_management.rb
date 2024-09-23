@@ -81,7 +81,7 @@ class EnergyManagement
         keep_hz
       end
     else # genset is not running
-      if soc <= 10
+      if soc <= 14
         start_genset
       end
     end
