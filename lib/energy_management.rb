@@ -119,8 +119,8 @@ class EnergyManagement
       raise "Genset didn't stop"
     end
     puts "Restoring AC source values"
-    @devices.next3.acsource.rated_current = 18
-    # @devices.next3.acsource.enable
+    @devices.next3.acsource.rated_current = 16
+    @devices.next3.acsource.enable
     puts "Closing air vents"
     @devices.relays.close_air_vents
   end
