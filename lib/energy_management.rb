@@ -115,8 +115,8 @@ class EnergyManagement
 
   def stop_genset
     # puts "Turning of load to cool down"
-    # @devices.next3.acsource.disable
-    # sleep 60
+    @devices.next3.acsource.disable
+    sleep 60
     puts "Stopping genset"
     @devices.genset.stop
     sleep 3
