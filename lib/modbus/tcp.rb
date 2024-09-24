@@ -1,4 +1,5 @@
 require "socket"
+require "net/protocol"
 require_relative "../modbus"
 
 # https://modbus.org/docs/Modbus_Application_Protocol_V1_1b.pdf
