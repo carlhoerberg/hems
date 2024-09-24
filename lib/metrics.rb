@@ -81,6 +81,7 @@ class PrometheusMetrics
     @@eta = ERB.new(File.read(File.join(__dir__, "..", "views", "eta.erb")))
     @@starlink = ERB.new(File.read(File.join(__dir__, "..", "views", "starlink.erb")))
     @@shelly = ERB.new(File.read(File.join(__dir__, "..", "views", "shelly.erb")))
+    @@ups = ERB.new(File.read(File.join(__dir__, "..", "views", "ups.erb")))
 
     def do_GET(req, res)
       res.content_type = "text/plain"
@@ -89,6 +90,7 @@ class PrometheusMetrics
         Thread.new { @@eta.result_with_hash({ t:, eta: @devices.eta }) },
         Thread.new { @@starlink.result_with_hash({ t:, status: @devices.starlink.status }) },
         Thread.new { @@shelly.result_with_hash({ t:, shelly: @devices.shelly }) },
+        Thread.new { @@ups.result_with_hash({ t:, ups: @devices.ups }) },
         Thread.new do
           @@genset.result_with_hash({ t:, measurements: @devices.genset.measurements })
         rescue EOFError

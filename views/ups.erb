@@ -1,0 +1,17 @@
+# TYPE ups_soc gauge
+ups_soc <%=ups.soc%>
+# TYPE ups_temperature gauge
+ups_temperature <%=ups.temperature%>
+# TYPE ups_current gauge
+ups_current <%=ups.current%>
+# TYPE ups_voltage gauge
+ups_voltage <%=ups.voltage%>
+# TYPE ups_frequency gauge
+ups_frequency <%=ups.frequency%>
+# TYPE ups_consumed_watt_hours counter
+ups_consumed_watt_hours <%=ups.consumed_watt_hours%>
+# TYPE ups_runtime_remaining gauge
+ups_runtime_remaining <%=ups.runtime_remaining%>
+
+# TYPE metrics_gather_time gauge
+metrics_gather_time{device="ups"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>
