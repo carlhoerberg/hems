@@ -81,7 +81,7 @@ class EnergyManagement
 
   def genset_support(soc = @devices.next3.battery.soc)
     if @devices.genset.is_running?
-      if soc >= 99 || overheated?
+      if soc >= 95 || overheated?
         stop_genset
       else
         keep_hz
