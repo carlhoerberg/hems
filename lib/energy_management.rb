@@ -114,7 +114,7 @@ class EnergyManagement
   end
 
   def stop_genset
-    # puts "Turning of load to cool down"
+    puts "Turning of load to cool down"
     @devices.next3.acsource.disable
     sleep 60
     puts "Stopping genset"
@@ -133,14 +133,14 @@ class EnergyManagement
 
   def keep_hz
     hz = @devices.genset.frequency
-    if hz < 49.8
+    if hz < 49.7
       rated_current = @devices.next3.acsource.rated_current
-      puts "hz=#{hz} adjusting current down from #{rated_current}"
+      puts "hz=#{hz} adjusting current down to #{rated_current - 1}"
       @devices.next3.acsource.rated_current = rated_current - 1
     elsif hz > 50.1
       rated_current = @devices.next3.acsource.rated_current
       if rated_current < 18 # never try to draw more than 18A
-        puts "hz=#{hz} adjusting current up from #{rated_current}"
+        puts "hz=#{hz} adjusting current up to #{rated_current + 1}"
         @devices.next3.acsource.rated_current = rated_current + 1
       end
     end
