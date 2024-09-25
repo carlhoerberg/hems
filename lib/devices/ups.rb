@@ -29,7 +29,7 @@ class Devices
     end
 
     def consumed_watt_hours
-      @modbus.read_holding_register(145, 2).to_i32
+      @modbus.read_holding_registers(145, 2).to_i32
     end
 
     def input_voltage
