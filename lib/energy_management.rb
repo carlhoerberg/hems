@@ -95,7 +95,7 @@ class EnergyManagement
 
   def overheated?
     temp = @devices.genset.coolant_temperature
-    105 < temp && temp < 200 # higher values are probably read errors
+    95 < temp && temp < 200 # higher values are probably read errors
   end
 
   def start_genset
