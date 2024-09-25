@@ -26,6 +26,7 @@ class Devices
           device.notify_status(data["params"])
         rescue => e
           warn "ShellyUDPServer error: #{e.inspect}", json.inspect
+          STDERR.puts e.backtrace.join("\n")
         end
       end
     end
