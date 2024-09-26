@@ -5,9 +5,10 @@ require_relative "./devices/starlink"
 require_relative "./devices/shelly"
 require_relative "./devices/relays"
 require_relative "./devices/ups"
+require_relative "./devices/unifi"
 
 class Devices
-  attr_reader :next3, :genset, :eta, :starlink, :shelly, :relays, :ups
+  attr_reader :next3, :genset, :eta, :starlink, :shelly, :relays, :ups, :unifi
 
   def initialize
     @next3 = Next3.new
@@ -17,5 +18,6 @@ class Devices
     @shelly = Shelly.new
     @relays = Relays.new
     @ups = UPS.new
+    @unifi = Unifi.new
   end
 end

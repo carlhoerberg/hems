@@ -1,0 +1,13 @@
+# TYPE unifi_wlan_users gauge
+unifi_wlan_users <%=unifi_health.dig("wlan", "num_user")%>
+# TYPE unifi_wlan_guests gauge
+unifi_wlan_guests <%=unifi_health.dig("wlan", "num_guest")%>
+# TYPE unifi_wlan_iot gauge
+unifi_wlan_iot <%=unifi_health.dig("wlan", "num_iot")%>
+# TYPE unifi_lan_users gauge
+unifi_lan_users <%=unifi_health.dig("lan", "num_user")%>
+# TYPE unifi_lan_guests gauge
+unifi_lan_guests <%=unifi_health.dig("lan", "num_guest")%>
+
+# TYPE metrics_gather_time gauge
+metrics_gather_time{device="unifi"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>
