@@ -40,7 +40,7 @@ class Devices
     def get_cookie
       body = %({"username": "#{ENV["UNIFI_USER"]}", "password": "#{ENV["UNIFI_PASSWORD"]}"})
       headers = { "Content-Type" => "application/json" }
-      res = @http.post(path, body, headers)
+      res = @http.post("/api/auth/login", body, headers)
       res.response['set-cookie'].split('; ').first
     end
   end
