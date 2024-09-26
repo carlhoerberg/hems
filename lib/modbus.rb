@@ -125,6 +125,10 @@ module Modbus
         @modbus.write_holding_registers(addr, values, @unit)
       end
 
+      def write_holding_register(addr, value)
+        @modbus.write_holding_register(addr, value, @unit)
+      end
+
       def write_coil(addr, value)
         @modbus.write_coil(addr, value, @unit)
       end
