@@ -15,7 +15,7 @@ class Devices
     end
 
     def health
-      p get("/proxy/network/api/s/default/stat/health").group_by { |e| e["subsystem"] }
+      get("/proxy/network/api/s/default/stat/health").group_by { |e| e["subsystem"] }
     end
 
     private
