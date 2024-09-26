@@ -4,7 +4,8 @@ require "json"
 class Devices
   class Unifi
     def initialize(host = "192.168.0.1", port = 443)
-      @http = Net::HTTP.new(host, port, use_ssl: true).tap do |h|
+      @http = Net::HTTP.new(host, port).tap do |h|
+        h.use_ssl = true
         h.open_timeout = 1
         h.read_timeout = 1
         h.verify_mode = OpenSSL::SSL::VERIFY_NONE
