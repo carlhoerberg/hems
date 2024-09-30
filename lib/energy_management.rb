@@ -30,27 +30,40 @@ class EnergyManagement
   # Turn off when SOC < 85
   # Turn off if forecast doesn't expect us to reach 100% SOC at the end of the solar day
   def load_shedding(soc = @devices.next3.battery.soc)
+    pc = phase_capacity
     if @devices.relays.heater_6kw?
-      if soc < 85
-        puts "SOC #{soc}%, turning off 9kw heater"
+      if soc <= 90
+        puts "SOC #{soc}%, turning off 6kw heater"
         @devices.relays.heater_6kw = false
+      elsif pc.any? { |p| p < 0 }
+        puts "Over power, turning off 6kw heater"
+        @devices.relays.heater_6kw = false
+      end
+    else # 6kw heater is off
+      if soc > 95 && pc.all? { |p| p > 6000 / 3 }
+        puts "Solar excess, turning on 6kw heater"
+        @devices.relays.heater_6kw = true
       end
     end
     if @devices.relays.heater_9kw?
-      if soc < 85
+      if soc <= 90
         puts "SOC #{soc}%, turning off 9kw heater"
         @devices.relays.heater_9kw = false
-      elsif (tp = @devices.next3.acload.total_apparent_power) > 16_000
-        puts "Total power #{tp}, turning off 9kw heater"
+      elsif pc.any? { |p| p < 0 }
+        puts "Over power, turning off 9kw heater"
         @devices.relays.heater_9kw = false
       end
     else # 9kw heater is off
-      if soc > 99 &&
-          15_000 - @devices.next3.acload.total_apparent_power > 9_000 &&
-          Time.now.hour < 18
+      if soc > 95 && pc.all? { |p| p > 9000 / 3 }
         puts "Solar excess, turning on 9kw heater"
         @devices.relays.heater_9kw = true
       end
+    end
+  end
+
+  def phase_capacity
+    (1..3).map do |phase|
+      5_000 - @devices.next3.acload.apparent_power(phase)
     end
   end
 
@@ -61,7 +74,6 @@ class EnergyManagement
   # * Battery at 100% at the end of the solar day
   # How many kWh needed to fill up the battery at the end of the day?
   # How many kWh needed for base load for the rest of the day?
-  #
   def heating
     now = Time.now
     midnight = Time.local(now.year, now.month, now.day) + (24 * 60 * 60)
@@ -81,7 +93,9 @@ class EnergyManagement
 
   def genset_support(soc = @devices.next3.battery.soc)
     if @devices.genset.is_running?
-      if soc >= 95 || overheated?
+      if soc >= 60
+        stop_genset
+      elsif overheated?
         stop_genset
       else
         keep_hz
@@ -116,7 +130,7 @@ class EnergyManagement
   def stop_genset
     puts "Turning of load to cool down"
     @devices.next3.acsource.disable
-    sleep 60
+    sleep 90
     puts "Stopping genset"
     @devices.genset.stop
     sleep 3
