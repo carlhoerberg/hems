@@ -126,7 +126,7 @@ class EnergyManagement
     puts "Battery runtime: #{runtime}"
 
     # improve accuracy of forecast by telling how much is consumed yet today
-    produced_solar_today = @next3.solar.day_energy / 1000.0
+    produced_solar_today = @next3.solar.total_day_energy / 1000.0
     @solar_forecast.actual = produced_solar_today if produced_solar_today > 1 # don't report too early in the day
 
     expected_solar_kwh_during_runtime = @solar_forecast.kwh_next_hours(runtime)
