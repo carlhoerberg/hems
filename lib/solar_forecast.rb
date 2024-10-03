@@ -8,7 +8,7 @@ class SolarForecast
   end
 
   def timewindow(baseload)
-    uri = URI.parse("https://api.forecast.solar/#{@token}/timewindow/63.2511/12.9506/67/0/24")
+    uri = URI.parse("https://api.forecast.solar/#{@token}/timewindow/63.2511/12.9506/67/0/16")
     uri.query = URI.encode_www_form({
       time: "iso8601",
       inverter: 16,
@@ -22,7 +22,7 @@ class SolarForecast
   end
 
   def estimate
-    uri = URI.parse("https://api.forecast.solar/#{@token}/estimate/63.2511/12.9506/67/0/24")
+    uri = URI.parse("https://api.forecast.solar/#{@token}/estimate/63.2511/12.9506/67/0/16")
     uri.query = URI.encode_www_form({
       time: "iso8601",
       inverter: 16,
@@ -34,7 +34,7 @@ class SolarForecast
   end
 
   def actual=(kwh)
-    uri = URI.parse("https://api.forecast.solar/#{@token}/estimate/63.2511/12.9506/67/0/24")
+    uri = URI.parse("https://api.forecast.solar/#{@token}/estimate/63.2511/12.9506/67/0/16")
     uri.query = URI.encode_www_form({
       limit: 0,
       actual: kwh,
@@ -45,9 +45,9 @@ class SolarForecast
     end
   end
 
-  # Estimated produced kWh for in the next `hours`
+  # Estimated produced kWh in the next `hours`
   def kwh_next_hours(hours)
-    uri = URI.parse("https://api.forecast.solar/#{@token}/estimate/watthours/period/63.2511/12.9506/67/0/24")
+    uri = URI.parse("https://api.forecast.solar/#{@token}/estimate/watthours/period/63.2511/12.9506/67/0/16")
     uri.query = URI.encode_www_form({
       time: "iso8601",
       inverter: 16,
