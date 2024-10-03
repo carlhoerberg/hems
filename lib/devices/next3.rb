@@ -232,6 +232,11 @@ class Devices
       def total_power
         @unit.read_holding_registers(5705, 2).to_f32
       end
+
+      # Energy produced today, in wH
+      def day_energy
+        @unit.read_holding_registers(5711, 2).to_f32
+      end
     end
   end
 end

@@ -5,6 +5,8 @@ class EnergyManagement
   def initialize
     @devices = Devices.new
     @stopped = false
+    @solar_forecast = SolarForecast.new
+    @power_measurements = []
   end
 
   def start
@@ -93,7 +95,7 @@ class EnergyManagement
 
   def genset_support(soc = @devices.next3.battery.soc)
     if @devices.genset.is_running?
-      if soc >= 60
+      if soc >= 95 || will_reach_full_battery_with_solar?(soc)
         stop_genset
       elsif overheated?
         stop_genset
@@ -101,10 +103,38 @@ class EnergyManagement
         keep_hz
       end
     else # genset is not running
-      if soc <= 13
+      if soc <= 12
         start_genset
       end
     end
+  end
+
+  def will_reach_full_battery_with_solar?(soc)
+    # collect power measuremnts to be able to calculate an averge once in a while
+    @power_measurements << @devices.next3.acload.total_apparent_power
+    puts "Got #{@power_measurements.size} power measurements, avg: #{@power_measurements.sum / @power_measurements.size / 1000.0}"
+    return if @power_measurements.size < 600 / 5 # 10 minutes, 5s interval measurements
+
+    avg_power_kw = @power_measurements.sum / @power_measurements.size / 1000.0
+    puts "Avg power kw: #{avg_power_kw}"
+    @power_measurements.clear # don't use a sliding window as we don't want to poll forecast api too much
+
+    battery_kwh = soc * BATTERY_KWH
+    puts "Battery kWh: #{battery_kwh}"
+    runtime = battery_kwh / avg_power_kw
+    puts "Battery runtime: #{runtime}"
+
+    # improve accuracy of forecast by telling how much is consumed yet today
+    produced_solar_today = @next3.solar.day_energy / 1000.0
+    @solar_forecast.actual = produced_solar_today if produced_solar_today > 1 # don't report too early in the day
+
+    expected_solar_kwh_during_runtime = @solar_forecast.kwh_next_hours(runtime)
+    puts "Expected solar kWh next #{runtime} hours: #{expected_solar_kwh_during_runtime}"
+    expected_solar_kwh_during_runtime -= runtime * avg_power_kw
+    puts "Expected solar kWh next #{runtime} hours minus power during runtime: #{expected_solar_kwh_during_runtime}"
+
+    puts "Expected battery kWh in #{runtime}h: #{battery_kwh + expected_solar_kwh_during_runtime}"
+    battery_kwh + expected_solar_kwh_during_runtime >= BATTERY_KWH
   end
 
   def overheated?
