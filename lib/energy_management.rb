@@ -1,4 +1,5 @@
 require_relative "./devices"
+require_relative "./solar_forecast"
 
 # Hållfjället energy management system
 class EnergyManagement
