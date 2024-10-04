@@ -131,8 +131,6 @@ class EnergyManagement
 
     expected_solar_kwh_during_runtime = @solar_forecast.kwh_next_hours(runtime)
     puts "Expected solar kWh next #{runtime} hours: #{expected_solar_kwh_during_runtime}"
-    expected_solar_kwh_during_runtime -= runtime * avg_power_kw
-    puts "Expected solar kWh next #{runtime} hours minus power during runtime: #{expected_solar_kwh_during_runtime}"
 
     puts "Expected battery kWh in #{runtime}h: #{battery_kwh + expected_solar_kwh_during_runtime}"
     battery_kwh + expected_solar_kwh_during_runtime >= BATTERY_KWH
