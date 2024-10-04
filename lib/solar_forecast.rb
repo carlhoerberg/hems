@@ -67,6 +67,19 @@ class SolarForecast
     end
   end
 
+  def estimate_watts
+    uri = URI.parse("https://api.forecast.solar/#{@token}/estimate/watts/63.2511/12.9506/67/0/16")
+    uri.query = URI.encode_www_form({
+      time: "iso8601",
+      inverter: 16,
+      limit: 2
+    })
+    Net::HTTP.get_response(uri) do |resp|
+      raise "HTTP response not 200 OK: #{resp.inspect}" unless Net::HTTPOK === resp
+      return JSON.parse(resp.body).dig("result")
+    end
+  end
+
   class Estimate
     def initialize(data)
       @data = data

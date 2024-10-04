@@ -121,19 +121,27 @@ class EnergyManagement
     @power_measurements.clear # don't use a sliding window as we don't want to poll forecast api too much
 
     battery_kwh = BATTERY_KWH * soc / 100.0
-    puts "Battery kWh: #{battery_kwh}"
-    runtime = battery_kwh / avg_power_kw
-    puts "Battery runtime: #{runtime}"
+    puts "Battery charge: #{battery_kwh} kWh"
 
-    # improve accuracy of forecast by telling how much is consumed yet today
+    # improve accuracy of forecast by telling how much is produced so far today
     produced_solar_today = @devices.next3.solar.total_day_energy / 1000.0
+    puts "Solar produced today: #{produced_solar_today} kWh"
     @solar_forecast.actual = produced_solar_today if produced_solar_today > 1 # don't report too early in the day
 
-    expected_solar_kwh_during_runtime = @solar_forecast.kwh_next_hours(runtime)
-    puts "Expected solar kWh next #{runtime} hours: #{expected_solar_kwh_during_runtime}"
+    last_time = Time.now
+    @solar_forecast.estimate_watts.each do |t, watts|
+      time = Time.parse(t)
+      next if time <= last_time
 
-    puts "Expected battery kWh in #{runtime}h: #{battery_kwh + expected_solar_kwh_during_runtime}"
-    battery_kwh + expected_solar_kwh_during_runtime >= BATTERY_KWH
+      period = (time - last_time) / 3600
+      battery_kwh += (watts * 1000.0 - avg_power_kw) * period
+      estimated_soc = (battery_kwh / BATTERY_KWH * 100).round
+      puts "Estimated battery at #{time}: #{estimated_soc}% #{battery_kwh} kWh"
+      return true if estimated_soc >= 100
+      return false if estimated_soc <= 12 # % SoC required otherwise genset starts again
+
+      last_time = time
+    end
   end
 
   def overheated?
