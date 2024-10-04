@@ -41,7 +41,7 @@ class SolarForecast
     })
     Net::HTTP.get_response(uri) do |resp|
       raise "HTTP response not OK: #{resp.inspect}" unless Net::HTTPSuccess === resp
-      return JSON.parse(resp.body).dig("message", "info", "planes_factors", 0)
+      #return JSON.parse(resp.body).dig("message", "info", "planes_factors", 0)
     end
   end
 
