@@ -178,7 +178,7 @@ class EnergyManagement
 
   def keep_hz
     hz = @devices.genset.frequency
-    if hz < 49.7
+    if hz < 49.5
       rated_current = @devices.next3.acsource.rated_current
       puts "hz=#{hz} adjusting current down to #{rated_current - 1}"
       @devices.next3.acsource.rated_current = rated_current - 1
