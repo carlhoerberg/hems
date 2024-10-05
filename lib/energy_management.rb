@@ -150,10 +150,10 @@ class EnergyManagement
   end
 
   def start_genset
-    @devices.relays.open_air_vents
-    puts "Opening air vents, takes 2:30"
-    sleep 150 # it takes 2:30 for the vents to fully open
-    puts "Air vents should be fully open"
+    #@devices.relays.open_air_vents
+    #puts "Opening air vents, takes 2:30"
+    #sleep 150 # it takes 2:30 for the vents to fully open
+    #puts "Air vents should be fully open"
 
     puts "Starting genset"
     @devices.genset.start
@@ -176,10 +176,10 @@ class EnergyManagement
       raise "Genset didn't stop"
     end
     puts "Restoring AC source values"
-    @devices.next3.acsource.rated_current = 16
+    @devices.next3.acsource.rated_current = 15
     @devices.next3.acsource.enable
-    puts "Closing air vents"
-    @devices.relays.close_air_vents
+    #puts "Closing air vents"
+    #@devices.relays.close_air_vents
   end
 
   def keep_hz
