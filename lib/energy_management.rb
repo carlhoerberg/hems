@@ -96,7 +96,7 @@ class EnergyManagement
 
   def genset_support(soc = @devices.next3.battery.soc)
     if @devices.genset.is_running?
-      if soc >= 94 # || will_reach_full_battery_with_solar?(soc)
+      if soc >= 94 || will_reach_full_battery_with_solar?(soc)
         stop_genset
       elsif overheated?
         stop_genset
@@ -134,7 +134,7 @@ class EnergyManagement
       next if time <= last_time
 
       period = (time - last_time) / 3600
-      battery_kwh += (watts * 1000.0 - avg_power_kw) * period
+      battery_kwh += (watts / 1000.0 - avg_power_kw) * period
       estimated_soc = (battery_kwh / BATTERY_KWH * 100).round
       puts "Estimated battery at #{time}: #{estimated_soc}% #{battery_kwh} kWh"
       return true if estimated_soc >= 100
