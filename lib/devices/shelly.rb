@@ -7,11 +7,15 @@ class Devices
     @@server = Thread.new { Shelly.listen }
 
     def plugs
-      @@devices.each_value.grep(ShellyPlusPlugS)
+      @@devices
+        .delete_if { |_, s| ShellyPlusPlugS === s && Time.at(s.ts) < Time.now - 180 }
+        .each_value.grep(ShellyPlusPlugS)
     end
 
     def termometers
-      @@devices.each_value.grep(ShellyHTG3)
+      @@devices
+        .delete_if { |_, s| ShellyHTG3 === s && Time.at(s.ts) < Time.now - 600 }
+        .each_value.grep(ShellyHTG3)
     end
 
     def self.listen
@@ -44,9 +48,17 @@ class Devices
     @@udp = UDPSocket.new
     @@lock = Mutex.new
 
+    attr_reader :ts
+
     def initialize(host, port)
       @host = host
       @port = port
+    end
+
+    def notify_status(params)
+      if (ts = params.dig("ts"))
+        @ts = ts
+      end
     end
 
     def rpc(method, params)
@@ -74,6 +86,7 @@ class Devices
     end
 
     def notify_status(params)
+      super
       if (c = params.dig("switch:0", "current"))
         @current = c
       end
@@ -123,6 +136,7 @@ class Devices
     end
 
     def notify_status(params)
+      super
       if (h = params.dig("humidity:0", "rh"))
         @humidity = h
       end
