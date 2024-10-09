@@ -96,9 +96,14 @@ class EnergyManagement
 
   def genset_support(soc = @devices.next3.battery.soc)
     if @devices.genset.is_running?
-      if soc >= 94 || will_reach_full_battery_with_solar?(soc)
+      if soc >= 94
+        puts "SoC #{soc}%, battery current limited, stopping genset"
+        stop_genset
+      elsif will_reach_full_battery_with_solar?(soc)
+        puts "Battery will reach full charge with solar, stopping genset"
         stop_genset
       elsif overheated?
+        puts "Overheated, stopping genset"
         stop_genset
       else
         keep_hz
