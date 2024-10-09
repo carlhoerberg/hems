@@ -147,6 +147,7 @@ class EnergyManagement
 
       last_time = time
     end
+    false # if we get here we have not received full charge within 2 days
   end
 
   def overheated?
