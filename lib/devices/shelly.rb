@@ -129,14 +129,16 @@ class Devices
   end
 
   class ShellyHTG3
-    attr_reader :device_id, :humidity, :temperature
+    attr_reader :ts, :device_id, :humidity, :temperature
 
     def initialize(device_id)
       @device_id = device_id
     end
 
     def notify_status(params)
-      super
+      if (ts = params.dig("ts"))
+        @ts = ts
+      end
       if (h = params.dig("humidity:0", "rh"))
         @humidity = h
       end
