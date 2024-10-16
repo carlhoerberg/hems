@@ -56,7 +56,9 @@ class Devices
     end
 
     def notify_status(params)
+      p "notify_status", self.class, params
       if (ts = params.dig("ts"))
+        puts "ts=#{ts}"
         @ts = ts
       end
     end
@@ -136,6 +138,7 @@ class Devices
     end
 
     def notify_status(params)
+      p "notify_status htg3", params
       if (ts = params.dig("ts"))
         @ts = ts
       end
