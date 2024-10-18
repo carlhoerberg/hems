@@ -7,15 +7,13 @@ class Devices
     @@server = Thread.new { Shelly.listen }
 
     def plugs
-      @@devices
-        .delete_if { |_, s| ShellyPlusPlugS === s && Time.at(s.ts) < Time.now - 180 }
-        .each_value.grep(ShellyPlusPlugS)
+      @@devices.reject! { |_, s| ShellyPlusPlugS === s && Time.at(s.ts) < Time.now - 180 && p("rejecting", s) }
+      @@devices.each_value.grep(ShellyPlusPlugS)
     end
 
     def termometers
-      @@devices
-        .delete_if { |_, s| ShellyHTG3 === s && Time.at(s.ts) < Time.now - 600 }
-        .each_value.grep(ShellyHTG3)
+      @@devices.reject! { |_, s| ShellyHTG3 === s && Time.at(s.ts) < Time.now - 600 && p("rejecting", s) }
+      @@devices.each_value.grep(ShellyHTG3)
     end
 
     def self.listen
@@ -56,9 +54,7 @@ class Devices
     end
 
     def notify_status(params)
-      p "notify_status", self.class, params
       if (ts = params.dig("ts"))
-        puts "ts=#{ts}"
         @ts = ts
       end
     end
@@ -138,7 +134,6 @@ class Devices
     end
 
     def notify_status(params)
-      p "notify_status htg3", params
       if (ts = params.dig("ts"))
         @ts = ts
       end
