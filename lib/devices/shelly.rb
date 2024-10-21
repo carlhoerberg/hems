@@ -63,11 +63,16 @@ class Devices
       request = { id: rand(2**16), method:, params: }
       @@lock.synchronize do
         @@udp.send(request.to_json, 0, @host, @port)
-        bytes, _from = @@udp.recvfrom(4096)
-        response = JSON.parse(bytes)
-        raise Error.new("Invalid ID in response") if response["id"] != request[:id]
-        raise Error.new(resp.dig("error", "message")) if response["error"]
-        response.fetch("result")
+        begin # emulate blocking recvfrom
+          bytes, _from = @@udp.recvfrom_nonblock(4096)
+          response = JSON.parse(bytes)
+          raise Error.new("Invalid ID in response") if response["id"] != request[:id]
+          raise Error.new(resp.dig("error", "message")) if response["error"]
+          response.fetch("result")
+        rescue IO::WaitReadable
+          IO.select([@@udp], nil, nil, 1) || raise(Error, "Timeout waiting for RPC UDP response")
+          retry
+        end
       end
     end
 
