@@ -64,7 +64,8 @@ class Devices
       @@lock.synchronize do
         @@udp.send(request.to_json, 0, @host, @port)
         begin
-          p bytes, _from = @@udp.recvfrom_nonblock(4096)
+          bytes, _from = @@udp.recvfrom_nonblock(4096)
+          puts "UDP RPC response: #{bytes}"
           response = JSON.parse(bytes)
           raise Error.new("Invalid ID in response") if response["id"] != request[:id]
           raise Error.new(resp.dig("error", "message")) if response["error"]
