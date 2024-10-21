@@ -130,10 +130,6 @@ class Devices
       get "/user/var/124/10581/0/11410/2127"
     end
 
-    def vvx_primary_return_valve
-      get "/user/var/124/10581/0/0/13186"
-    end
-
     def menu
       Net::HTTP.start(@host, @port) do |http|
         res = http.get("/user/menu")
