@@ -106,7 +106,7 @@ class EnergyManagement
         puts "Overheated, stopping genset"
         stop_genset
       else
-        keep_hz
+        # keep_hz
       end
     else # genset is not running
       if soc <= 12
@@ -168,6 +168,11 @@ class EnergyManagement
       puts "Genset didn't start", "Status: #{@devices.genset.status}"
       raise "Genset didn't start"
     end
+
+    until @devices.genset.ready_to_load?
+      puts "Genset not ready to load"
+      sleep 1
+    end
   end
 
   def stop_genset
@@ -182,7 +187,7 @@ class EnergyManagement
       raise "Genset didn't stop"
     end
     puts "Restoring AC source values"
-    @devices.next3.acsource.rated_current = 15
+    # @devices.next3.acsource.rated_current = 16
     @devices.next3.acsource.enable
     #puts "Closing air vents"
     #@devices.relays.close_air_vents
