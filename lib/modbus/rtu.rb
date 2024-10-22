@@ -28,9 +28,9 @@ module Modbus
         checksum = @@serial.readpartial(2) # crc16 bytes
         warn "Invalid CRC16" if checksum != CRC16.crc16(@response)
         result
-      rescue ProtocolException, EOFError => e
+      rescue ProtocolException, IOError, SystemCallError => e
         close
-        retry if (try += 1) < 1
+        retry if (try += 1) < 2
         raise e
       end
     end
