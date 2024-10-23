@@ -53,9 +53,18 @@ class PrometheusMetrics
     @@view = ERB.new(File.read(File.join(__dir__, "..", "views", "genset_control.erb")))
 
     def do_GET(req, res)
-      res.content_type = "text/html"
-      res.body = @@view.result_with_hash({ status: @genset.status,
-                                           measurements: @genset.measurements })
+      case req.path
+      when %r(/start$)
+        @genset.start
+        res.body = "started"
+      when %r(/stop$)
+        @genset.stop
+        res.body = "stopped"
+      else
+        res.content_type = "text/html"
+        res.body = @@view.result_with_hash({ status: @genset.status,
+                                             measurements: @genset.measurements })
+      end
     end
 
     def do_POST(req, res)
