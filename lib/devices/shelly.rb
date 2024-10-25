@@ -12,8 +12,8 @@ class Devices
     end
 
     def termometers
-      @@devices.reject! { |_, s| s.respond_to? :temperature && Time.at(s.ts) < Time.now - 600 }
-      @@devices.each_value.select { |d| d.respond_to? :temperature }
+      @@devices.reject! { |_, s| s.respond_to?(:temperature) && Time.at(s.ts) < Time.now - 600 }
+      @@devices.each_value.select { |d| d.respond_to?(:temperature) }
     end
 
     def self.listen
