@@ -90,7 +90,7 @@ class Devices
       @device_id = device_id
     end
 
-    def update_data(data)
+    def update_data(data, ts)
       @ts = ts
       @temperature = data["temperature"]
       @humidity = data["humidity"]
