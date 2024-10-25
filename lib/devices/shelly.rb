@@ -59,7 +59,7 @@ class Devices
         device = @@devices[device_id] ||= Aranet.new device_id
         device.update_data(data, event["ts"])
       when "shelly-blu"
-        device_id = "shellybluht-#{data["addr"].delete(":")}"
+        device_id = "shellybluht-#{data["address"].delete(":")}"
         device = @@devices[device_id] ||= ShellyBluHT.new device_id
         device.update_data(data, event["ts"])
       end
