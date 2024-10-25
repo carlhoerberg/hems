@@ -55,17 +55,23 @@ class Devices
       data = event["data"]
       case event["event"]
       when "aranet"
-        device = @@devices["aranet-#{data["sys"]["addr"].delete(":")}"] ||= Aranet.new
+        device_id = "aranet-#{data["sys"]["addr"].delete(":")}"
+        device = @@devices[device_id] ||= Aranet.new device_id
         device.update_data(data, event["ts"])
       when "shelly-blu"
-        device = @@devices["shellybluht-#{data["addr"].delete(":")}"] ||= ShellyBluHT.new
+        device_id = "shellybluht-#{data["addr"].delete(":")}"
+        device = @@devices[device_id] ||= ShellyBluHT.new device_id
         device.update_data(data, event["ts"])
       end
     end
   end
 
   class Aranet
-    attr_reader :ts, :co2_ppm, :temperature, :humidity, :pressure, :battery
+    attr_reader :ts, :device_id, :co2_ppm, :temperature, :humidity, :pressure, :battery
+
+    def initialize(device_id)
+      @device_id = device_id
+    end
 
     def update_data(data, ts)
       @ts = ts
@@ -78,7 +84,11 @@ class Devices
   end
 
   class ShellyBluHT
-    attr_reader :ts, :temperature, :humidity, :battery
+    attr_reader :ts, :device_id, :temperature, :humidity, :battery
+
+    def initialize(device_id)
+      @device_id = device_id
+    end
 
     def update_data(data)
       @ts = ts
