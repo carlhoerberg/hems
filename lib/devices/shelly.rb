@@ -25,7 +25,7 @@ class Devices
         begin
           p data = JSON.parse(json)
           case data["method"]
-          when "NotifyStatus"
+          when "NotifyStatus", "NotifyFullStatus"
             device = @@devices[data["src"]] ||= Shelly.from_device_id(data["src"])
             device.notify_status(data["params"])
           when "NotifyEvent"
