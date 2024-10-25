@@ -7,13 +7,13 @@ class Devices
     @@server = Thread.new { Shelly.listen }
 
     def plugs
-      @@devices.reject! { |_, s| ShellyPlusPlugS === s && Time.at(s.ts) < Time.now - 180 && p("rejecting", s) }
+      @@devices.reject! { |_, s| ShellyPlusPlugS === s && Time.at(s.ts) < Time.now - 180 }
       @@devices.each_value.grep(ShellyPlusPlugS)
     end
 
     def termometers
-      @@devices.reject! { |_, s| ShellyHTG3 === s && Time.at(s.ts) < Time.now - 600 && p("rejecting", s) }
-      @@devices.each_value.grep(ShellyHTG3)
+      @@devices.reject! { |_, s| s.respond_to? :temperature && Time.at(s.ts) < Time.now - 600 }
+      @@devices.each_value.select { |d| d.respond_to? :temperature }
     end
 
     def self.listen
@@ -24,8 +24,15 @@ class Devices
         json, _from = udp.recvfrom(4096)
         begin
           p data = JSON.parse(json)
-          device = @@devices[data["src"]] ||= Shelly.from_device_id(data["src"])
-          device.notify_status(data["params"])
+          case data["method"]
+          when "NotifyStatus"
+            device = @@devices[data["src"]] ||= Shelly.from_device_id(data["src"])
+            device.notify_status(data["params"])
+          when "NotifyEvent"
+            data.dig("params", "events").each do |event|
+              Shelly.notify_event(event)
+            end
+          end
         rescue => e
           warn "ShellyUDPServer error: #{e.inspect}", json.inspect
           STDERR.puts e.backtrace.join("\n")
@@ -39,6 +46,45 @@ class Devices
       when /^shellyplusplugs-/ then ShellyPlusPlugS.new(device_id)
       else                     raise "Unknown device id #{device_id}"
       end
+    end
+
+    # {"src"=>"shellyplusplugs-fcb4670cf7fc", "dst"=>"*", "method"=>"NotifyEvent", "params"=>{"ts"=>1729713785.0, "events"=>[{"component"=>"script:1", "id"=>1, "event"=>"shelly-blu", "data"=>{"encryption"=>false, "BTHome_version"=>2, "pid"=>82, "battery"=>100, "humidity"=>50, "temperature"=>19.7, "rssi"=>-71, "address"=>"7c:c6:b6:62:46:80"}, "ts"=>1729713785.0}]}}
+    #
+    # {"src"=>"shellyplusplugs-d4d4daecd810", "dst"=>"*", "method"=>"NotifyEvent", "params"=>{"ts"=>1729893268.8, "events"=>[{"component"=>"script:1", "id"=>1, "event"=>"aranet", "data"=>{"status"=>{"integration"=>true, "dfu"=>false, "cal_state"=>0}, "sys"=>{"fw_patch"=>19, "fw_minor"=>4, "fw_major"=>1, "hw"=>9, "addr"=>"cc:37:b5:bf:d6:a7", "rssi"=>-71}, "region"=>15, "packaging"=>1, "co2_ppm"=>1275, "tC"=>21.6, "pressure_dPa"=>9459, "rh"=>34, "battery"=>93, "co2_aranet_level"=>2, "refresh_interval"=>300, "age"=>4, "packet_counter"=>221}, "ts"=>1729893268.8}]}}
+    def self.notify_event(event)
+      data = event["data"]
+      case event["event"]
+      when "aranet"
+        device = @@devices["aranet-#{data["sys"]["addr"].delete(":")}"] ||= Aranet.new
+        device.update_data(data, event["ts"])
+      when "shelly-blu"
+        device = @@devices["shellybluht-#{data["addr"].delete(":")}"] ||= ShellyBluHT.new
+        device.update_data(data, event["ts"])
+      end
+    end
+  end
+
+  class Aranet
+    attr_reader :ts, :co2_ppm, :temperature, :humidity, :pressure, :battery
+
+    def update_data(data, ts)
+      @ts = ts
+      @co2_ppm = data["co2_ppm"]
+      @temperature = data["tC"]
+      @humidity = data["rh"]
+      @pressure = data["pressure_dPa"]
+      @battery = data["battery"]
+    end
+  end
+
+  class ShellyBluHT
+    attr_reader :ts, :temperature, :humidity, :battery
+
+    def update_data(data)
+      @ts = ts
+      @temperature = data["temperature"]
+      @humidity = data["humidity"]
+      @battery = data["battery"]
     end
   end
 
