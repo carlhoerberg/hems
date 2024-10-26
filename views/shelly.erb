@@ -3,17 +3,17 @@
 # TYPE shelly_plug_apower gauge
 # TYPE shelly_plug_aenergy_total counter
 <%shelly.plugs.each do |s|%>
-shelly_plug_current{device_id="<%=s.device_id%>"} <%=s.current%>
-shelly_plug_voltage{device_id="<%=s.device_id%>"} <%=s.voltage%>
-shelly_plug_apower{device_id="<%=s.device_id%>"} <%=s.apower%>
-shelly_plug_aenergy_total{device_id="<%=s.device_id%>"} <%=s.aenergy_total%>
+shelly_plug_current{device_id="<%=s.device_id%>"} <%=s.current%> <%=s.timestamp%>
+shelly_plug_voltage{device_id="<%=s.device_id%>"} <%=s.voltage%> <%=s.timestamp%>
+shelly_plug_apower{device_id="<%=s.device_id%>"} <%=s.apower%> <%=s.timestamp%>
+shelly_plug_aenergy_total{device_id="<%=s.device_id%>"} <%=s.aenergy_total%> <%=s.timestamp%>
 <%end%>
 
 # TYPE shelly_ht_temperature gauge
 # TYPE shelly_ht_humidity gauge
 <%shelly.termometers.each do |ht|%>
-shelly_ht_temperature{device_id="<%=ht.device_id%>"} <%=ht.temperature%>
-shelly_ht_humidity{device_id="<%=ht.device_id%>"} <%=ht.humidity%>
+shelly_ht_temperature{device_id="<%=ht.device_id%>"} <%=ht.temperature%> <%=ht.timestamp%>
+shelly_ht_humidity{device_id="<%=ht.device_id%>"} <%=ht.humidity%> <%=ht.timestamp%>
 <%end%>
 
 # TYPE metrics_gather_time gauge

@@ -7,12 +7,10 @@ class Devices
     @@server = Thread.new { Shelly.listen }
 
     def plugs
-      @@devices.reject! { |_, s| ShellyPlusPlugS === s && Time.at(s.ts) < Time.now - 180 }
       @@devices.each_value.grep(ShellyPlusPlugS)
     end
 
     def termometers
-      @@devices.reject! { |_, s| s.respond_to?(:temperature) && Time.at(s.ts) < Time.now - 600 }
       @@devices.each_value.select { |d| d.respond_to?(:temperature) }
     end
 
@@ -66,12 +64,20 @@ class Devices
     end
   end
 
-  class Aranet
-    attr_reader :ts, :device_id, :co2_ppm, :temperature, :humidity, :pressure, :battery
+  class ShellyDevice
+    attr_reader :ts, :device_id
 
     def initialize(device_id)
       @device_id = device_id
     end
+
+    def timestamp
+      (@ts * 1000).to_i if @ts
+    end
+  end
+
+  class Aranet < ShellyDevice
+    attr_reader :co2_ppm, :temperature, :humidity, :pressure, :battery
 
     def update_data(data, ts)
       @ts = ts
@@ -83,12 +89,8 @@ class Devices
     end
   end
 
-  class ShellyBluHT
-    attr_reader :ts, :device_id, :temperature, :humidity, :battery
-
-    def initialize(device_id)
-      @device_id = device_id
-    end
+  class ShellyBluHT < ShellyDevice
+    attr_reader :temperature, :humidity, :battery
 
     def update_data(data, ts)
       @ts = ts
@@ -98,27 +100,19 @@ class Devices
     end
   end
 
-  class ShellyUDP
+  class ShellyUDP < ShellyDevice
     @@udp = UDPSocket.new
     @@lock = Mutex.new
 
-    attr_reader :ts
-
-    def initialize(host, port)
-      @host = host
+    def initialize(device_id, port)
+      super(device_id)
       @port = port
-    end
-
-    def notify_status(params)
-      if (ts = params.dig("ts"))
-        @ts = ts
-      end
     end
 
     def rpc(method, params)
       request = { id: rand(2**16), method:, params: }
       @@lock.synchronize do
-        @@udp.send(request.to_json, 0, @host, @port)
+        @@udp.send(request.to_json, 0, @device_id, @port)
         begin
           bytes, _from = @@udp.recvfrom_nonblock(4096)
           puts "UDP RPC response: #{bytes}"
@@ -137,16 +131,17 @@ class Devices
   end
 
   class ShellyPlusPlugS < ShellyUDP
-    attr_reader :device_id, :current, :apower, :aenergy_total, :voltage
+    attr_reader :current, :apower, :aenergy_total, :voltage
 
     def initialize(device_id, port = 1010)
       super(device_id, port)
-      @device_id = device_id
       update_status
     end
 
     def notify_status(params)
-      super
+      if (ts = params.dig("ts"))
+        @ts = ts
+      end
       if (c = params.dig("switch:0", "current"))
         @current = c
       end
@@ -188,12 +183,8 @@ class Devices
     end
   end
 
-  class ShellyHTG3
-    attr_reader :ts, :device_id, :humidity, :temperature
-
-    def initialize(device_id)
-      @device_id = device_id
-    end
+  class ShellyHTG3 < ShellyDevice
+    attr_reader :humidity, :temperature
 
     def notify_status(params)
       if (ts = params.dig("ts"))
