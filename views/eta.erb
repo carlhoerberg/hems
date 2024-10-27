@@ -76,5 +76,8 @@ eta_tank_charge_status <%=eta.tank_charge_status%>
 # TYPE eta_tank_consumers_requested_temp gauge
 eta_tank_consumers_requested_temp <%=eta.tank_consumers_requested_temp%>
 
+# TYPE eta_tank_charge_counter counter
+eta_tank_charge_counter <%=eta.tank_charge_counter%>
+
 # TYPE metrics_gather_time gauge
 metrics_gather_time{device="eta"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>
