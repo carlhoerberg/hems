@@ -94,9 +94,15 @@ class Devices
 
     def update_data(data, ts)
       @ts = ts
-      @temperature = data["temperature"]
-      @humidity = data["humidity"]
-      @battery = data["battery"]
+      if (v = data["temperature"])
+        @temperature = v
+      end
+      if (v = data["humidity"])
+        @humidity = v
+      end
+      if (v = data["battery"])
+        @battery = v
+      end
     end
   end
 
