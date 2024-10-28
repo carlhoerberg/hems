@@ -41,7 +41,7 @@ class EnergyManagement
       elsif pc.any? { |p| p < 0 }
         puts "Over power, turning off 6kw heater"
         @devices.relays.heater_6kw = false
-      elsif @devices.solar.total_power < 1000
+      elsif @devices.next3.solar.total_power < 1000
         puts "Weak solar power, turning off 6kw heater"
         @devices.relays.heater_6kw = false
       end
@@ -58,7 +58,7 @@ class EnergyManagement
       elsif pc.any? { |p| p < 0 }
         puts "Over power, turning off 9kw heater"
         @devices.relays.heater_9kw = false
-      elsif @devices.solar.total_power < 1000
+      elsif @devices.next3.solar.total_power < 1000
         puts "Weak solar power, turning off 9kw heater"
         @devices.relays.heater_9kw = false
       end
