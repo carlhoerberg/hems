@@ -145,9 +145,6 @@ class Devices
     end
 
     def notify_status(params)
-      if (ts = params.dig("ts"))
-        @ts = ts
-      end
       if (c = params.dig("switch:0", "current"))
         @current = c
       end
@@ -159,6 +156,9 @@ class Devices
       end
       if (p = params.dig("switch:0", "aenergy", "total"))
         @aenergy_total = p
+      end
+      if (ts = params.dig("ts") && @current && @voltage && @apower && @aenergy_total)
+        @ts = ts
       end
     end
 
@@ -193,14 +193,14 @@ class Devices
     attr_reader :humidity, :temperature
 
     def notify_status(params)
-      if (ts = params.dig("ts"))
-        @ts = ts
-      end
       if (h = params.dig("humidity:0", "rh"))
         @humidity = h
       end
       if (t = params.dig("temperature:0", "tC"))
         @temperature = t
+      end
+      if (ts = params.dig("ts") && @humidity && @temperature)
+        @ts = ts
       end
     end
   end
