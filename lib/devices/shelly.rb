@@ -157,7 +157,7 @@ class Devices
       if (p = params.dig("switch:0", "aenergy", "total"))
         @aenergy_total = p
       end
-      if (ts = params.dig("ts") && @current && @voltage && @apower && @aenergy_total)
+      if ((ts = params.dig("ts")) && @current && @voltage && @apower && @aenergy_total)
         @ts = ts
       end
     end
@@ -199,7 +199,7 @@ class Devices
       if (t = params.dig("temperature:0", "tC"))
         @temperature = t
       end
-      if (ts = params.dig("ts") && @humidity && @temperature)
+      if ((ts = params.dig("ts")) && @humidity && @temperature)
         @ts = ts
       end
     end

@@ -44,7 +44,7 @@ module Modbus
       end
     end
 
-    def read(count, timeout = 1)
+    def read(count, timeout = 10)
       if IO.select([@socket], nil, nil, timeout)
         @socket.read(count) || raise(EOFError.new)
       else
