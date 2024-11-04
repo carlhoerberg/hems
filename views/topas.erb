@@ -1,0 +1,28 @@
+# TYPE topas_reactor_level gauge
+topas_reactor_level <%=measurements[:reactor_level]%>
+# TYPE topas_accumulation_level gauge
+topas_accumulation_level <%=measurements[:accumulation_level]%>
+# TYPE topas_aperformance gauge
+topas_aperformance <%=measurements[:aperformance]%>
+# TYPE topas_chem_percentage gauge
+topas_chem_percentage <%=measurements[:chem_percentage]%>
+
+# TYPE topas_total_treated_water counter
+topas_total_treated_water <%=measurements[:total_treated_water]%>
+# TYPE topas_running_time counter
+topas_running_time <%=measurements[:total_running_time]%>
+
+# TYPE topas_current_phase gauge
+topas_current_phase <%=measurements[:current_phase]%>
+# TYPE topas_time_of_current_phase gauge
+topas_time_of_current_phase <%=measurements[:time_of_current_phase]%>
+
+# TYPE topas_info gauge
+topas_info <%=measurements[:info]%>
+# TYPE topas_warning gauge
+topas_warning <%=measurements[:warning]%>
+# TYPE topas_emergency gauge
+topas_emergency <%=measurements[:emergency]%>
+
+# TYPE metrics_gather_time gauge
+metrics_gather_time{device="topas"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>
