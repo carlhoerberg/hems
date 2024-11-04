@@ -30,9 +30,9 @@ class Devices
         denitr_filling_last_time: m[10],
         denitr_sedimentation_last_time: m[11],
         denitr_recirculation_last_time: m[12],
-        info: m[47], # convert to string
-        warning: m[47], # convert to string
-        emergency: m[48], # convert to string
+        info: m[47],
+        warning: m[48],
+        emergency: m[49],
         chem_volume: m[52],
         chem_percentage: m[53],
         total_treated_water: m[58],
