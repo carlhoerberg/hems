@@ -104,11 +104,11 @@ class EnergyManagement
     if @devices.genset.is_running?
       if soc >= 94
         puts "SoC #{soc}%, battery current limited, stopping genset"
-        #stop_genset
+        stop_genset
       elsif will_reach_full_battery_with_solar?(soc)
         puts "Battery will reach full charge with solar, stopping genset"
-        #stop_genset
-        #@power_measurements.clear
+        stop_genset
+        @power_measurements.clear
       elsif overheated?
         puts "Overheated, stopping genset"
         stop_genset
