@@ -76,6 +76,14 @@ class Devices
       def bms_recommended_discharging_current
         @unit.read_holding_registers(429, 2).to_f32
       end
+
+      def status
+        @unit.read_holding_registers(300, 2).to_u32
+      end
+
+      def errors
+        @unit.read_holding_registers(302, 2).to_u32
+      end
     end
 
     class AcSource
