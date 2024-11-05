@@ -115,7 +115,7 @@ class EnergyManagement
         # keep_hz
       end
     else # genset is not running
-      if soc <= 12
+      if soc <= 14
         start_genset
       end
     end
@@ -149,7 +149,7 @@ class EnergyManagement
       estimated_soc = (battery_kwh / BATTERY_KWH * 100).round
       puts "Estimated battery at #{time}: #{estimated_soc}% #{battery_kwh} kWh"
       return true if estimated_soc >= 94
-      return false if estimated_soc <= 12 # % SoC required otherwise genset starts again
+      return false if estimated_soc <= 14 # % SoC required otherwise genset starts again
 
       last_time = time
     end
@@ -179,6 +179,8 @@ class EnergyManagement
       puts "Genset not ready to load"
       sleep 1
     end
+    puts "Enabling ACSource"
+    @devices.next3.acsource.enable
   end
 
   def stop_genset
