@@ -10,10 +10,10 @@ battery_state_of_health <%=next3.battery.state_of_health%>
 battery_charging_current <%=next3.battery.charging_current%>
 # TYPE battery_charging_power gauge
 battery_charging_power <%=next3.battery.charging_power%>
-# TYPE battery_day_charging_energy counter
-battery_day_charging_energy <%=next3.battery.day_charging_energy%>
-# TYPE battery_day_discharging_energy counter
-battery_day_discharging_energy <%=next3.battery.day_discharging_energy%>
+# TYPE battery_total_charging_energy counter
+battery_total_charging_energy <%=next3.battery.total_charging_energy%>
+# TYPE battery_total_discharging_energy counter
+battery_total_discharging_energy <%=next3.battery.total_discharging_energy%>
 # TYPE battery_bms_recommended_charging_current gauge
 battery_bms_recommended_charging_current <%=next3.battery.bms_recommended_charging_current%>
 # TYPE battery_bms_recommended_charging_current gauge
@@ -31,30 +31,30 @@ acsource_frequency <%=next3.acsource.frequency%>
 # TYPE acload_active_power gauge
 # TYPE acload_reactive_power gauge
 # TYPE acload_apparent_power gauge
-# TYPE acload_day_consumed_energy counter
+# TYPE acload_total_consumed_energy counter
 # TYPE acsource_voltage gauge
 # TYPE acsource_current gauge
 # TYPE acsource_active_power gauge
 # TYPE acsource_reactive_power gauge
 # TYPE acsource_apparent_power gauge
-# TYPE acsource_day_consumed_energy counter
+# TYPE acsource_total_consumed_energy counter
 <%[1, 2, 3].each do |l|%>
 acload_current{L="<%=l%>"} <%=next3.acload.current(l)%>
 acload_voltage{L="<%=l%>"} <%=next3.acload.voltage(l)%>
 acload_active_power{L="<%=l%>"} <%=next3.acload.active_power(l)%>
 acload_reactive_power{L="<%=l%>"} <%=next3.acload.reactive_power(l)%>
 acload_apparent_power{L="<%=l%>"} <%=next3.acload.apparent_power(l)%>
-acload_day_consumed_energy{L="<%=l%>"} <%=next3.acload.day_consumed_energy(l)%>
+acload_total_consumed_energy{L="<%=l%>"} <%=next3.acload.total_consumed_energy(l)%>
 acsource_voltage{L="<%=l%>"} <%=next3.acsource.voltage(l)%>
 acsource_current{L="<%=l%>"} <%=next3.acsource.current(l)%>
 acsource_active_power{L="<%=l%>"} <%=next3.acsource.active_power(l)%>
 acsource_reactive_power{L="<%=l%>"} <%=next3.acsource.reactive_power(l)%>
 acsource_apparent_power{L="<%=l%>"} <%=next3.acsource.apparent_power(l)%>
-acsource_day_consumed_energy{L="<%=l%>"} <%=next3.acsource.day_consumed_energy(l)%>
+acsource_total_consumed_energy{L="<%=l%>"} <%=next3.acsource.total_consumed_energy(l)%>
 <%end%>
 
 # TYPE solar_power gauge
-# TYPE solar_day_energy counter
+# TYPE solar_total_energy counter
 # TYPE solar_voltage gauge
 # TYPE solar_current gauge
 # TYPE solar_day_sunshine counter
@@ -62,7 +62,7 @@ acsource_day_consumed_energy{L="<%=l%>"} <%=next3.acsource.day_consumed_energy(l
 solar_power{array="<%=array%>"} <%=next3.solar.power(array)%>
 solar_voltage{array="<%=array%>"} <%=next3.solar.voltage(array)%>
 solar_current{array="<%=array%>"} <%=next3.solar.current(array)%>
-solar_day_energy{array="<%=array%>"} <%=next3.solar.day_energy(array)%>
+solar_total_energy{array="<%=array%>"} <%=next3.solar.total_energy(array)%>
 solar_day_sunshine{array="<%=array%>"} <%=next3.solar.day_sunshine(array)%>
 <%end%>
 

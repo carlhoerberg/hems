@@ -57,12 +57,12 @@ class Devices
         @unit.read_holding_registers(0, 2).to_f32
       end
 
-      def day_charging_energy
-        @unit.read_holding_registers(2, 2).to_f32
+      def total_charging_energy
+        @unit.read_holding_registers(10, 4).to_f64
       end
 
-      def day_discharging_energy
-        @unit.read_holding_registers(14, 2).to_f32
+      def total_discharging_energy
+        @unit.read_holding_registers(22, 4).to_f64
       end
 
       def charging_current_high_limit
@@ -145,6 +145,11 @@ class Devices
         raise ArgumentError.new("Phase 1, 2 or 3") unless [1,2,3].include? phase
         @unit.read_holding_registers(300 * phase + 8, 2).to_f32
       end
+
+      def total_consumed_energy(phase)
+        raise ArgumentError.new("Phase 1, 2 or 3") unless [1,2,3].include? phase
+        @unit.read_holding_registers(300 * phase + 36, 4).to_f64
+      end
     end
 
     class AcLoad
@@ -194,6 +199,11 @@ class Devices
         raise ArgumentError.new("Phase 1, 2 or 3") unless [1,2,3].include? phase
         @unit.read_holding_registers(3928 + 300 * phase, 2).to_f32
       end
+
+      def total_consumed_energy(phase)
+        raise ArgumentError.new("Phase 1, 2 or 3") unless [1,2,3].include? phase
+        @unit.read_holding_registers(3936 + 300 * phase, 4).to_f64
+      end
     end
 
     # Each solar MPPT has two arrays, 1 and 2
@@ -228,6 +238,10 @@ class Devices
 
       def power_limit(array)
         @unit.read_holding_registers(6922 + (array - 1) * 300, 2).to_f32
+      end
+
+      def total_energy(array)
+        @unit.read_holding_registers(6019 + (array - 1) * 300, 4).to_f64
       end
 
       # At least one array in solar excess state or power limited
