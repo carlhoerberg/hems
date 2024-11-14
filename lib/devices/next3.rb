@@ -57,6 +57,14 @@ class Devices
         @unit.read_holding_registers(0, 2).to_f32
       end
 
+      def day_charging_energy
+        @unit.read_holding_registers(2, 2).to_f32
+      end
+
+      def day_discharging_energy
+        @unit.read_holding_registers(14, 2).to_f32
+      end
+
       def total_charging_energy
         @unit.read_holding_registers(10, 4).to_f64
       end
