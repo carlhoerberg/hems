@@ -7,7 +7,7 @@ class Devices
     @@server = Thread.new { Shelly.listen }
 
     def plugs
-      @@devices.each_value.grep(ShellyPlusPlugS)
+      @@devices.each_value.select { |d| d.respond_to?(:apower) }
     end
 
     def termometers
@@ -139,7 +139,7 @@ class Devices
   end
 
   class ShellyProEM50 < ShellyUDP
-    attr_reader :current, :apower, :voltage, :total_act_power
+    attr_reader :current, :apower, :voltage, :aenergy_total
 
     def initialize(device_id, port = 2020)
       super(device_id, port)
