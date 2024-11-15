@@ -40,9 +40,10 @@ class Devices
 
     def self.from_device_id(device_id)
       case device_id
-      when /^shellyhtg3-/      then ShellyHTG3.new(device_id)
-      when /^shellyplusplugs-/ then ShellyPlusPlugS.new(device_id)
-      else                     raise "Unknown device id #{device_id}"
+      when /^shellyhtg3-/     then ShellyHTG3.new(device_id)
+      when /^shellyplusplugs/ then ShellyPlusPlugS.new(device_id)
+      when /^shellyproem50-/  then ShellyProEM50.new(device_id)
+      else                    raise "Unknown device id #{device_id}"
       end
     end
 
@@ -134,6 +135,33 @@ class Devices
     end
 
     class Error < StandardError; end
+  end
+
+  class ShellyProEM50 < ShellyUDP
+    attr_reader :current, :apower, :voltage, :total_act_power
+
+    def initialize(device_id, port = 2020)
+      super(device_id, port)
+      #update_status
+    end
+
+    def notify_status(params)
+      if (c = params.dig("em1data:0", "current"))
+        @current = c
+      end
+      if (p = params.dig("em1data:0", "voltage"))
+        @voltage = p
+      end
+      if (p = params.dig("em1data:0", "act_power"))
+        @apower = p
+      end
+      if (p = params.dig("em1data:0", "total_act_energy"))
+        @aenergy_total = p
+      end
+      if ((ts = params.dig("ts")) && @current && @voltage && @apower && @aenergy_total)
+        @ts = ts
+      end
+    end
   end
 
   class ShellyPlusPlugS < ShellyUDP
