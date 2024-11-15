@@ -147,13 +147,13 @@ class Devices
     end
 
     def notify_status(params)
-      if (c = params.dig("em1data:0", "current"))
+      if (c = params.dig("em1:0", "current"))
         @current = c
       end
-      if (p = params.dig("em1data:0", "voltage"))
+      if (p = params.dig("em1:0", "voltage"))
         @voltage = p
       end
-      if (p = params.dig("em1data:0", "act_power"))
+      if (p = params.dig("em1:0", "act_power"))
         @apower = p
       end
       if (p = params.dig("em1data:0", "total_act_energy"))
