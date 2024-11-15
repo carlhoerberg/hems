@@ -53,6 +53,11 @@ class Devices
         min_reactor_level_for_dosing: c[43],
         configuration_of_wwtp: c[44],
         serial_treated_water_pumping_blocking: c[47],
+        din1: c[47] & 1 == 1,
+        din2: c[47] & 2 == 1,
+        din3: c[47] & 4 == 1,
+        din4: c[47] & 8 == 1,
+        discharge_delay: c[47] >> 7
       }
     end
 
@@ -76,18 +81,18 @@ class Devices
         warning: m[48],
         emergency: m[49],
         chem_volume_remaining: m[52],
-        chem_percentage_remaining: (m[53] & 255),
+        chem_percentage_remaining: (m[53] & 127),
         chem_days_remaining: (m[53] >> 7),
         analog_v1_input: m[54] / 1000.0,
         analog_i1_input: m[55],
         analog_v2_input: m[56] / 1000.0,
         analog_i2_input: m[57],
         total_treated_water: m[58],
-        average_treated_water: m[59] / 1000.0,
-        average_treated_water_reg_interval: m[60] / 1000.0,
+        average_treated_water: m[59],
+        average_treated_water_reg_interval: m[60],
         total_running_time: m[61],
-        max_treated_water: m[62] / 1000.0,
-        max_treated_water_10_days: m[63] / 1000.0,
+        max_treated_water: m[62],
+        max_treated_water_10_days: m[63],
       }
     end
   end
