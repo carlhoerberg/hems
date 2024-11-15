@@ -40,10 +40,11 @@ class Devices
 
     def self.from_device_id(device_id)
       case device_id
-      when /^shellyhtg3-/     then ShellyHTG3.new(device_id)
-      when /^shellyplusplugs/ then ShellyPlusPlugS.new(device_id)
-      when /^shellyproem50-/  then ShellyProEM50.new(device_id)
-      else                    raise "Unknown device id #{device_id}"
+      when /^shellyhtg3-/      then ShellyHTG3.new(device_id)
+      when /^shellyplusplugs-/ then ShellyPlusPlugS.new(device_id)
+      when /^shellyplugsg3-/   then ShellyPlusPlugS.new(device_id)
+      when /^shellyproem50-/   then ShellyProEM50.new(device_id)
+      else                     raise "Unknown device id #{device_id}"
       end
     end
 
