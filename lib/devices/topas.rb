@@ -53,11 +53,58 @@ class Devices
         min_reactor_level_for_dosing: c[43],
         configuration_of_wwtp: c[44],
         serial_treated_water_pumping_blocking: c[47],
-        din1: c[47] & 1 == 1,
-        din2: c[47] & 2 == 1,
-        din3: c[47] & 4 == 1,
-        din4: c[47] & 8 == 1,
+        din1: c[47] & 1 > 0,
+        din2: c[47] & 2 > 0,
+        din3: c[47] & 4 > 0,
+        din4: c[47] & 8 > 0,
         discharge_delay: c[47] >> 7
+      }
+    end
+
+    def status
+      c = @modbus.read_holding_registers(10000, 8)
+      c.concat Array.new(50)
+      c.concat @modbus.read_holding_registers(10058, 17)
+      {
+        error_state: c[0],
+        minute: c[3] & 255,
+        hour: c[3] >> 8,
+        sec: c[4],
+        day: c[5] & 31,
+        month: (c[5] >> 5) & 15,
+        year: 2000 + (c[5] >> 9),
+        temperature: c[6],
+        blower_running: c[7] & 1 > 0,
+        relay_p1: c[7] & 2 > 0,
+        relay_v1: c[7] & 4 > 0,
+        relay_v2: c[7] & 8 > 0,
+        relay_v3: c[7] & 16 > 0,
+        relay_v4: c[7] & 32 > 0,
+        relay_p2: c[7] & 64 > 0,
+        relay_p3: c[7] & 128 > 0,
+        relay_p4: c[7] & 256 > 0,
+        relay_p5: c[7] & 512 > 0,
+        in_d1: c[7] & 1024 > 0,
+        in_d2: c[7] & 2048 > 0,
+        in_d3: c[7] & 4096 > 0,
+        in_d4: c[7] & 8192 > 0,
+        gsm_signal: c[58],
+        total_running_time: c[59],
+        time_v1_closed: c[60],
+        time_v1_open: c[61],
+        time_v2_closed: c[62],
+        time_v2_open: c[63],
+        time_v3_closed: c[64],
+        time_v3_open: c[65],
+        time_v4_closed: c[66],
+        time_v4_open: c[67],
+        blower_time: c[68],
+        running_time_p1: c[69],
+        running_time_p2: c[70],
+        running_time_p3: c[71],
+        running_time_p4: c[72],
+        running_time_p5: c[73],
+        count_impulses_d1: c[74],
       }
     end
 
