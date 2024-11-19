@@ -104,7 +104,7 @@ class EnergyManagement
     if @devices.genset.is_running?
       if @devices.next3.battery.errors != 0
         puts "Battery has errors, keeping genset running"
-      elsif soc >= 94
+      elsif soc >= 99
         puts "SoC #{soc}%, battery current limited, stopping genset"
         stop_genset
       elsif will_reach_full_battery_with_solar?(soc)
@@ -118,7 +118,7 @@ class EnergyManagement
         # keep_hz
       end
     else # genset is not running
-      if soc <= 14
+      if soc <= 15
         start_genset
       end
     end
@@ -151,8 +151,8 @@ class EnergyManagement
       battery_kwh += (watts / 1000.0 - avg_power_kw) * period
       estimated_soc = (battery_kwh / BATTERY_KWH * 100).round
       puts "Estimated battery at #{time}: #{estimated_soc}% #{battery_kwh} kWh"
-      return true if estimated_soc >= 94
-      return false if estimated_soc <= 14 # % SoC required otherwise genset starts again
+      return true if estimated_soc >= 99
+      return false if estimated_soc <= 15 # % SoC required otherwise genset starts again
 
       last_time = time
     end
