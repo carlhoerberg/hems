@@ -104,7 +104,7 @@ class EnergyManagement
     if @devices.genset.is_running?
       if @devices.next3.battery.errors != 0
         puts "Battery has errors, keeping genset running"
-      elsif soc >= 99
+      elsif @devices.next3.battery.bms_recommended_charging_current.zero?
         puts "SoC #{soc}%, battery current limited, stopping genset"
         stop_genset
       elsif will_reach_full_battery_with_solar?(soc)
