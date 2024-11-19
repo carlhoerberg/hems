@@ -153,7 +153,7 @@ class EnergyManagement
       estimated_soc = (battery_kwh / BATTERY_KWH * 100).round
       puts "Estimated battery at #{time}: #{estimated_soc}% #{battery_kwh} kWh"
       return true if estimated_soc >= 99
-      return false if estimated_soc <= 16 # % SoC required otherwise genset starts again
+      return false if estimated_soc <= 12 # % SoC required otherwise genset starts again
 
       last_time = time
     end
