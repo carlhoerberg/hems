@@ -118,8 +118,7 @@ class EnergyManagement
         # keep_hz
       end
     else # genset is not running
-      if soc <= 12 ||
-          @devices.next3.battery.bms_recommended_discharging_current > -300
+      if soc <= 15
         start_genset
       end
     end
