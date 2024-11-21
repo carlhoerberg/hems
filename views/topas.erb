@@ -28,5 +28,8 @@ topas_warning <%=measurements[:warning]%>
 # TYPE topas_emergency gauge
 topas_emergency <%=measurements[:emergency]%>
 
+# TYPE topas_temperature gauge
+topas_temperature <%=status[:temperature]%>
+
 # TYPE metrics_gather_time gauge
 metrics_gather_time{device="topas"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>
