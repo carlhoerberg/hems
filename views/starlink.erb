@@ -1,5 +1,5 @@
 # TYPE starlink_latency gauge
-starlink_latency <%=status.dig("dishGetStatus", "popPingLatencyMs")%>
+starlink_latency <%=status.dig("dishGetStatus", "popPingLatencyMs") || 0%>
 # TYPE starlink_downlink_bps gauge
 starlink_downlink_bps <%=status.dig("dishGetStatus", "downlinkThroughputBps")%>
 # TYPE starlink_uplink_bps gauge
