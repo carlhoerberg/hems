@@ -5,11 +5,8 @@
   <body>
     <h1>Genset control</h1>
     <form method="post">
-      <%if status[:running]%>
-        <button name="action" value="stop">Stop</button>
-      <%else%>
-        <button name="action" value="start">Start</button>
-      <%end%>
+      <button name="action" value="stop">Stop</button>
+      <button name="action" value="start">Start</button>
     </form>
     <h2>Status</h2>
     <table>
