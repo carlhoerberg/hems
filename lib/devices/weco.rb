@@ -9,7 +9,8 @@ class Devices
     end
 
     def any
-      @weco.serial.write "\x00\x03\x00\x00\x00\x01"
+      # @weco.serial.write "\x00\x03\x00\x00\x00\x01"
+      p @weco.unit(0).read_holding_registers(0, 1)
       p @weco.unit(1).read_holding_registers(1, 38)
       p @weco.unit(1).read_holding_registers(39, 6)
     end

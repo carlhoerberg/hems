@@ -26,7 +26,7 @@ module Modbus
         serial.write request, CRC16.crc16(request)
         unit, function = read(2).unpack("CC")
         request_unit, request_function = request[0..1].unpack("CC")
-        raise ProtocolException, "Invalid unit response" if unit != request_unit
+        raise ProtocolException, "Invalid unit response" if unit != request_unit && request_unit != 0
         raise ProtocolException, "Invalid function response" if function != request_function
         check_exception!(function)
         result = yield
