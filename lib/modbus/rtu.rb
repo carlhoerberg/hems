@@ -7,8 +7,9 @@ module Modbus
   class RTU < Base
     @@lock = Mutex.new
 
-    def initialize(device = "/dev/ttyACM?")
+    def initialize(device = "/dev/ttyACM?", baud_rate = 9600)
       @device = device
+      @baud_rate = baud_rate
     end
 
     def close
@@ -49,7 +50,7 @@ module Modbus
       @@serial ||=
         begin
           device = Dir.glob(@device).first || raise("No serial device found")
-          UART.open(device)
+          UART.open(device, @baud_rate)
         end
     end
   end
