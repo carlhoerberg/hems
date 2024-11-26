@@ -6,7 +6,7 @@
 shelly_plug_current{device_id="<%=s.device_id%>"} <%=s.current%> <%=s.timestamp%>
 shelly_plug_voltage{device_id="<%=s.device_id%>"} <%=s.voltage%> <%=s.timestamp%>
 shelly_plug_apower{device_id="<%=s.device_id%>"} <%=s.apower%> <%=s.timestamp%>
-shelly_plug_aenergy_total{device_id="<%=s.device_id%>"} <%=s.aenergy_total%> <%=s.timestamp%>
+shelly_plug_aenergy_total{device_id="<%=s.device_id%>"} <%=s.aenergy_total || "NaN"%> <%=s.timestamp%>
 <%end%>
 
 # TYPE shelly_ht_temperature gauge
