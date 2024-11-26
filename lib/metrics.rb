@@ -96,27 +96,31 @@ class PrometheusMetrics
 
     def do_GET(req, res)
       res.content_type = "text/plain"
-      metrics =
-        case req.path
-        when %r(/shelly$)
-          @@shelly.result_with_hash({ t:, shelly: @devices.shelly })
-        when %r(/next3$)
-          @@next3.result_with_hash({ t:, next3: @devices.next3 })
-        when %r(/eta$)
-          @@eta.result_with_hash({ t:, eta: @devices.eta })
-        when %r(/starlink$)
-          @@starlink.result_with_hash({ t:, status: @devices.starlink.status })
-        when %r(/ups$)
-          @@ups.result_with_hash({ t:, ups: @devices.ups })
-        when %r(/unifi$)
-          @@unifi.result_with_hash({ t:, unifi_health: @devices.unifi.health })
-        when %r(/topas$)
-          @@topas.result_with_hash({ t:, measurements: @devices.topas.measurements, status: @devices.topas.status })
-        when %r(/genset$)
-          @@genset.result_with_hash({ t:, measurements: @devices.genset.measurements })
-        else
-          ""
+      metrics = ""
+      case req.path
+      when %r(/shelly$)
+        metrics = @@shelly.result_with_hash({ t:, shelly: @devices.shelly })
+      when %r(/next3$)
+        metrics = @@next3.result_with_hash({ t:, next3: @devices.next3 })
+      else
+        threads = [
+          Thread.new { @@eta.result_with_hash({ t:, eta: @devices.eta }) },
+          Thread.new { @@starlink.result_with_hash({ t:, status: @devices.starlink.status }) },
+          Thread.new { @@ups.result_with_hash({ t:, ups: @devices.ups }) },
+          Thread.new { @@unifi.result_with_hash({ t:, unifi_health: @devices.unifi.health }) },
+          Thread.new { @@topas.result_with_hash({ t:, measurements: @devices.topas.measurements, status: @devices.topas.status }) },
+          Thread.new do
+            @@genset.result_with_hash({ t:, measurements: @devices.genset.measurements })
+          rescue EOFError
+            warn "Genset is offline"
+          end,
+        ]
+        threads.each do |t|
+          metrics << (t.value || "")
+        rescue
+          # Thread#report_on_exception
         end
+      end
       if req.accept_encoding.include? "gzip"
         res["content-encoding"] = "gzip"
         res.body = Zlib.gzip(metrics)
