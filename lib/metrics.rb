@@ -104,8 +104,10 @@ class PrometheusMetrics
         metrics = @@next3.result_with_hash({ t:, next3: @devices.next3 })
       else
         threads = [
+          Thread.new { @@next3.result_with_hash({ t:, next3: @devices.next3 }) },
           Thread.new { @@eta.result_with_hash({ t:, eta: @devices.eta }) },
           Thread.new { @@starlink.result_with_hash({ t:, status: @devices.starlink.status }) },
+          Thread.new { @@shelly.result_with_hash({ t:, shelly: @devices.shelly }) },
           Thread.new { @@ups.result_with_hash({ t:, ups: @devices.ups }) },
           Thread.new { @@unifi.result_with_hash({ t:, unifi_health: @devices.unifi.health }) },
           Thread.new { @@topas.result_with_hash({ t:, measurements: @devices.topas.measurements, status: @devices.topas.status }) },
