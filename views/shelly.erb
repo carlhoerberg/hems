@@ -12,8 +12,8 @@ shelly_plug_aenergy_total{device_id="<%=s.device_id%>"} <%=s.aenergy_total || "N
 # TYPE shelly_ht_temperature gauge
 # TYPE shelly_ht_humidity gauge
 <%shelly.termometers.each do |ht|%>
-shelly_ht_temperature{device_id="<%=ht.device_id%>"} <%=ht.temperature%> <%=ht.timestamp%>
-shelly_ht_humidity{device_id="<%=ht.device_id%>"} <%=ht.humidity%> <%=ht.timestamp%>
+shelly_ht_temperature{device_id="<%=ht.device_id%>"} <%=ht.temperature || "NaN"%> <%=ht.timestamp%>
+shelly_ht_humidity{device_id="<%=ht.device_id%>"} <%=ht.humidity || "NaN"%> <%=ht.timestamp%>
 <%end%>
 
 # TYPE metrics_gather_time gauge
