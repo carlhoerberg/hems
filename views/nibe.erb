@@ -1,4 +1,4 @@
 <%values.each do |v|%>
-# TYPE <%=v[:name]%> gauge
-<%=v[:name]%> <%=v[:value]%> <%=v[:ts]%>
+# TYPE nibe_<%=v[:name]%> gauge
+nibe_<%=v[:name]%> <%=v[:value]%> <%=v[:ts]%>
 <%end%>
