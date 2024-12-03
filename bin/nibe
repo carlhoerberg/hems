@@ -21,10 +21,6 @@ class Nibe
       40072 => { name: "bf1_flow", type: "s<", factor: 10.0 }, # flow
       40321 => { name: "compressor_frequency", type: "S<" },
       43084 => { name: "electrical_addition", type: "s<" },
-      43108 => { name: "fan_speed", type: "C" },
-      41256 => { name: "fan_speed1", type: "C" },
-      41257 => { name: "fan_speed2", type: "C" },
-      41258 => { name: "fan_speed3", type: "C" },
       43416 => { name: "compressor_starts", type: "l<" },
       43437 => { name: "pump_speed", type: "C" }, # pump speed
       45001 => { name: "alarm", type: "s<" },
