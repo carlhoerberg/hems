@@ -34,12 +34,12 @@ class Nibe
       @server.mount_proc("/metrics") do |req, res|
         res.content_type = "text/plain"
         values = metrics.values.select { |v| v[:ts] }
-        metrics = @@nibe.result_with_hash({ values: })
+        output = @@nibe.result_with_hash({ values: })
         if req.accept_encoding.include? "gzip"
           res["content-encoding"] = "gzip"
-          res.body = Zlib.gzip(metrics)
+          res.body = Zlib.gzip(output)
         else
-          res.body = metrics
+          res.body = output
         end
       end
     end
