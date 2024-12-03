@@ -3,9 +3,9 @@
 # TYPE shelly_plug_apower gauge
 # TYPE shelly_plug_aenergy_total counter
 <%shelly.plugs.each do |s|%>
-shelly_plug_current{device_id="<%=s.device_id%>"} <%=s.current%> <%=s.timestamp%>
-shelly_plug_voltage{device_id="<%=s.device_id%>"} <%=s.voltage%> <%=s.timestamp%>
-shelly_plug_apower{device_id="<%=s.device_id%>"} <%=s.apower%> <%=s.timestamp%>
+shelly_plug_current{device_id="<%=s.device_id%>"} <%=s.current || "NaN"%> <%=s.timestamp%>
+shelly_plug_voltage{device_id="<%=s.device_id%>"} <%=s.voltage || "NaN"%> <%=s.timestamp%>
+shelly_plug_apower{device_id="<%=s.device_id%>"} <%=s.apower || "NaN"%> <%=s.timestamp%>
 shelly_plug_aenergy_total{device_id="<%=s.device_id%>"} <%=s.aenergy_total || "NaN"%> <%=s.timestamp%>
 <%end%>
 
