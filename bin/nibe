@@ -91,7 +91,7 @@ class Nibe
 
             if msg_checksum != calc_checksum
               $log.error "checksum_mismatch msg=#{msg_checksum.to_s(16)} calc=#{calc_checksum.to_s(16)} command=0x#{command.to_s(16)} len=#{data_len}"
-              $log.debug IO::Buffer.for(data).hexdump unless data.empty?
+              $log.debug { IO::Buffer.for(data).hexdump } unless data.empty?
               nack(socket)
               next
             end
@@ -111,6 +111,13 @@ class Nibe
               last_updated_addr = 0
               min_ts = Time.now.to_f * 1000 + 1000
               metrics.each do |addr, v|
+                if (requested = v[:requested])
+                  if Time.now.to_i - 2 > requested
+                    v.delete :requested # if no response in a long time then request it again
+                  else
+                    next
+                  end
+                end
                 if v[:ts].nil?
                   last_updated_addr = addr
                   break
@@ -122,6 +129,7 @@ class Nibe
               end
               $log.info "read_request addr=#{last_updated_addr}"
               socket.write read_request(last_updated_addr)
+              metrics[last_updated_addr][:requested] = Time.now.to_i # don't double request metrics
             when 0x6A # read response
               addr = data.unpack1("S<")
               if (v = metrics[addr])
