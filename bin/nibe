@@ -2,6 +2,10 @@
 require "socket"
 require "webrick"
 require "zlib"
+require "logger"
+
+$log = Logger.new($stdout, level: Logger::INFO)
+$log.formatter = proc { |sev, time, progname, msg| "#{msg}\n" }
 
 class Nibe
   def self.run
@@ -61,55 +65,47 @@ class Nibe
       loop do
         socket = Socket.tcp(@host, @port, connect_timeout: 1)
         socket.setsockopt(Socket::IPPROTO_TCP, Socket::TCP_NODELAY, 1)
-        puts "connected"
+        $log.info "Connected"
         loop do
           case byte = socket.readbyte
           when 0x06 # ack
-            puts "acked"
+            $log.debug "acked"
           when 0x15 # nack
-            puts "nacked"
+            $log.error "nacked"
           when 0x5C # start of msg
             null = socket.readbyte
             if null != 0x0
-              puts "unexpected value after 0x5c: 0x#{null.to_s(16)}"
+              $log.debug "unexpected value after 0x5c: 0x#{null.to_s(16)}"
               next
             end
-            puts "start_of_msg"
+            $log.debug "start_of_msg"
             device = socket.readbyte
             command = socket.readbyte
             data_len = socket.readbyte
-            puts "device=0x#{device.to_s(16)} command=0x#{command.to_s(16)} len=#{data_len}"
 
             data = socket.read(data_len)
             msg_checksum = socket.readbyte
+
             msg = [device, command, data_len, data].pack("CCCa*")
             calc_checksum = checksum(msg)
 
             if msg_checksum != calc_checksum
-              puts "checksum_mismatch msg=#{msg_checksum.to_s(16)} calc=#{calc_checksum.to_s(16)}"
-              puts IO::Buffer.for(data).hexdump unless data.empty?
+              $log.error "checksum_mismatch msg=#{msg_checksum.to_s(16)} calc=#{calc_checksum.to_s(16)} command=0x#{command.to_s(16)} len=#{data_len}"
+              $log.debug IO::Buffer.for(data).hexdump unless data.empty?
               nack(socket)
               next
-            else
-              puts "checksum_valid msg=#{msg_checksum.to_s(16)} calc=#{calc_checksum.to_s(16)}"
             end
 
             if device != 0x20
-              puts "not for modbus, #{device.to_s(16)}"
-              puts IO::Buffer.for(data).hexdump unless data.empty?
+              $log.warn "unexpected_device=0x#{device.to_s(16)} command=0x#{command.to_s(16)} len=#{data_len}"
+              $log.warn { IO::Buffer.for(data).hexdump } unless data.empty?
               ack(socket)
               next
             end
 
             case command
             when 0x6B # write request
-              puts "write_request"
-              #if req = @write_requests.pop(true)
-              #  # construct write msg
-              #  # socket.write(req_msg)
-              #else
-              #  ack(socket)
-              #end
+              $log.debug "write_request"
               ack(socket)
             when 0x69 # read request
               last_updated_addr = 0
@@ -124,27 +120,30 @@ class Nibe
                   min_ts = v[:ts]
                 end
               end
-              raise "could not find an address to update" if last_updated_addr.zero?
-              bytes = read_request(last_updated_addr)
-              puts "read_request=\"#{bytes.unpack1("H*")}\" addr=#{last_updated_addr}"
-              socket.write bytes
+              $log.info "read_request addr=#{last_updated_addr}"
+              socket.write read_request(last_updated_addr)
             when 0x6A # read response
               addr = data.unpack1("S<")
               if (v = metrics[addr])
                 value = data.unpack1(v[:type], offset: 2)
                 v[:value] = value / v.fetch(:factor, 1)
                 v[:ts] = (Time.now.to_f * 1000).to_i
-                puts "read_response addr=#{addr} name=\"#{v[:name]}\" value=#{v[:value]}"
+                $log.info "read_response addr=#{addr} name=\"#{v[:name]}\" value=#{v[:value]}"
               else
-                puts "read_response address_not_found=#{addr}"
+                $log.warn "read_response address_not_found=#{addr}"
               end
               ack(socket)
+            when 0x68, 0xEE, 0x6D # broadcast, ?, version/model
+              $log.debug "ignoring_command=0x#{command.to_s(16)}"
+              $log.debug { IO::Buffer.for(data).hexdump } unless data.empty?
+              ack(socket)
             else
-              puts IO::Buffer.for(data).hexdump unless data.empty?
+              $log.warn "unexpected_command=0x#{command.to_s(16)}"
+              $log.warn { IO::Buffer.for(data).hexdump } unless data.empty? 
               ack(socket)
             end
           else
-            puts "read_byte=0x#{byte.to_s(16)}"
+            $log.debug "read_byte=0x#{byte.to_s(16)}"
           end
         end
       end
@@ -157,12 +156,12 @@ class Nibe
     end
 
     def ack(socket)
-      puts "response=ack"
+      $log.debug "response=ack"
       socket.putc 0x06
     end
 
     def nack(socket)
-      puts "response=nack"
+      $log.debug "response=nack"
       socket.putc 0x15
     end
 
