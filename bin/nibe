@@ -20,14 +20,15 @@ class Nibe
       40051 => { name: "bs1_air_flow", type: "s<", factor: 10.0 }, # air flow (unfiltered)
       40072 => { name: "bf1_flow", type: "s<", factor: 10.0 }, # flow
       40321 => { name: "compressor_frequency", type: "S<" },
-      43084 => { name: "electrical_addition", type: "s<" },
+      43084 => { name: "electrical_addition", type: "s<", factor: 100.0 },
       43416 => { name: "compressor_starts", type: "l<" },
-      43437 => { name: "pump_speed", type: "C" }, # pump speed
+      43437 => { name: "pump_speed", type: "C" },
       45001 => { name: "alarm", type: "s<" },
       43141 => { name: "compressor_power", type: "S<" },
       41846 => { name: "energy_ventilation", type: "L<", factor: 10.0 },
       41848 => { name: "energy_hot_water", type: "L<", factor: 10.0 },
       41850 => { name: "energy_heating", type: "L<", factor: 10.0 },
+      43066 => { name: "defrosting_time", type: "l<" },
     }
 
     Thread.new { WebServer.new(metrics).start }
