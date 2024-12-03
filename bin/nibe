@@ -18,7 +18,6 @@ class Nibe
       40025 => { name: "bt20_exhaust_air_temp", type: "s<", factor: 10.0 }, # exhaust air temp
       40026 => { name: "bt21_vented_air_temp", type: "s<", factor: 10.0 }, # vented air temp
       40051 => { name: "bs1_air_flow", type: "s<", factor: 10.0 }, # air flow (unfiltered)
-      40072 => { name: "bf1_flow", type: "s<", factor: 10.0 }, # flow
       40321 => { name: "compressor_frequency", type: "S<" },
       43084 => { name: "electrical_addition", type: "s<", factor: 100.0 },
       43416 => { name: "compressor_starts", type: "l<" },
@@ -29,6 +28,10 @@ class Nibe
       41848 => { name: "energy_hot_water", type: "L<", factor: 10.0 },
       41850 => { name: "energy_heating", type: "L<", factor: 10.0 },
       43066 => { name: "defrosting_time", type: "l<" },
+      44298 => { name: "heat_meter_hot_water_compressor_and_addition", type: "L<", factor: 10.0 },
+      44300 => { name: "heat_meter_heat_compressor_and_addition", type: "L<", factor: 10.0 },
+      44306 => { name: "heat_meter_hot_water_compressor", type: "L<", factor: 10.0 },
+      44308 => { name: "heat_meter_heat_compressor", type: "L<", factor: 10.0 },
     }
 
     Thread.new { WebServer.new(metrics).start }
