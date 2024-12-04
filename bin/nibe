@@ -99,7 +99,7 @@ class Nibe
             if msg_checksum != calc_checksum
               $log.error "checksum_mismatch msg=#{msg_checksum.to_s(16)} calc=#{calc_checksum.to_s(16)} command=0x#{command.to_s(16)} len=#{data_len}"
               $log.debug { IO::Buffer.for(data).hexdump } unless data.empty?
-              nack(socket)
+              # nack(socket)
               next
             end
 
