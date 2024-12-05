@@ -16,6 +16,8 @@ class Devices
       @server = Thread.new { listen }
     end
 
+    private
+
     def listen
       udp = UDPSocket.new
       udp.bind("0.0.0.0", 4913)
