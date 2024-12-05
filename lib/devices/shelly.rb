@@ -42,7 +42,7 @@ class Devices
     end
 
     def notify_status(device_id, params)
-      ts = params["ts"] * 1000
+      ts = (params["ts"] * 1000).to_i
       device = @devices[device_id] ||= {}
       case device_id
       when /^shellyhtg3-/
