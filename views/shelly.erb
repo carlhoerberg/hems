@@ -1,5 +1,5 @@
 <%devices.each do |device_id, metrics|%>
-<%metrics.each do |name, metric|%>
+<%metrics.each do |name, m|%>
 # TYPE <%=name%> <%=m[:counter] ? "counter" : "gauge"%>
 <%=name%>{device_id="<%=device_id%>"} <%=m[:v] || "NaN"%> <%=m[:ts]%>
 <%end%>
