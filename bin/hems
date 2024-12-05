@@ -6,7 +6,7 @@ require_relative "../lib/energy_management"
 $stdout.sync = true
 Thread.abort_on_exception = true
 devices = Devices.new
-em = EnergyManagement.new
+em = EnergyManagement.new(devices)
 metrics = PrometheusMetrics.new(devices)
 
 trap('INT') { em.stop; metrics.stop }

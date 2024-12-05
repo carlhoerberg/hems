@@ -3,8 +3,8 @@ require_relative "./solar_forecast"
 
 # Hållfjället energy management system
 class EnergyManagement
-  def initialize
-    @devices = Devices.new
+  def initialize(devices)
+    @devices = devices
     @stopped = false
     @solar_forecast = SolarForecast.new
     @power_measurements = []
