@@ -42,7 +42,9 @@ class Devices
       body = %({"username": "#{ENV["UNIFI_USER"]}", "password": "#{ENV["UNIFI_PASSWORD"]}"})
       headers = { "Content-Type" => "application/json" }
       res = @http.post("/api/auth/login", body, headers)
-      res.response['set-cookie'].split('; ').first
+      if (c = res.response['set-cookie'])
+        c.split('; ').first
+      end
     end
   end
 end
