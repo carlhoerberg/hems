@@ -87,7 +87,7 @@ class Devices
     # {"src"=>"shellyplusplugs-d4d4daecd810", "dst"=>"*", "method"=>"NotifyEvent", "params"=>{"ts"=>1729893268.8, "events"=>[{"component"=>"script:1", "id"=>1, "event"=>"aranet", "data"=>{"status"=>{"integration"=>true, "dfu"=>false, "cal_state"=>0}, "sys"=>{"fw_patch"=>19, "fw_minor"=>4, "fw_major"=>1, "hw"=>9, "addr"=>"cc:37:b5:bf:d6:a7", "rssi"=>-71}, "region"=>15, "packaging"=>1, "co2_ppm"=>1275, "tC"=>21.6, "pressure_dPa"=>9459, "rh"=>34, "battery"=>93, "co2_aranet_level"=>2, "refresh_interval"=>300, "age"=>4, "packet_counter"=>221}, "ts"=>1729893268.8}]}}
     def notify_event(event)
       data = event["data"]
-      ts = event["ts"] * 1000
+      ts = (event["ts"] * 1000).to_i
       case event["event"]
       when "aranet"
         device_id = "aranet-#{data["sys"]["addr"].delete(":")}"
