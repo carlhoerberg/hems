@@ -41,7 +41,7 @@ class Devices
       end
     end
 
-    def notify_status(device_id, data)
+    def notify_status(device_id, params)
       ts = params["ts"] * 1000
       device = @devices[device_id] ||= {}
       case device_id
