@@ -1,8 +1,6 @@
-<% metrics.each do |key, values|%>
+<% metrics.each do |key, value|%>
 # TYPE starlink_<%=key%> gauge
-<%values.each do |(value, ts)|%>
-starlink_<%=key%> <%=value || "NaN"%> <%=ts%>
-<% end %>
+starlink_<%=key%> <%=value%>
 <% end %>
 
 # TYPE metrics_gather_time gauge
