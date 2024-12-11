@@ -28,10 +28,8 @@ class Devices
       %w(powerIn uplinkThroughputBps downlinkThroughputBps popPingLatencyMs popPingDropRate).to_h do |key|
         values = h[key]
         index = current % values.length # index of the last updated value in the ring buffer
-        ts = Time.now.to_f.round * 1000 # round to full second
-        value = Array.new([5, values.length].min) do |i|
-          [values[index - i], ts - (i * 1000)]
-        end
+        last_5 = values.rotate!(index - 4).take(5) # rotate the ring so that the 5 last values are first
+        value = last_5.max # take the largest of the values from the past 5s
         [key.gsub(/([A-Z])/, '_\1').downcase, value]
       end
     end
