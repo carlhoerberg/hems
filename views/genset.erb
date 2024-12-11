@@ -29,6 +29,8 @@ genset_kwh <%=measurements[:kWh]%>
 genset_start_counter <%=measurements[:start_counter]%>
 # TYPE genset_hours counter
 genset_hours <%=measurements[:hours]%>
+# TYPE genset_binary_output gauge
+genset_binary_output <%=measurements[:binary_output]%>
 
 # TYPE metrics_gather_time gauge
 metrics_gather_time{device="genset"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>
