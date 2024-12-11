@@ -75,6 +75,9 @@ class Devices
         if (v = params.dig("em1:0", "act_power"))
           device["shelly_plug_apower"] = { v:, ts: }
         end
+        if (v = params.dig("em1:0", "aprt_power"))
+          device["shelly_plug_aprtpower"] = { v:, ts: }
+        end
         if (v = params.dig("em1data:0", "total_act_energy"))
           device["shelly_plug_aenergy_total"] = { v:, ts:, counter: true }
         end
