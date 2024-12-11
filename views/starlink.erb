@@ -1,7 +1,9 @@
-# TYPE starlink_latency gauge
-# TYPE starlink_downlink_bps gauge
-starlink_downlink_bps <%=status.dig("dishGetStatus", "downlinkThroughputBps")%>
-# TYPE starlink_uplink_bps gauge
-starlink_uplink_bps <%=status.dig("dishGetStatus", "uplinkThroughputBps")%>
+<% metrics.each do |key, values|%>
+# TYPE starlink_<%=key%> gauge
+<%values.each do |(value, ts)|%>
+starlink_<%=key%> <%=value || "NaN"%> <%=ts%>
+<% end %>
+<% end %>
+
 # TYPE metrics_gather_time gauge
 metrics_gather_time{device="starlink"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>
