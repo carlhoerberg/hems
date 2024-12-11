@@ -30,7 +30,7 @@ class Devices
         index = current % values.length # index of the last updated value in the ring buffer
         ts = Time.now.to_f.round * 1000 # round to full second
         value = Array.new([5, values.length].min) do |i|
-          [values[index - i], ts - i]
+          [values[index - i], ts - (i * 1000)]
         end
         [key.gsub(/([A-Z])/, '_\1').downcase, value]
       end
