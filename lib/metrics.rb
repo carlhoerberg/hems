@@ -103,7 +103,7 @@ class PrometheusMetrics
         Thread.new { @@shelly.result_with_hash({ t:, devices: @devices.shelly.devices }) },
         Thread.new { @@ups.result_with_hash({ t:, ups: @devices.ups }) },
         Thread.new { @@unifi.result_with_hash({ t:, unifi_health: @devices.unifi.health }) },
-        #Thread.new { @@topas.result_with_hash({ t:, measurements: @devices.topas.measurements, status: @devices.topas.status }) },
+        Thread.new { @@topas.result_with_hash({ t:, measurements: @devices.topas.measurements, status: @devices.topas.status }) },
         Thread.new do
           @@genset.result_with_hash({ t:, measurements: @devices.genset.measurements })
         rescue EOFError
