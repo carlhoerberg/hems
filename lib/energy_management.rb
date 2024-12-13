@@ -207,11 +207,11 @@ class EnergyManagement
 
   def keep_hz
     hz = @devices.genset.frequency
-    if hz <= 49.7
+    if hz <= 49.6
       rated_current = @devices.next3.acsource.rated_current
       puts "hz=#{hz} adjusting current down to #{rated_current - 1}"
       @devices.next3.acsource.rated_current = rated_current - 1
-    elsif hz >= 50.3
+    elsif hz >= 50.4
       rated_current = @devices.next3.acsource.rated_current
       if rated_current < 24 && # never try to draw more than 24A
           # only adjust if inverter is drawing full power
