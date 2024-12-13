@@ -115,7 +115,7 @@ class EnergyManagement
         puts "Overheated, stopping genset"
         stop_genset
       else
-        # keep_hz
+        keep_hz
       end
     else # genset is not running
       if soc <= 10 ||
@@ -199,7 +199,7 @@ class EnergyManagement
       raise "Genset didn't stop"
     end
     puts "Restoring AC source values"
-    # @devices.next3.acsource.rated_current = 16
+    @devices.next3.acsource.rated_current = 23 # safe for +0 outdoor temp
     @devices.next3.acsource.enable
     #puts "Closing air vents"
     #@devices.relays.close_air_vents
@@ -207,13 +207,16 @@ class EnergyManagement
 
   def keep_hz
     hz = @devices.genset.frequency
-    if hz < 49.5
+    if hz <= 49.7
       rated_current = @devices.next3.acsource.rated_current
       puts "hz=#{hz} adjusting current down to #{rated_current - 1}"
       @devices.next3.acsource.rated_current = rated_current - 1
-    elsif hz > 50.1
+    elsif hz >= 50.3
       rated_current = @devices.next3.acsource.rated_current
-      if rated_current < 18 # never try to draw more than 18A
+      if rated_current < 24 && # never try to draw more than 24A
+          # only adjust if inverter is drawing full power
+          # eg. not when ramping up, or battery is almost full
+          @devices.next3.acsource.current(1) > rated_current - 2
         puts "hz=#{hz} adjusting current up to #{rated_current + 1}"
         @devices.next3.acsource.rated_current = rated_current + 1
       end
