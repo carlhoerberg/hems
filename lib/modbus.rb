@@ -181,6 +181,10 @@ module Modbus
       def to_u32
         pack("nn").unpack1("L>")
       end
+
+      def to_i16
+        pack("n").unpack1("s>")
+      end
     end
 
     refine Float do

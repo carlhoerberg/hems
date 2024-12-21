@@ -29,7 +29,7 @@ class Devices
     end
 
     def coolant_temperature
-      @genset.read_input_register(0x001D)
+      @genset.read_input_registers(0x001D, 1).to_i16
     end
 
     def fuel_level
