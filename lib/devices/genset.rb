@@ -142,7 +142,7 @@ class Devices
         binary_input: m[26], # CRC16 error when genset is running
         binary_output: m[27],
         oil_pressure: m[28] / power_reading_precision,
-        coolant_temperature: m[29],
+        coolant_temperature: [m[29]].to_i16,
         fuel_level: m[30], # CRC16 error when genset is running
         unit_system: m[31].zero? ? :metric : :imperial,
         d_plus: m[32] / 10.0,
