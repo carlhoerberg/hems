@@ -9,7 +9,7 @@ class Devices
     end
 
     def status
-      @modbus.read_holding_registers(0, 2)
+      @modbus.read_holding_registers(0, 2).to_u32
     end
 
     def soc
