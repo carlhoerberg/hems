@@ -56,6 +56,15 @@ class Devices
       (@modbus.read_holding_register(151) / 2.0**6).round(2)
     end
 
+    def efficiency
+      val = @modbus.read_holding_register(154, 1).to_i16
+      if val.negative? # enum values
+        val
+      else
+        (val / 128.0).round(2)
+      end
+    end
+
     def runtime_remaining
       @modbus.read_holding_registers(128, 2).to_i32
     end
