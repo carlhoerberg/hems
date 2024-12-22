@@ -57,7 +57,7 @@ class Devices
     end
 
     def efficiency
-      val = @modbus.read_holding_register(154, 1).to_i16
+      val = @modbus.read_holding_registers(154, 1).to_i16
       if val.negative? # enum values
         val
       else
