@@ -21,7 +21,7 @@ class Devices
     end
 
     def temperature
-      (@modbus.read_holding_register(135) / 2.0**7).round(1).to_i16
+      (@modbus.read_holding_registers(135, 1).to_i16 / 2.0**7).round(1)
     end
 
     def active_power
