@@ -1,7 +1,15 @@
+# TYPE ups_status gauge
+ups_status <%=ups.status%>
 # TYPE ups_soc gauge
 ups_soc <%=ups.soc%>
+# TYPE ups_battery_voltage gauge
+ups_battery_voltage <%=ups.battery_voltage%>
 # TYPE ups_temperature gauge
 ups_temperature <%=ups.temperature%>
+# TYPE ups_active_power gauge
+ups_active_power <%=ups.active_power%>
+# TYPE ups_apparent_power gauge
+ups_apparent_power <%=ups.apparent_power%>
 # TYPE ups_current gauge
 ups_output_current <%=ups.output_current%>
 # TYPE ups_output_voltage gauge
