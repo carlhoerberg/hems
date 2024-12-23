@@ -31,13 +31,13 @@ class Devices
     def active_power
       pct = @modbus.read_holding_register(136) / 256.0 / 100.0
       rated = 500 # @modbus.read_holding_register(589)
-      (pct * rated).round(1)
+      (pct * rated).round
     end
 
     def apparent_power
       pct = @modbus.read_holding_register(138) / 256.0 / 100.0
       rated = 750 # @modbus.read_holding_register(588)
-      (pct * rated).round(1)
+      (pct * rated).round
     end
 
     def output_current
