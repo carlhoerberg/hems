@@ -41,7 +41,7 @@ class Devices
     end
 
     def output_current
-      (@modbus.read_holding_register(140) / 2.0**5).round(3)
+      (@modbus.read_holding_register(140) / 2.0**5).round(2)
     end
 
     def output_voltage
