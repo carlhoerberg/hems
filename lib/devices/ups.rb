@@ -12,6 +12,10 @@ class Devices
       @modbus.read_holding_registers(0, 2).to_u32
     end
 
+    def status_change_cause
+      @modbus.read_holding_register(2)
+    end
+
     def soc
       (@modbus.read_holding_register(130) / 2.0**9).round(1)
     end
