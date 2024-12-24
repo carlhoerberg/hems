@@ -25,7 +25,7 @@ class Devices
       loop do
         json, _from = udp.recvfrom(4096)
         begin
-          p data = JSON.parse(json)
+          data = JSON.parse(json)
           case data["method"]
           when "NotifyStatus", "NotifyFullStatus"
             notify_status(data["src"], data["params"])
