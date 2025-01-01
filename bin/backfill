@@ -1,0 +1,42 @@
+#!/usr/bin/env ruby
+require "time"
+
+path = ARGV.shift
+abort "Directory path required" unless path && Dir.exist?(path)
+
+puts "# TYPE acsource_total_consumed_energy counter"
+puts "# TYPE acload_total_consumed_energy counter"
+puts "# TYPE solar_total_energy counter"
+puts "# TYPE solar_day_sunshine counter"
+puts "# TYPE battery_total_charging_energy counter"
+puts "# TYPE battery_total_discharging_energy counter"
+puts "# TYPE battery_cycles counter"
+
+#labels = %(instance="100.65.214.90:8000",job="hems")
+Dir.glob(File.join(path, "**", "*.csv")).each do |csv|
+  File.open(csv) do |f|
+    until f.gets.start_with? "**DAY VALUES;"
+    end
+    2.times { f.gets }
+    values = f.gets.split(";")
+    time = Time.parse values[0]
+    ts = time.to_i
+    ts += 3600 if time.dst?
+    #ts *= 1000 # ms
+    puts %(acsource_total_consumed_energy{L="1"} #{values[405]} #{ts})
+    puts %(acsource_total_consumed_energy{L="2"} #{values[429]} #{ts})
+    puts %(acsource_total_consumed_energy{L="3"} #{values[453]} #{ts})
+    puts %(acload_total_consumed_energy{L="1"} #{values[47]} #{ts})
+    puts %(acload_total_consumed_energy{L="2"} #{values[71]} #{ts})
+    puts %(acload_total_consumed_energy{L="3"} #{values[95]} #{ts})
+    puts %(solar_total_energy{array="1"} #{values[575]} #{ts})
+    puts %(solar_total_energy{array="2"} #{values[580]} #{ts})
+    puts %(solar_day_sunshine{array="1"} #{values[585]} #{ts})
+    puts %(solar_day_sunshine{array="2"} #{values[590]} #{ts})
+    puts %(battery_total_charging_energy #{values[327]} #{ts})
+    puts %(battery_total_discharging_energy #{values[330]} #{ts})
+    puts %(battery_cycles #{values[340]} #{ts})
+  end
+end
+
+puts "# EOF"
