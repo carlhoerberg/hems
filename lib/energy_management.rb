@@ -194,7 +194,12 @@ class EnergyManagement
   def stop_genset
     puts "Turning of load to cool down"
     @devices.next3.acsource.disable
-    sleep 90
+    loop do
+      temp = @devices.genset.coolant_temperature
+      break if temp < 70
+      puts "Idling genset, temperature=#{temp}"
+      sleep 10
+    end
     puts "Stopping genset"
     @devices.genset.stop
     sleep 3
