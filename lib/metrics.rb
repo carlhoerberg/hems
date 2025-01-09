@@ -141,9 +141,11 @@ class PrometheusMetrics
         @devices.relays.open_air_vents
       when %r(/2$)
         @devices.genset.stop
+        @devices.genset.close_air_vents
       when %r(/3$)
         @devices.genset.close_air_vents
       when %r(/4$)
+        @devices.relays.open_air_vents
         @devices.genset.start
       else
         raise HTTPStatus::NotFound, "not found."
