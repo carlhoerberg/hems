@@ -112,7 +112,6 @@ class EnergyManagement
       elsif will_reach_full_battery_with_solar?(soc)
         puts "Battery will reach full charge with solar, stopping genset"
         stop_genset
-        @power_measurements.clear
       elsif overheated?
         puts "Overheated, stopping genset"
         stop_genset
@@ -210,6 +209,7 @@ class EnergyManagement
     puts "Restoring AC source values"
     @devices.next3.acsource.rated_current = 23 # safe for +0 outdoor temp
     @devices.next3.acsource.enable
+    @power_measurements.clear
   end
 
   def keep_hz
