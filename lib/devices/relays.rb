@@ -50,14 +50,20 @@ class Devices
       @modbus.write_coil(1, on_off)
     end
 
+    @air_vents_open = false
+
     def open_air_vents
+      return if @air_vents_open
       activate(3)
       activate(4)
+      @air_vents_open = true
     end
 
     def close_air_vents
+      return unless @air_vents_open
       deactivate(3)
       deactivate(4)
+      @air_vents_open = false
     end
   end
 end
