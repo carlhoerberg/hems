@@ -74,28 +74,6 @@ class EnergyManagement
     end
   end
 
-  # Heat as much as possible, start as early as possible during the day
-  # Turn heat on if expected kWh produced today covers:
-  # * Base load
-  # * Load shedding
-  # * Battery at 100% at the end of the solar day
-  # How many kWh needed to fill up the battery at the end of the day?
-  # How many kWh needed for base load for the rest of the day?
-  def heating
-    now = Time.now
-    midnight = Time.local(now.year, now.month, now.day) + (24 * 60 * 60)
-    hours_rest_of_today = (midnight - now) / 3600.0
-    expected_kwh_consumed_rest_of_today = baseload * hours_rest_of_today
-    expected_kwh_produced_rest_of_today = SolarForecast.new.expected.kwh_rest_of_today
-    kwh_to_fill_battery = BATTERY_KWH * (1 - @devices.next3.battery.soc / 100.0)
-    excess_kwh = expected_kwh_produced_rest_of_today -
-      kwh_to_fill_battery -
-      expected_kwh_consumed_rest_of_today
-    if excess_kwh.positive?
-      @devices.relays.heater_9kw = true
-    end
-  end
-
   BATTERY_KWH = 31.2
 
   def genset_support(soc = @devices.next3.battery.soc)
