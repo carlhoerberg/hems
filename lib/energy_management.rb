@@ -102,7 +102,7 @@ class EnergyManagement
         @devices.relays.close_air_vents
       end
       discharge_current = -@devices.next3.battery.charging_current
-      puts "discharge limit=#{discharge_limit} current=#{discharge_current} diff=#{discharge_limit - discharge_limit}"
+      #puts "discharge limit=#{discharge_limit} current=#{discharge_current} diff=#{discharge_limit - discharge_current}"
       #if discharge_limit - discharge_current < 100 || soc <= 6
       #  start_genset
       #end
