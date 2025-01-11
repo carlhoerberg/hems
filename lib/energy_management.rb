@@ -28,17 +28,13 @@ class EnergyManagement
     @stopped = true
   end
 
-  # Turn on the 9kw heater when solar is power limited
-  # Turn off if load > 16kw
-  # Turn off when SOC < 85
-  # Turn off if forecast doesn't expect us to reach 100% SOC at the end of the solar day
+  # Start water heaters when close to excess solar/battery capacity
   def load_shedding(soc = @devices.next3.battery.soc)
-    pc = phase_capacity
     if @devices.relays.heater_6kw?
       if soc <= 90
         puts "SOC #{soc}%, turning off 6kw heater"
         @devices.relays.heater_6kw = false
-      elsif pc.any? { |p| p < 0 }
+      elsif phase_capacity.any? { |p| p < 0 }
         puts "Over power, turning off 6kw heater"
         @devices.relays.heater_6kw = false
       #elsif @devices.next3.solar.total_power < 1000
@@ -46,7 +42,8 @@ class EnergyManagement
       #  @devices.relays.heater_6kw = false
       end
     else # 6kw heater is off
-      if soc > 95 && pc.all? { |p| p > 6000 / 3 } && @devices.next3.solar.total_power > 5000
+      if soc > 95 && @devices.next3.solar.total_power > 5000 &&
+          phase_capacity.all? { |p| p > 6000 / 3 }
         puts "Solar excess, turning on 6kw heater"
         @devices.relays.heater_6kw = true
       end
@@ -55,7 +52,7 @@ class EnergyManagement
       if soc <= 90
         puts "SOC #{soc}%, turning off 9kw heater"
         @devices.relays.heater_9kw = false
-      elsif pc.any? { |p| p < 0 }
+      elsif phase_capacity.any? { |p| p < 0 }
         puts "Over power, turning off 9kw heater"
         @devices.relays.heater_9kw = false
       #elsif @devices.next3.solar.total_power < 1000
@@ -63,7 +60,8 @@ class EnergyManagement
       #  @devices.relays.heater_9kw = false
       end
     else # 9kw heater is off
-      if soc > 95 && pc.all? { |p| p > 6000 / 3 } && @devices.next3.solar.total_power > 5000
+      if soc > 95 && @devices.next3.solar.total_power > 5000 &&
+          phase_capacity.all? { |p| p > 9000 / 3 }
         puts "Solar excess, turning on 9kw heater"
         @devices.relays.heater_9kw = true
       end
