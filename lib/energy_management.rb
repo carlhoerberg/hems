@@ -189,21 +189,37 @@ class EnergyManagement
     @power_measurements.clear
   end
 
+  # last time the acsource.rated_current was increased
+  @last_current_raise = Time.monotonic
+
   def keep_hz
-    hz = @devices.genset.frequency
-    if hz < 49.75
+    hz = @devices.genset.frequency # frequency from genset got 1 decimal
+    if hz <= 49.7
       rated_current = @devices.next3.acsource.rated_current
       puts "hz=#{hz} adjusting current down to #{rated_current - 1}"
       @devices.next3.acsource.rated_current = rated_current - 1
     elsif hz >= 50.6
       rated_current = @devices.next3.acsource.rated_current
-      if rated_current < 23 && # never try to draw more than 23A
-          # only adjust if inverter is drawing full power
+      # never try to draw more than 23A
+      if rated_current < 23
+        # increase max once per minute
+        if Time.monotonic - @last_current_raise > 60
+          # Only adjust if inverter is drawing full power
           # eg. not when ramping up, or battery is almost full
-          @devices.next3.acsource.current(1) > rated_current - 2
-        puts "hz=#{hz} adjusting current up to #{rated_current + 1}"
-        @devices.next3.acsource.rated_current = rated_current + 1
+          if @devices.next3.acsource.current(1) > rated_current - 2
+            puts "hz=#{hz} adjusting current up to #{rated_current + 1}"
+            @devices.next3.acsource.rated_current = rated_current + 1
+            @last_current_raise = Time.monotonic
+          end
+        end
       end
     end
+  end
+end
+
+class Time
+  # Monotonic seconds since boot
+  def self.monotonic
+    Process.clock_gettime(Process::CLOCK_MONOTONIC)
   end
 end
