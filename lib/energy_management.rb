@@ -118,7 +118,7 @@ class EnergyManagement
   def will_reach_full_battery_with_solar?(soc)
     # collect power measuremnts to be able to calculate an averge once in a while
     @power_measurements << @devices.next3.acload.total_apparent_power
-    puts "Got #{@power_measurements.size} power measurements, avg: #{@power_measurements.sum / @power_measurements.size / 1000.0}"
+    #puts "Got #{@power_measurements.size} power measurements, avg: #{@power_measurements.sum / @power_measurements.size / 1000.0}"
     return if @power_measurements.size < 60 / 5 # 1 minute, 5s interval measurements
 
     avg_power_kw = @power_measurements.sum / @power_measurements.size / 1000.0
