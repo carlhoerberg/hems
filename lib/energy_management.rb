@@ -15,7 +15,7 @@ class EnergyManagement
     @stopped = false
     @solar_forecast = SolarForecast.new
     @power_measurements = []
-    @last_current_raise = Time.monotonic # last time the acsource.rated_current was increased
+    @last_current_raise = 0 # last time the acsource.rated_current was increased
   end
 
   def start
