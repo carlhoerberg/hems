@@ -206,8 +206,8 @@ class EnergyManagement
       @devices.next3.acsource.rated_current = rated_current - 1
     elsif hz >= 50.6
       rated_current = @devices.next3.acsource.rated_current
-      # never try to draw more than 23A
-      if rated_current < 23
+      # never try to draw more than 25A
+      if rated_current < 25
         # increase max once per minute
         if Time.monotonic - @last_current_raise > 60
           # Only adjust if inverter is drawing full power
