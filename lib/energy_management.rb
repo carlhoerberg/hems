@@ -1,6 +1,13 @@
 require_relative "./devices"
 require_relative "./solar_forecast"
 
+class Time
+  # Monotonic seconds since boot
+  def self.monotonic
+    Process.clock_gettime(Process::CLOCK_MONOTONIC)
+  end
+end
+
 # Hållfjället energy management system
 class EnergyManagement
   def initialize(devices)
@@ -214,12 +221,5 @@ class EnergyManagement
         end
       end
     end
-  end
-end
-
-class Time
-  # Monotonic seconds since boot
-  def self.monotonic
-    Process.clock_gettime(Process::CLOCK_MONOTONIC)
   end
 end
