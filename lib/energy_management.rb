@@ -85,7 +85,9 @@ class EnergyManagement
 
   def genset_support(soc = @devices.next3.battery.soc)
     if @devices.genset.is_running?
-      @devices.relays.open_air_vents
+      @devices.relays.open_air_vents # should already be open, but make sure
+
+      keep_hz
 
       if @devices.next3.battery.errors != 0
         puts "Battery has errors, keeping genset running"
@@ -95,8 +97,6 @@ class EnergyManagement
       elsif will_reach_full_battery_with_solar?(soc)
         puts "Battery will reach full charge with solar, stopping genset"
         stop_genset
-      else
-        keep_hz
       end
     else # genset is not running
       discharge_limit = @devices.next3.battery.bms_recommended_discharging_current
@@ -105,6 +105,7 @@ class EnergyManagement
       else # close vents if genset is not running and we are ok on batteries
         @devices.relays.close_air_vents
       end
+
       discharge_current = -@devices.next3.battery.charging_current
       if discharge_limit - discharge_current < 100 || soc <= 7
         start_genset
