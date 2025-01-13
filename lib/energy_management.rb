@@ -95,9 +95,6 @@ class EnergyManagement
       elsif will_reach_full_battery_with_solar?(soc)
         puts "Battery will reach full charge with solar, stopping genset"
         stop_genset
-      elsif overheated?
-        puts "Overheated, stopping genset"
-        stop_genset
       else
         keep_hz
       end
@@ -150,11 +147,6 @@ class EnergyManagement
     false # if we get here we have not received full charge within 2 days
   end
 
-  def overheated?
-    temp = @devices.genset.coolant_temperature
-    91 < temp && temp < 200 # higher values are probably read errors
-  end
-
   def start_genset
     @devices.relays.open_air_vents
 
@@ -201,7 +193,13 @@ class EnergyManagement
 
   def keep_hz
     hz = @devices.genset.frequency # frequency from genset got 1 decimal
-    if hz <= 49.7
+    temp = @devices.genset.coolant_temperature
+
+    if temp >= 90
+      rated_current = @devices.next3.acsource.rated_current
+      puts "coolant_temperature=#{temp} adjusting current down to #{rated_current - 1}"
+      @devices.next3.acsource.rated_current = rated_current - 1
+    elsif hz <= 49.7
       rated_current = @devices.next3.acsource.rated_current
       puts "hz=#{hz} adjusting current down to #{rated_current - 1}"
       @devices.next3.acsource.rated_current = rated_current - 1
