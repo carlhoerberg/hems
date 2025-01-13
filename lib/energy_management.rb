@@ -96,17 +96,13 @@ class EnergyManagement
       end
     else # genset is not running
       discharge_limit = @devices.next3.battery.bms_recommended_discharging_current
-      if discharge_limit < 350 # open air vents well before any battery problems
+      if discharge_limit <= 350 # open air vents well before any battery problems
         @devices.relays.open_air_vents
       else # close vents if genset is not running and we are ok on batteries
         @devices.relays.close_air_vents
       end
       discharge_current = -@devices.next3.battery.charging_current
-      #puts "discharge limit=#{discharge_limit} current=#{discharge_current} diff=#{discharge_limit - discharge_current}"
-      #if discharge_limit - discharge_current < 100 || soc <= 6
-      #  start_genset
-      #end
-      if soc <= 10 || discharge_limit < 300
+      if discharge_limit - discharge_current < 100 || soc <= 7
         start_genset
       end
     end
