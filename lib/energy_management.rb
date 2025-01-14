@@ -89,11 +89,22 @@ class EnergyManagement
     end
   end
 
-  # if the current on any phase is >20A then the inverter needs support
+  # if the current on any phase is >20A for more than 25s the inverter needs support
   def high_phase_current?
-    @phase_current_history.shift while @phase_current_history.size > 12 # about 1 minute
+    @phase_current_history.shift while @phase_current_history.size >= 100
     @phase_current_history.push phase_current
-    @phase_current_history.any? { |phases| phases.any? { |phase| phase > 21 } }
+    (0..2).each do |phase|
+      streak = 0
+      @phase_current_history.each do |phases|
+        if phases[phase] > 20
+          streak += 1
+        else
+          streak = 0
+        end
+        return true if streak >= 5
+      end
+    end
+    false
   end
 
   BATTERY_KWH = 31.2
