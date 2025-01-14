@@ -91,7 +91,7 @@ class EnergyManagement
 
   # if the current on any phase is >20A then the inverter needs support
   def high_phase_current?
-    @phase_current_history.shift if @phase_current_history.size > 100 # about 10 minutes
+    @phase_current_history.shift if @phase_current_history.size > 12 # about 1 minute
     @phase_current_history.push phase_current
     @phase_current_history.any? { |phases| phases.any? { |phase| phase > 20 } }
   end
