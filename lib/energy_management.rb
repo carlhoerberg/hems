@@ -135,10 +135,12 @@ class EnergyManagement
       end
 
       discharge_current = -@devices.next3.battery.charging_current
-      if high_phase_current?
-        puts "Starting genset. High phase current, avoid voltage drop"
-        start_genset
-      elsif discharge_limit - discharge_current < 100 || soc <= 7
+      #if high_phase_current?
+      #  puts "Starting genset. High phase current, avoid voltage drop"
+      #  start_genset
+      #  return
+      #end
+      if discharge_limit - discharge_current < 100 || soc <= 7
         puts "Starting genset. SoC=#{soc}% discharge_limit=#{discharge_limit}A discharge_current=#{discharge_current}A"
         start_genset
       end
