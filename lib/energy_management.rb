@@ -189,7 +189,12 @@ class EnergyManagement
     @devices.genset.start
     sleep 3 # should have started in this time
     unless @devices.genset.is_running?
-      puts "Genset didn't start", "Status: #{@devices.genset.status}"
+      status = @devices.genset.status.select { |_, v| v }.keys
+      puts "Genset didn't start, status:", status
+      if status == [:general_alarm, :common_shutdown, :min_generator_frequency]
+        puts "Min generator frequency alarm, resetting"
+        @devices.genset.stop
+      end
       raise "Genset didn't start"
     end
 
