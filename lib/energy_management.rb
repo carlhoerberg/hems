@@ -236,7 +236,7 @@ class EnergyManagement
       rated_current = @devices.next3.acsource.rated_current
       puts "coolant_temperature=#{temp} adjusting current down to #{rated_current - 1}"
       @devices.next3.acsource.rated_current = rated_current - 1
-    elsif hz <= 49.6
+    elsif hz <= 49.5
       rated_current = @devices.next3.acsource.rated_current
       puts "hz=#{hz} adjusting current down to #{rated_current - 1}"
       @devices.next3.acsource.rated_current = rated_current - 1
