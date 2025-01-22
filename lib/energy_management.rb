@@ -140,7 +140,7 @@ class EnergyManagement
       #  start_genset
       #  return
       #end
-      if discharge_limit - discharge_current < 100 || soc <= 7
+      if discharge_limit - discharge_current < 130 || soc <= 7
         puts "Starting genset. SoC=#{soc}% discharge_limit=#{discharge_limit}A discharge_current=#{discharge_current}A"
         start_genset
       end
