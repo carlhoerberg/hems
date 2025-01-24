@@ -157,6 +157,9 @@ class Devices
           doc = REXML::Document.new(res.body, ignore_whitespace_nodes: :all)
           val = doc.root[0]
           val.text.to_f / val["scaleFactor"].to_i
+        when Net::HTTPBadRequest
+          puts "#{res.inspect} #{path}"
+          "NaN"
         else
           raise "HTTP response not 200 OK: #{res.inspect}"
         end
