@@ -7,10 +7,10 @@ $stdout.sync = true
 Thread.abort_on_exception = true
 devices = Devices.new
 em = EnergyManagement.new(devices)
-metrics = HTTPServer.new(devices)
+srv = HTTPServer.new(devices)
 
-trap('INT') { em.stop; metrics.stop }
-trap('TERM') { em.stop; metrics.stop }
+trap('INT') { em.stop; srv.stop }
+trap('TERM') { em.stop; srv.stop }
 em_thread = Thread.new { em.start }
-metrics.start
+srv.start
 em_thread.join

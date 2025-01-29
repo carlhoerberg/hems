@@ -3,6 +3,7 @@ require_relative "./http_server/metrics"
 require_relative "./http_server/relays"
 require_relative "./http_server/genset"
 require_relative "./http_server/button"
+require_relative "./http_server/topas"
 
 class HTTPServer
   def initialize(devices)
@@ -12,6 +13,7 @@ class HTTPServer
     @server.mount "/relays", RelaysControl, devices.relays
     @server.mount "/genset", GensetControl, devices.genset
     @server.mount "/button1", ButtonControl, devices
+    @server.mount "/topas", TopasControl, devices
     @server.mount_proc("/eta") do |_req, res|
       res.content_type = "application/xml"
       res.body = devices.eta.menu
