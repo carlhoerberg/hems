@@ -1,0 +1,38 @@
+<html>
+  <head>
+    <title>Topas</title>
+  </head>
+  <body>
+    <h1>Topas control</h1>
+    <form method="post">
+      <button name="action" value="reset_alarms">Reset alarms</button>
+    </form>
+    <h2>Configuration</h2>
+    <table>
+      <%configuration.each do |key, value|%>
+        <tr>
+          <td><%=key%></td>
+          <td><%=value%></td>
+        </tr>
+      <%end%>
+    </table>
+    <h2>Status</h2>
+    <table>
+      <%status.each do |key, value|%>
+        <tr>
+          <td><%=key%></td>
+          <td><%=value%></td>
+        </tr>
+      <%end%>
+    </table>
+    <h2>Measurments</h2>
+    <table>
+      <%measurements.each do |key, value|%>
+        <tr>
+          <td><%=key%></td>
+          <td><%=value%></td>
+        </tr>
+      <%end%>
+    </table>
+  </body>
+</html>
