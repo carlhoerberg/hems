@@ -5,7 +5,7 @@ class HTTPServer
       @topas = topas
     end
 
-    @@view = ERB.new(File.read(File.join(__dir__, "..", "views", "topas_control.erb")))
+    @@view = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "topas_control.erb")))
 
     def do_GET(req, res)
       res.content_type = "text/html"
