@@ -1,13 +1,13 @@
 #!/usr/bin/env ruby
 require_relative "../lib/devices"
-require_relative "../lib/metrics"
+require_relative "../lib/http_server"
 require_relative "../lib/energy_management"
 
 $stdout.sync = true
 Thread.abort_on_exception = true
 devices = Devices.new
 em = EnergyManagement.new(devices)
-metrics = PrometheusMetrics.new(devices)
+metrics = HTTPServer.new(devices)
 
 trap('INT') { em.stop; metrics.stop }
 trap('TERM') { em.stop; metrics.stop }
