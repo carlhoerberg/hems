@@ -7,14 +7,14 @@ class HTTPServer
       @devices = devices
     end
 
-    @@next3 = ERB.new(File.read(File.join(__dir__, "..", "views", "next3.erb")))
-    @@genset = ERB.new(File.read(File.join(__dir__, "..", "views", "genset.erb")))
-    @@eta = ERB.new(File.read(File.join(__dir__, "..", "views", "eta.erb")))
-    @@starlink = ERB.new(File.read(File.join(__dir__, "..", "views", "starlink.erb")))
-    @@shelly = ERB.new(File.read(File.join(__dir__, "..", "views", "shelly.erb")))
-    @@ups = ERB.new(File.read(File.join(__dir__, "..", "views", "ups.erb")))
-    @@unifi = ERB.new(File.read(File.join(__dir__, "..", "views", "unifi.erb")))
-    @@topas = ERB.new(File.read(File.join(__dir__, "..", "views", "topas.erb")))
+    @@next3 = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "next3.erb")))
+    @@genset = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "genset.erb")))
+    @@eta = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "eta.erb")))
+    @@starlink = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "starlink.erb")))
+    @@shelly = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "shelly.erb")))
+    @@ups = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "ups.erb")))
+    @@unifi = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "unifi.erb")))
+    @@topas = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "topas.erb")))
 
     def do_GET(req, res)
       res.content_type = "text/plain"

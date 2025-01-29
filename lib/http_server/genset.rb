@@ -5,7 +5,7 @@ class HTTPServer
       @genset = genset
     end
 
-    @@view = ERB.new(File.read(File.join(__dir__, "..", "views", "genset_control.erb")))
+    @@view = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "genset_control.erb")))
 
     def do_GET(req, res)
       case req.path
