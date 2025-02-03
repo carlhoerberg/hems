@@ -28,7 +28,7 @@ class Devices
 
     def main_pack_response
       _unit, _function, len = @serial.read(3).unpack("CCC")
-      values = @serial.read(len).unpack("S>*")
+      values = @serial.read(len).unpack("s>*")
       _crc1, _crc2 = @serial.read(2).unpack("CC")
       {
         cell_num: values[6],
@@ -66,7 +66,7 @@ class Devices
 
     def battery_pack_response
       _unit, _function, len = @serial.read(3).unpack("CCC")
-      values = @serial.read(len).unpack("S>*")
+      values = @serial.read(len).unpack("s>*")
       _crc1, _crc2 = @serial.read(2).unpack("CC")
       {
         sys_vol: values[0] / 10.0,
