@@ -41,11 +41,11 @@ class Devices
         SysRunTim: values[11, 2].pack("n*").unpack1("L>"),
         SysVol: values[13],
         Current: values[14],
-        MaxTmp: values[15],
-        MinTmp: values[16],
+        MaxTmp: values[15] - 40,
+        MinTmp: values[16] - 40,
         MaxVol: values[17],
         MinVol: values[18],
-        SocValue: values[19],
+        SocValue: values[19] / 2.5,
         FactCap: values[20],
         VolValue_0: values[21] / 1000.0,
         VolValue_1: values[22] / 1000.0,
@@ -71,14 +71,14 @@ class Devices
       values = @serial.read(len).unpack("n*")
       _crc1, _crc2 = @serial.read(2).unpack("CC")
       {
-        sys_vol: values[0],
-        current: values[1],
-        max_tmp: values[2],
-        min_tmp: values[3],
-        max_vol: values[4],
-        min_vol: values[5],
-        soc_value: values[6],
-        fact_cap: values[7],
+        sys_vol: values[0] / 100.0,
+        current: values[1] / 100.0,
+        max_tmp: values[2] / 100.0,
+        min_tmp: values[3] / 100.0,
+        max_vol: values[4] / 1000.0,
+        min_vol: values[5] / 1000.0,
+        soc_value: values[6] / 2.5,
+        fact_cap: values[7], # factory capacity (Ah)
       }
     end
   end
