@@ -38,7 +38,7 @@ class Devices
         boot_version: values[8],
         soft_version: values[9],
         hard_version: values[10],
-        sys_runtime: values[11, 2].pack("n*").unpack1("L<"),
+        sys_runtime: values[11, 2], #.pack("n*").unpack1("L<"),
         sys_vol: values[13] / 100.0,
         current: values[14] / 100.0,
         max_tmp: values[15] - 40,
