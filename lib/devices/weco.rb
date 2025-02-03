@@ -30,7 +30,7 @@ class Devices
 
     def main_pack_response
       _unit, _function, len = @serial.read(3).unpack("CCC")
-      values = @serial.read(len).unpack("n*")
+      values = @serial.read(len).unpack("S>*")
       _crc1, _crc2 = @serial.read(2).unpack("CC")
       {
         cell_num: values[6],
@@ -38,7 +38,7 @@ class Devices
         boot_version: values[8],
         soft_version: values[9],
         hard_version: values[10],
-        sys_runtime: values[11, 2], #.pack("n*").unpack1("L<"),
+        sys_runtime: values[11] + values[12] << 16,
         sys_vol: values[13] / 100.0,
         current: values[14] / 100.0,
         max_tmp: values[15] - 40,
@@ -68,7 +68,7 @@ class Devices
 
     def battery_pack_response
       _unit, _function, len = @serial.read(3).unpack("CCC")
-      values = @serial.read(len).unpack("n*")
+      values = @serial.read(len).unpack("S>*")
       _crc1, _crc2 = @serial.read(2).unpack("CC")
       {
         sys_vol: values[0] / 10.0,
