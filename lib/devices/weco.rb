@@ -8,20 +8,20 @@ class Devices
     end
 
     def status
-      packs = Array.new(6)
+      modules = []
       @serial.write "\x01\x03\x00\x01\x00\x26\x1c\x2a"
-      packs << main_pack_response
+      modules << main_pack_response
       @serial.write "\x01\x03\x00\x79\x00\x0a\x1c\x6a" # module 1
-      packs << battery_pack_response
+      modules << battery_pack_response
       @serial.write "\x01\x03\x00\x83\x00\x0a\x1c\x5a" # module 2
-      packs << battery_pack_response
+      modules << battery_pack_response
       @serial.write "\x01\x03\x00\x8d\x00\x0a\x1c\x18"
-      packs << battery_pack_response
+      modules << battery_pack_response
       @serial.write "\x01\x03\x00\x97\x00\x0a\x1c\x5a"
-      packs << battery_pack_response
+      modules << battery_pack_response
       @serial.write "\x01\x03\x00\xa1\x00\x0a\x1c\x50"
-      packs << battery_pack_response
-      packs
+      modules << battery_pack_response
+      modules
     end
 
     private
