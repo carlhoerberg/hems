@@ -4,7 +4,6 @@
 # TYPE weco_min_temp gauge
 # TYPE weco_max_voltage gauge
 # TYPE weco_min_voltage gauge
-# TYPE weco_sys_voltage gauge
 <%status.each_with_index do |s, i|%>
 weco_soc{module="<%=i%>"} <%=s[:soc_value]%>
 weco_current{module="<%=i%>"} <%=s[:current]%>
@@ -12,7 +11,6 @@ weco_max_temp{module="<%=i%>"} <%=s[:max_tmp]%>
 weco_min_temp{module="<%=i%>"} <%=s[:min_tmp]%>
 weco_max_voltage{module="<%=i%>"} <%=s[:max_vol]%>
 weco_min_voltage{module="<%=i%>"} <%=s[:min_vol]%>
-weco_sys_voltage{module="<%=i%>"} <%=s[:sys_vol]%>
 <%end%>
 
 # TYPE metrics_gather_time gauge
