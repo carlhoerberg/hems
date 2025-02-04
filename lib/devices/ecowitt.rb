@@ -9,7 +9,12 @@ class Devices
     end
 
     def temperature
-      @m.read_input_register(0x0167)
+      v = @m.read_holding_register(0x0167)
+      ((v - 400) / 10.0).round(1)
+    end
+
+    def measurements
+      @m.read_holding_registers(0x0165, 9)
     end
   end
 end
