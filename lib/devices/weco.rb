@@ -5,22 +5,25 @@ class Devices
     def initialize
       device = Dir.glob("/dev/ttyUSB0").first || raise("No serial device found")
       @serial = UART.open(device, 115200)
+      @lock = Mutex.new
     end
 
     def status
       modules = []
-      @serial.write "\x01\x03\x00\x01\x00\x26\x1c\x2a"
-      modules << main_pack_response
-      @serial.write "\x01\x03\x00\x79\x00\x0a\x1c\x6a" # module 1
-      modules << battery_pack_response
-      @serial.write "\x01\x03\x00\x83\x00\x0a\x1c\x5a" # module 2
-      modules << battery_pack_response
-      @serial.write "\x01\x03\x00\x8d\x00\x0a\x1c\x18"
-      modules << battery_pack_response
-      @serial.write "\x01\x03\x00\x97\x00\x0a\x1c\x5a"
-      modules << battery_pack_response
-      @serial.write "\x01\x03\x00\xa1\x00\x0a\x1c\x50"
-      modules << battery_pack_response
+      @lock.synchronize do
+        @serial.write "\x01\x03\x00\x01\x00\x26\x1c\x2a"
+        modules << main_pack_response
+        @serial.write "\x01\x03\x00\x79\x00\x0a\x1c\x6a" # module 1
+        modules << battery_pack_response
+        @serial.write "\x01\x03\x00\x83\x00\x0a\x1c\x5a" # module 2
+        modules << battery_pack_response
+        @serial.write "\x01\x03\x00\x8d\x00\x0a\x1c\x18"
+        modules << battery_pack_response
+        @serial.write "\x01\x03\x00\x97\x00\x0a\x1c\x5a"
+        modules << battery_pack_response
+        @serial.write "\x01\x03\x00\xa1\x00\x0a\x1c\x50"
+        modules << battery_pack_response
+      end
       modules
     end
 
