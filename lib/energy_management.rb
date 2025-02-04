@@ -119,7 +119,7 @@ class EnergyManagement
         puts "High phase current, keeping genset running"
       elsif @devices.next3.battery.errors != 0
         puts "Battery has errors, keeping genset running"
-      elsif soc >= 97
+      elsif @devices.weco.status.map { |s| s[:soc_value] }.min >= 97
         puts "SoC #{soc}%, battery current limited, stopping genset"
         stop_genset
       elsif will_reach_full_battery_with_solar?(soc)
