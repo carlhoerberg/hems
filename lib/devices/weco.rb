@@ -37,10 +37,12 @@ class Devices
       modules
     end
 
-    def test
+    def self.test
       puts "\x01\x03\x00\x01\x00\x26\x1c\x2a".dump
       unit = 1
       function = 3
+      addr = 0x01
+      count = 0x26
       request = [unit, function, addr, count].pack("CCnn")
       puts (request + checksum(request)).dump
     end
@@ -139,6 +141,12 @@ class Devices
       raise("Unexpected response, function #{rfunction} != #{function}") if rfunction != function
       raise("Unexpected response, crc: #{crc.dump} != #{checksum(response).dump}") if rchecksum != checksum(response)
       values
+    end
+
+    def self.checksum(data)
+      sum = data.each_byte.sum # sum bytes
+      lrc = (sum & 0xFF) ^ 0xFF # two's complement
+      [0x1c, lrc].pack("CC")
     end
 
     def checksum(data)
