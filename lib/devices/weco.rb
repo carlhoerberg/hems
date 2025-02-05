@@ -3,8 +3,7 @@ require "uart"
 class Devices
   class Weco
     def initialize
-      device = Dir.glob("/dev/ttyUSB0").first || raise("No serial device found")
-      @serial = UART.open(device, 115200)
+      @serial = UART.open("/dev/ttyUSB0", 115200)
       @lock = Mutex.new
     end
 
