@@ -37,6 +37,14 @@ class Devices
       modules
     end
 
+    def test
+      puts "\x01\x03\x00\x01\x00\x26\x1c\x2a".dump
+      unit = 1
+      function = 3
+      request = [unit, function, addr, count].pack("CCnn")
+      puts (request + checksum(request)).dump
+    end
+
     private
 
     def main_pack_response
@@ -94,15 +102,15 @@ class Devices
     end
 
     def master_status
-      values = read_holding_registers(14, 7)
+      values = read_holding_registers(0x01, 0x26)
       {
-        sys_vol: values[0] / 100.0,
-        current: values[1] / 100.0,
-        max_tmp: values[2] - 40,
-        min_tmp: values[3] - 40,
-        max_vol: values[4] / 1000.0,
-        min_vol: values[5] / 1000.0,
-        soc_value: values[6] / 2.5,
+        sys_vol: values[13] / 100.0,
+        current: values[14] / 100.0,
+        max_tmp: values[15] - 40,
+        min_tmp: values[16] - 40,
+        max_vol: values[17] / 1000.0,
+        min_vol: values[18] / 1000.0,
+        soc_value: values[19] / 2.5,
       }
     end
 
@@ -125,7 +133,7 @@ class Devices
       request = [unit, function, addr, count].pack("CCnn")
       @serial.write request, checksum(request)
 
-      response = @serial.read(5 + count * 2)
+      response = @serial.read(5 + count * 2) || raise(IO::EOFError.new)
       runit, rfunction, _len, values, crc = response.unpack("CCCs>#{count}CC")
       raise("Unexpected response, unit #{runit} != #{unit}") if runit != unit
       raise("Unexpected response, function #{rfunction} != #{function}") if rfunction != function
