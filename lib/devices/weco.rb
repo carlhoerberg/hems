@@ -25,6 +25,10 @@ class Devices
         @serial.flock(File::LOCK_EX)
         begin
           yield @serial
+        rescue
+          @serial.close
+          @serial = nil
+          raise
         ensure
           @serial.flock(File::LOCK_UN)
         end
