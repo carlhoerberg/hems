@@ -6,7 +6,7 @@ class Devices
       @serial = UART.open("/dev/ttyUSB0", 115200)
       @lock = Mutex.new
       @key = 0x85F9 # rand(0xFFFF)
-      #set_key(0)
+      set_key(0)
       set_key
     end
 
