@@ -3,7 +3,6 @@ require "uart"
 class Devices
   class Weco
     def initialize
-      @serial = UART.open("/dev/ttyUSB0", 115200)
       @lock = Mutex.new
       @key = 0x85F9 # rand(0xFFFF)
       #set_key
@@ -20,13 +19,12 @@ class Devices
       modules
     end
 
-    private
-
     def lock(&)
       @lock.synchronize do
+        @serial ||= UART.open("/dev/ttyUSB0", 115200)
         @serial.flock(File::LOCK_EX)
         begin
-          yield
+          yield @serial
         ensure
           @serial.flock(File::LOCK_UN)
         end
