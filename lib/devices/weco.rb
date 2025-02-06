@@ -29,7 +29,7 @@ class Devices
           @serial.close
           @serial = nil
           raise
-        ensure
+        else
           @serial.flock(File::LOCK_UN)
         end
       end
