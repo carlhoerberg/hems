@@ -6,11 +6,10 @@ class Devices
       @serial = UART.open("/dev/ttyUSB0", 115200)
       @lock = Mutex.new
       @key = 0x85F9 # rand(0xFFFF)
-      set_key(0)
-      set_key
+      #set_key
     end
 
-    def status
+    def status_old
       modules = []
       @lock.synchronize do
         @serial.write "\x01\x03\x00\x01\x00\x26\x1c\x2a"
@@ -29,7 +28,7 @@ class Devices
       modules
     end
 
-    def status2
+    def status
       modules = []
       @lock.synchronize do
         modules << master_status
