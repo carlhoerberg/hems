@@ -9,7 +9,7 @@ class Devices
       #set_key
     end
 
-    def status
+    def status3
       modules = []
       lock do
         @serial.write "\x01\x03\x00\x01\x00\x26\x1c\x2a"
@@ -28,7 +28,7 @@ class Devices
       modules
     end
 
-    def status2
+    def status
       modules = []
       lock do
         modules << master_status
