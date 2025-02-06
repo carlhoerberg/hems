@@ -5,9 +5,9 @@ class Devices
     def initialize
       @serial = UART.open("/dev/ttyUSB0", 115200)
       @lock = Mutex.new
-      @key = 0xD7D9 # rand(0xFFFF)
+      @key = 0x85F9 # rand(0xFFFF)
       #set_key(0)
-      #set_key
+      set_key
     end
 
     def status
@@ -128,7 +128,7 @@ class Devices
       request = [unit, function, addr, count].pack("CCS>S>")
       @serial.write request, [checksum(request)].pack("S<")
 
-      response = @serial.read(5 + count * 2) || raise(IO::EOFError.new)
+      response = @serial.read(5 + count * 2) || raise(EOFError.new)
       runit, rfunction, _len, values, crc = response.unpack("CCCs>#{count}S<")
       raise("Unexpected response, unit #{runit} != #{unit}") if runit != unit
       raise("Unexpected response, function #{rfunction} != #{function}") if rfunction != function
@@ -137,8 +137,8 @@ class Devices
     end
 
     def set_key(key = @key)
-      @serial.write [0, 3, key, 0].pack("CCS>S>")
-      response = @serial.read(8) || raise(IO::EOFError.new)
+      @serial.write [0, 3, key, 1].pack("CCS>S>")
+      response = @serial.read(8) || raise(EOFError.new)
       unit, func, addr, len, crc = response.unpack("CCS>S>S<")
       raise("Unexpected response: #{response.dump}") if unit != 1 || func != 3 || addr != 0x0323 || len != 0 || crc != checksum(response.byteslice(0..-3), key)
     end
