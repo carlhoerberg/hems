@@ -36,15 +36,15 @@ class Devices
     end
 
     def master_status
-      values = read_holding_registers(0x01, 0x26)
+      values = read_holding_registers(14, 7)
       {
-        sys_vol: values[13] / 100.0,
-        current: values[14] / 100.0,
-        max_tmp: values[15] - 40,
-        min_tmp: values[16] - 40,
-        max_vol: values[17] / 1000.0,
-        min_vol: values[18] / 1000.0,
-        soc_value: values[19] / 2.5,
+        sys_vol: values[0] / 100.0,
+        current: values[1] / 100.0,
+        max_tmp: values[2] - 40,
+        min_tmp: values[3] - 40,
+        max_vol: values[4] / 1000.0,
+        min_vol: values[5] / 1000.0,
+        soc_value: values[6] / 2.5,
       }
     end
 
