@@ -138,14 +138,16 @@ class Devices
       request = [unit, function, addr, count].pack("CCS>S>")
       @serial.write request, [checksum(request)].pack("S<")
 
-      response = @serial.read(3 + count * 2) || raise(EOFError.new)
-      runit, rfunction, len, values = response.unpack("CCCs>#{count}")
+      head = @serial.read(3) || raise(EOFError.new)
+      runit, rfunction, len = head.unpack("CCC")
       raise("Unexpected response, unit #{runit} != #{unit}") if runit != unit
       raise("Unexpected response, function #{rfunction} != #{function}") if rfunction != function
       raise("Unexpected response, len #{len} != #{count} * 2") if len != count * 2
+      data = @serial.read(len) || raise(EOFError.new)
       crc = @serial.read(2).unpack1("S<")
-      warn "CRC mismatch: #{crc} != #{checksum(response)}" if crc != checksum(response)
-      values
+      expected_crc = checksum(head + data)
+      warn "CRC mismatch: #{crc} != #{expected_crc}" if crc != expected_crc
+      data.unpack("s>*")
     end
 
     def set_key(key = @key)
