@@ -5,6 +5,8 @@ class Devices
     def initialize
       @serial = UART.open("/dev/ttyUSB0", 115200)
       @lock = Mutex.new
+      @key = 0xD7D9 # rand(0xFFFF)
+      set_key
     end
 
     def status
@@ -35,16 +37,6 @@ class Devices
         end
       end
       modules
-    end
-
-    def self.test
-      puts "\x01\x03\x00\x01\x00\x26\x1c\x2a".dump
-      unit = 1
-      function = 3
-      addr = 0x01
-      count = 0x26
-      request = [unit, function, addr, count].pack("CCnn")
-      puts (request + checksum(request)).dump
     end
 
     private
@@ -132,27 +124,37 @@ class Devices
     def read_holding_registers(addr, count)
       unit = 1
       function = 3
-      request = [unit, function, addr, count].pack("CCnn")
-      @serial.write request, checksum(request)
+      request = [unit, function, addr, count].pack("CCS>S>")
+      @serial.write request, [checksum(request)].pack("S<")
 
       response = @serial.read(5 + count * 2) || raise(IO::EOFError.new)
-      runit, rfunction, _len, values, crc = response.unpack("CCCs>#{count}CC")
+      runit, rfunction, _len, values, crc = response.unpack("CCCs>#{count}S<")
       raise("Unexpected response, unit #{runit} != #{unit}") if runit != unit
       raise("Unexpected response, function #{rfunction} != #{function}") if rfunction != function
-      raise("Unexpected response, crc: #{crc.dump} != #{checksum(response).dump}") if rchecksum != checksum(response)
+      raise("Unexpected response, crc: #{crc.dump} != #{checksum(response.byteslice(0..-3)).dump}") if crc != checksum(response.byteslice(0..-3))
       values
     end
 
-    def self.checksum(data)
-      sum = data.each_byte.sum # sum bytes
-      lrc = (sum & 0xFF) ^ 0xFF # two's complement
-      [0x1c, lrc].pack("CC")
+    def set_key(key = @key)
+      @serial.write [0, 3, key, 0].pack("CCS>S>")
+      response = @serial.read(8) || raise(IO::EOFError.new)
+      unit, func, addr, len, crc = response.unpack("CCS>S>S<")
+      raise("Unexpected response: #{response.dump}") if unit != 1 || func != 3 || addr != 0x0323 || len != 0 || crc != checksum(response.byteslice(0..-3))
     end
 
     def checksum(data)
-      sum = data.each_byte.sum # sum bytes
-      lrc = (sum & 0xFF) ^ 0xFF # two's complement
-      [0x1c, lrc].pack("CC")
+      crc = 0xFFFF
+      data.each_byte do |byte|
+        crc ^= byte
+        8.times do
+          if (crc & 1) != 0
+            crc = (crc >> 1) ^ 0xA001
+          else
+            crc >>= 1
+          end
+        end
+      end
+      (~(crc | @key) + 26) & 0xFFFF
     end
 
     def warn_response
