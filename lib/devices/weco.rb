@@ -142,7 +142,7 @@ class Devices
       runit, rfunction, _len, values, crc = response.unpack("CCCs>#{count}S<")
       raise("Unexpected response, unit #{runit} != #{unit}") if runit != unit
       raise("Unexpected response, function #{rfunction} != #{function}") if rfunction != function
-      raise("Unexpected response, crc: #{crc.dump} != #{checksum(response.byteslice(0..-3)).dump}") if crc != checksum(response.byteslice(0..-3))
+      raise("Unexpected response, crc: #{crc} != #{checksum(response.byteslice(0..-3))}") if crc != checksum(response.byteslice(0..-3))
       values
     end
 
