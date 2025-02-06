@@ -138,7 +138,7 @@ class Devices
       request = [unit, function, addr, count].pack("CCS>S>")
       @serial.write request, [checksum(request)].pack("S<")
 
-      response = @serial.read(5 + count * 2) || raise(EOFError.new)
+      response = @serial.read(3 + count * 2) || raise(EOFError.new)
       runit, rfunction, len, values, crc = response.unpack("CCCs>#{count}")
       raise("Unexpected response, unit #{runit} != #{unit}") if runit != unit
       raise("Unexpected response, function #{rfunction} != #{function}") if rfunction != function
