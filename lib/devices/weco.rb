@@ -19,6 +19,20 @@ class Devices
       modules
     end
 
+    def total_status
+      lock do
+        values = read_holding_registers(203, 7)
+        {
+          charge_current_recommended: values[0] / 100.0,
+          discharge_current_limit: values[1] / 100.0,
+          current: values[2] / 100.0,
+          soc: values[3] / 2.5,
+          forced_state: values[4],
+          forced_seconds: values[5, 2].pack("n2").unpack1("L>") / 10.0,
+        }
+      end
+    end
+
     def lock(&)
       @lock.synchronize do
         @serial ||= UART.open("/dev/ttyUSB0", 115200)
