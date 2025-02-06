@@ -11,7 +11,7 @@ class Devices
 
     def status
       modules = []
-      @lock.synchronize do
+      lock do
         @serial.write "\x01\x03\x00\x01\x00\x26\x1c\x2a"
         modules << main_pack_response
         @serial.write "\x01\x03\x00\x79\x00\x0a\x1c\x6a" # module 1
@@ -30,7 +30,7 @@ class Devices
 
     def status2
       modules = []
-      @lock.synchronize do
+      lock do
         modules << master_status
         (1..5).each do |s|
           modules << slave_status(s)
@@ -40,6 +40,17 @@ class Devices
     end
 
     private
+
+    def lock(&)
+      @lock.synchronize do
+        @serial.flock(File::LOCK_EX)
+        begin
+          yield
+        ensure
+          @serial.flock(File::LOCK_UN)
+        end
+      end
+    end
 
     def main_pack_response
       _unit, _function, len = @serial.read(3).unpack("CCC")
