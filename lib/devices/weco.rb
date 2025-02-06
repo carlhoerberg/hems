@@ -9,7 +9,7 @@ class Devices
       #set_key
     end
 
-    def status_old
+    def status
       modules = []
       @lock.synchronize do
         @serial.write "\x01\x03\x00\x01\x00\x26\x1c\x2a"
@@ -28,7 +28,7 @@ class Devices
       modules
     end
 
-    def status
+    def status2
       modules = []
       @lock.synchronize do
         modules << master_status
