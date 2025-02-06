@@ -23,7 +23,7 @@ module Modbus
       try = 0
       @@lock.synchronize do
         @response = ""
-        serial.write request, CRC16.crc16(request)
+        serial.write request, CRC16.compute(request)
         unit, function = read(2).unpack("CC")
         request_unit, request_function = request[0..1].unpack("CC")
         raise ProtocolException, "Invalid unit response" if unit != request_unit && request_unit != 0
@@ -31,7 +31,7 @@ module Modbus
         check_exception!(function)
         result = yield
         checksum = @@serial.readpartial(2) # crc16 bytes
-        warn "Invalid CRC16" if checksum != CRC16.crc16(@response)
+        warn "Invalid CRC16" if checksum != CRC16.compute(@response)
         result
       rescue ProtocolException, IOError, SystemCallError => e
         close

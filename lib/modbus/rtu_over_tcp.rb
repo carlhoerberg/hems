@@ -10,7 +10,7 @@ module Modbus
       try = 0
       @lock.synchronize do
         @response = ""
-        socket.write request, CRC16.crc16(request)
+        socket.write request, CRC16.compute(request)
         unit, function = read(2).unpack("CC")
         request_unit, request_function = request[0..1].unpack("CC")
         raise ProtocolException, "Invalid unit response" if unit != request_unit
@@ -18,7 +18,7 @@ module Modbus
         check_exception!(function)
         result = yield
         checksum = read(2) # crc16 bytes
-        warn "Invalid CRC16" if checksum != CRC16.crc16(@response[0..-3])
+        warn "Invalid CRC16" if checksum != CRC16.compute(@response[0..-3])
         result
       rescue ProtocolException, IOError, SystemCallError => e
         close
