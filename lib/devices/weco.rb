@@ -6,7 +6,8 @@ class Devices
       @serial = UART.open("/dev/ttyUSB0", 115200)
       @lock = Mutex.new
       @key = 0xD7D9 # rand(0xFFFF)
-      set_key
+      #set_key(0)
+      #set_key
     end
 
     def status
@@ -139,10 +140,10 @@ class Devices
       @serial.write [0, 3, key, 0].pack("CCS>S>")
       response = @serial.read(8) || raise(IO::EOFError.new)
       unit, func, addr, len, crc = response.unpack("CCS>S>S<")
-      raise("Unexpected response: #{response.dump}") if unit != 1 || func != 3 || addr != 0x0323 || len != 0 || crc != checksum(response.byteslice(0..-3))
+      raise("Unexpected response: #{response.dump}") if unit != 1 || func != 3 || addr != 0x0323 || len != 0 || crc != checksum(response.byteslice(0..-3), key)
     end
 
-    def checksum(data)
+    def checksum(data, key = @key)
       crc = 0xFFFF
       data.each_byte do |byte|
         crc ^= byte
@@ -154,7 +155,7 @@ class Devices
           end
         end
       end
-      (~(crc | @key) + 26) & 0xFFFF
+      (~(crc | key) + 26) & 0xFFFF
     end
 
     def warn_response
