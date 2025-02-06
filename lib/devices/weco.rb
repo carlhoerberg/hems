@@ -139,18 +139,22 @@ class Devices
       @serial.write request, [checksum(request)].pack("S<")
 
       response = @serial.read(5 + count * 2) || raise(EOFError.new)
-      runit, rfunction, _len, values, crc = response.unpack("CCCs>#{count}S<")
+      runit, rfunction, len, values, crc = response.unpack("CCCs>#{count}")
       raise("Unexpected response, unit #{runit} != #{unit}") if runit != unit
       raise("Unexpected response, function #{rfunction} != #{function}") if rfunction != function
-      raise("Unexpected response, crc: #{crc} != #{checksum(response.byteslice(0..-3))}") if crc != checksum(response.byteslice(0..-3))
+      raise("Unexpected response, len #{len} != #{count} * 2") if len != count * 2
+      crc = @serial.read(2).unpack("S<")
+      warn "CRC mismatch: #{crc} != #{checksum(response)}" if crc != checksum(response)
       values
     end
 
     def set_key(key = @key)
       @serial.write [0, 3, key, 1].pack("CCS>S>")
       response = @serial.read(8) || raise(EOFError.new)
-      unit, func, addr, len, crc = response.unpack("CCS>S>S<")
-      raise("Unexpected response: #{response.dump}") if unit != 1 || func != 3 || addr != 0x0323 || len != 0 || crc != checksum(response.byteslice(0..-3), key)
+      unit, func, addr, len, crc = response.unpack("CCS>S>")
+      raise("Unexpected response: #{response.dump}") if unit != 1 || func != 3 || addr != 0x0323 || len != 0
+      crc = @serial.read(2).unpack("S<")
+      raise("Unexpected crc #{crc} != #{checksum(response, key)}") if crc != checksum(response, key)
     end
 
     def checksum(data, key = @key)
