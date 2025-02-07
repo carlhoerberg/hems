@@ -4,14 +4,23 @@
 # TYPE weco_min_temp gauge
 # TYPE weco_max_voltage gauge
 # TYPE weco_min_voltage gauge
-<%status.each_with_index do |s, i|%>
-weco_soc{module="<%=i%>"} <%=s[:soc_value]%>
-weco_current{module="<%=i%>"} <%=s[:current]%>
-weco_max_temp{module="<%=i%>"} <%=s[:max_tmp]%>
-weco_min_temp{module="<%=i%>"} <%=s[:min_tmp]%>
-weco_max_voltage{module="<%=i%>"} <%=s[:max_vol]%>
-weco_min_voltage{module="<%=i%>"} <%=s[:min_vol]%>
+<%modules.each_with_index do |m, i|%>
+weco_soc{module="<%=i%>"} <%=m[:soc_value]%>
+weco_current{module="<%=i%>"} <%=m[:current]%>
+weco_max_temp{module="<%=i%>"} <%=m[:max_tmp]%>
+weco_min_temp{module="<%=i%>"} <%=m[:min_tmp]%>
+weco_max_voltage{module="<%=i%>"} <%=m[:max_vol]%>
+weco_min_voltage{module="<%=i%>"} <%=m[:min_vol]%>
 <%end%>
+
+# TYPE weco_discharge_current_limit gauge
+weco_discharge_current_limit <%=total.discharge_current_limit%>
+
+# TYPE weco_charge_current_recommended gauge
+weco_charge_current_recommended <%=total.charge_current_recommended%>
+
+# TYPE weco_forced_state gauge
+weco_forced_state <%=total.forced_state%>
 
 # TYPE metrics_gather_time gauge
 metrics_gather_time{device="weco"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>
