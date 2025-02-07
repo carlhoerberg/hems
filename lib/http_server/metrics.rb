@@ -27,7 +27,7 @@ class HTTPServer
         Thread.new { @@ups.result_with_hash({ t:, ups: @devices.ups }) },
         Thread.new { @@unifi.result_with_hash({ t:, unifi_health: @devices.unifi.health }) },
         Thread.new { @@topas.result_with_hash({ t:, measurements: @devices.topas.measurements, status: @devices.topas.status }) },
-        Thread.new { @@weco.result_with_hash({ t:, status: @devices.weco.status }) },
+        Thread.new { @@weco.result_with_hash({ t:, modules: @devices.weco.modules, total: @devices.weco.total }) },
         Thread.new do
           @@genset.result_with_hash({ t:, measurements: @devices.genset.measurements })
         rescue EOFError
