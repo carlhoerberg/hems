@@ -14,13 +14,13 @@ weco_min_voltage{module="<%=i%>"} <%=m[:min_vol]%>
 <%end%>
 
 # TYPE weco_discharge_current_limit gauge
-weco_discharge_current_limit <%=total.discharge_current_limit%>
+weco_discharge_current_limit <%=total[:discharge_current_limit]%>
 
 # TYPE weco_charge_current_recommended gauge
-weco_charge_current_recommended <%=total.charge_current_recommended%>
+weco_charge_current_recommended <%=total[:charge_current_recommended]%>
 
 # TYPE weco_forced_state gauge
-weco_forced_state <%=total.forced_state%>
+weco_forced_state <%=total[:forced_state]%>
 
 # TYPE metrics_gather_time gauge
 metrics_gather_time{device="weco"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>
