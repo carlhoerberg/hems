@@ -8,6 +8,28 @@ class Devices
       #set_key
     end
 
+    def min_soc
+      lock do
+        min = read_holding_register(20) / 2.5 # master module
+        (1..5).each do |unit|
+          value = read_holding_register(117 + unit * 10) / 2.5
+          min = value if value < min
+        end
+        min
+      end
+    end
+
+    def currents
+      lock do
+        values = read_holding_registers(203, 3)
+        {
+          charge_limit: values[0] / 10.0, # positive
+          discharge_limit: values[1] / 10.0, # positive
+          current: values[2] / 10.0, # negative while charging
+        }
+      end
+    end
+
     def modules
       lock do
         Array.new(6) do |i|
@@ -91,6 +113,10 @@ class Devices
       expected_crc = checksum(head + data)
       warn "CRC mismatch: #{crc} != #{expected_crc}" if crc != expected_crc
       data.unpack("s>*")
+    end
+
+    def read_holding_register(addr)
+      read_holding_registers(addr, 1).first
     end
 
     def set_key(key = @key)

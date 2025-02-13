@@ -6,6 +6,12 @@ class Time
   def self.monotonic
     Process.clock_gettime(Process::CLOCK_MONOTONIC)
   end
+
+  def self.measure(&)
+    start = monotonic
+    yield
+    monotonic - start
+  end
 end
 
 # Hållfjället energy management system
@@ -14,18 +20,24 @@ class EnergyManagement
     @devices = devices
     @stopped = false
     @solar_forecast = SolarForecast.new
-    @power_measurements = []
     @phase_current_history = []
+    @last_solar_check = 0
     @last_current_raise = 0 # last time the acsource.rated_current was increased
   end
 
   def start
+    took = 0
     until @stopped
       begin
-        sleep 5
-        soc = @devices.next3.battery.soc
-        genset_support(soc)
-        load_shedding(soc)
+        sleep [5 - took, 0].max
+        took = Time.measure do
+          @phase_current_history.shift if @phase_current_history.size >= 60
+          @phase_current_history.push phase_current
+          soc = @devices.next3.battery.soc
+          genset_support(soc)
+          load_shedding(soc)
+        end
+        puts "Energy management loop took: #{took.round(2)}s"
       rescue => e
         puts "[ERROR] #{e.inspect}"
         e.backtrace.each { |l| print "\t", l, "\n" }
@@ -43,7 +55,7 @@ class EnergyManagement
       if soc <= 90
         puts "SOC #{soc}%, turning off 6kw heater"
         @devices.relays.heater_6kw = false
-      elsif phase_capacity.any? { |p| p < 0 }
+      elsif high_phase_current?
         puts "Over power, turning off 6kw heater"
         @devices.relays.heater_6kw = false
       #elsif @devices.next3.solar.total_power < 1000
@@ -52,7 +64,7 @@ class EnergyManagement
       end
     else # 6kw heater is off
       if soc > 95 && @devices.next3.solar.total_power > 5000 &&
-          phase_capacity.all? { |p| p > 6000 / 3 }
+          phase_current_capacity?(6000.0 / 3 / 230)
         puts "Solar excess, turning on 6kw heater"
         @devices.relays.heater_6kw = true
       end
@@ -61,7 +73,7 @@ class EnergyManagement
       if soc <= 90
         puts "SOC #{soc}%, turning off 9kw heater"
         @devices.relays.heater_9kw = false
-      elsif phase_capacity.any? { |p| p < 0 }
+      elsif high_phase_current?
         puts "Over power, turning off 9kw heater"
         @devices.relays.heater_9kw = false
       #elsif @devices.next3.solar.total_power < 1000
@@ -70,16 +82,10 @@ class EnergyManagement
       end
     else # 9kw heater is off
       if soc > 95 && @devices.next3.solar.total_power > 5000 &&
-          phase_capacity.all? { |p| p > 9000 / 3 }
+          phase_current_capacity?(9000.0 / 3 / 230)
         puts "Solar excess, turning on 9kw heater"
         @devices.relays.heater_9kw = true
       end
-    end
-  end
-
-  def phase_capacity
-    (1..3).map do |phase|
-      5_000 - @devices.next3.acload.apparent_power(phase)
     end
   end
 
@@ -89,14 +95,15 @@ class EnergyManagement
     end
   end
 
-  # if the current on any phase is >20A for more than 25s the inverter needs support
+  INVERTER_CURRENT_LIMIT = 20
+
+  # Returns true if the current on any phase has been over 20A for 25s in a row,
+  # during the last 5 minutes. That will result in a voltage drop. 
   def high_phase_current?
-    @phase_current_history.shift while @phase_current_history.size >= 100
-    @phase_current_history.push phase_current
     (0..2).each do |phase|
       streak = 0
       @phase_current_history.each do |phases|
-        if phases[phase] > 20
+        if phases[phase] > INVERTER_CURRENT_LIMIT
           streak += 1
         else
           streak = 0
@@ -105,6 +112,23 @@ class EnergyManagement
       end
     end
     false
+  end
+
+  # Can the requested current be added without overload? Look at the current draw
+  # for the past 5 minutes
+  def phase_current_capacity?(requested_current)
+    (0..2).each do |phase|
+      streak = 0
+      @phase_current_history.each do |phases|
+        if INVERTER_CURRENT_LIMIT - phases[phase] - requested_current < 0
+          streak += 1
+        else
+          streak = 0
+        end
+        return false if streak >= 5
+      end
+    end
+    true
   end
 
   BATTERY_KWH = 31.2
@@ -119,7 +143,7 @@ class EnergyManagement
         puts "High phase current, keeping genset running"
       elsif @devices.next3.battery.errors != 0
         puts "Battery has errors, keeping genset running"
-      elsif @devices.weco.modules.map { |s| s[:soc_value] }.min >= 97
+      elsif @devices.weco.min_soc >= 97
         puts "SoC #{soc}%, battery current limited, stopping genset"
         stop_genset
       elsif will_reach_full_battery_with_solar?(soc)
@@ -127,14 +151,15 @@ class EnergyManagement
         stop_genset
       end
     else # genset is not running
-      discharge_limit = @devices.next3.battery.bms_recommended_discharging_current
+      battery_current = @devices.weco.currents
+      discharge_limit = battery_current[:discharge_limit]
       if discharge_limit <= 350 # open air vents well before any battery problems
         @devices.relays.open_air_vents
       else # close vents if genset is not running and we are ok on batteries
         @devices.relays.close_air_vents
       end
 
-      discharge_current = -@devices.next3.battery.charging_current
+      discharge_current =  battery_current[:current]
       #if high_phase_current?
       #  puts "Starting genset. High phase current, avoid voltage drop"
       #  start_genset
@@ -148,21 +173,18 @@ class EnergyManagement
   end
 
   def will_reach_full_battery_with_solar?(soc)
-    # collect power measuremnts to be able to calculate an averge once in a while
-    @power_measurements << @devices.next3.acload.total_apparent_power
-    #puts "Got #{@power_measurements.size} power measurements, avg: #{@power_measurements.sum / @power_measurements.size / 1000.0}"
-    return if @power_measurements.size < 60 / 5 # 1 minute, 5s interval measurements
+    return if Time.monotonic - @last_solar_check < 60 # only check every minute
+    @last_solar_check = Time.monotonic
 
-    avg_power_kw = @power_measurements.sum / @power_measurements.size / 1000.0
-    puts "Avg power kw: #{avg_power_kw}"
-    @power_measurements.clear # don't use a sliding window as we don't want to poll forecast api too much
+    avg_power_kw = @phase_current_history.sum { |phases| phases.sum } * 230 / @phase_current_history.size / 1000.0
+    puts "Avg power usage: #{avg_power_kw.round(1)} kW"
 
     battery_kwh = BATTERY_KWH * soc / 100.0
-    puts "Battery charge: #{battery_kwh} kWh"
+    puts "Battery charge: #{battery_kwh.round(1)} kWh"
 
     # improve accuracy of forecast by telling how much is produced so far today
     produced_solar_today = @devices.next3.solar.total_day_energy / 1000.0
-    puts "Solar produced today: #{produced_solar_today} kWh"
+    puts "Solar produced today: #{produced_solar_today.round(1)} kWh"
     @solar_forecast.actual = produced_solar_today if produced_solar_today > 1 # don't report too early in the day
 
     last_time = Time.now
@@ -173,7 +195,7 @@ class EnergyManagement
       period = (time - last_time) / 3600
       battery_kwh += (watts / 1000.0 - avg_power_kw) * period
       estimated_soc = (battery_kwh / BATTERY_KWH * 100).round
-      puts "Estimated battery at #{time}: #{estimated_soc}% #{battery_kwh} kWh"
+      puts "Estimated battery at #{time}: #{estimated_soc}% #{battery_kwh.round(1)} kWh"
       return true if estimated_soc >= 95
       return false if estimated_soc <= 12 # % SoC required otherwise genset starts again
 
@@ -225,7 +247,6 @@ class EnergyManagement
     puts "Restoring AC source values"
     @devices.next3.acsource.rated_current = 23 # safe for +0 outdoor temp
     @devices.next3.acsource.enable
-    @power_measurements.clear
   end
 
   def keep_hz
