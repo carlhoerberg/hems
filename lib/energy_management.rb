@@ -26,18 +26,18 @@ class EnergyManagement
   end
 
   def start
-    took = 0
+    duration = 0
     until @stopped
       begin
-        sleep [5 - took, 0].max
-        took = Time.measure do
+        sleep [5 - duration, 0].max
+        duration = Time.measure do
           @phase_current_history.shift if @phase_current_history.size >= 60
           @phase_current_history.push phase_current
           soc = @devices.next3.battery.soc
           genset_support(soc)
           load_shedding(soc)
         end
-        puts "Energy management loop took: #{took.round(2)}s" if took > 1
+        puts "Energy management loop duration: #{duration.round(2)}s" if duration > 1
       rescue => e
         puts "[ERROR] #{e.inspect}"
         e.backtrace.each { |l| print "\t", l, "\n" }
