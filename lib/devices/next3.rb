@@ -92,6 +92,10 @@ class Devices
       def errors
         @unit.read_holding_registers(302, 2).to_u32
       end
+
+      def warnings
+        @unit.read_holding_registers(304, 2).to_u32
+      end
     end
 
     class AcSource
@@ -212,6 +216,16 @@ class Devices
         raise ArgumentError.new("Phase 1, 2 or 3") unless [1,2,3].include? phase
         @unit.read_holding_registers(3936 + 300 * phase, 4).to_f64
       end
+
+      def warnings(phase)
+        raise ArgumentError.new("Phase 1, 2 or 3") unless [1,2,3].include? phase
+        @unit.read_holding_registers(3002 + (phase - 1) * 300, 2).to_u32
+      end
+
+      def errors(phase)
+        raise ArgumentError.new("Phase 1, 2 or 3") unless [1,2,3].include? phase
+        @unit.read_holding_registers(3004 + (phase - 1) * 300, 2).to_u32
+      end
     end
 
     # Each solar MPPT has two arrays, 1 and 2
@@ -266,6 +280,12 @@ class Devices
       # Energy produced today, in wH
       def total_day_energy
         @unit.read_holding_registers(5711, 2).to_f32
+      end
+
+      # Returns an enum where:
+      # 0 not limited, 1 temperature limited, 2 max power reached, 3 max current reached, 4 solar excess
+      def limitation(array)
+        @unit.read_holding_registers(6918 + (array - 1) * 300, 2).to_u32
       end
     end
   end
