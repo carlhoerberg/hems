@@ -37,7 +37,7 @@ class EnergyManagement
           genset_support(soc)
           load_shedding(soc)
         end
-        puts "Energy management loop took: #{took.round(2)}s"
+        puts "Energy management loop took: #{took.round(2)}s" if took > 1
       rescue => e
         puts "[ERROR] #{e.inspect}"
         e.backtrace.each { |l| print "\t", l, "\n" }
