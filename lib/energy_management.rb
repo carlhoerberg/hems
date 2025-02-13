@@ -102,23 +102,15 @@ class EnergyManagement
   # Returns true if the current on any phase has been over 20A for 25s in a row,
   # during the last 5 minutes. That will result in a voltage drop. 
   def high_phase_current?
-    (0..2).each do |phase|
-      streak = 0
-      @phase_current_history.each do |phases|
-        if phases[phase] > INVERTER_CURRENT_LIMIT
-          streak += 1
-        else
-          streak = 0
-        end
-        return true if streak >= 5
-      end
-    end
-    false
+    not phase_current_capacity?(0)
   end
 
   # Can the requested current be added without overload? Look at the current draw
   # for the past 5 minutes
   def phase_current_capacity?(requested_current)
+    # we can't know if there's capacity until we have 5 or more measurments
+    return false if @phase_current_history.size < 5
+
     (0..2).each do |phase|
       streak = 0
       @phase_current_history.each do |phases|
@@ -161,7 +153,7 @@ class EnergyManagement
         @devices.relays.close_air_vents
       end
 
-      discharge_current =  battery_current[:current]
+      discharge_current = battery_current[:current]
       #if high_phase_current?
       #  puts "Starting genset. High phase current, avoid voltage drop"
       #  start_genset
