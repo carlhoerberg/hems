@@ -196,6 +196,10 @@ class EnergyManagement
       last_time = time
     end
     false # if we get here we have not received full charge within 2 days
+  rescue => e
+    puts "[ERROR] #{e.inspect}"
+    e.backtrace.each { |l| print "\t", l, "\n" }
+    false
   end
 
   def start_genset
