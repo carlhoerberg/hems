@@ -68,6 +68,7 @@ class EnergyManagement
           @devices.next3.solar.total_power > 5000
         puts "Solar excess, turning on 6kw heater"
         @devices.relays.heater_6kw = true
+        return # so that we don't enable the 9kW too
       end
     end
     if @devices.relays.heater_9kw?
