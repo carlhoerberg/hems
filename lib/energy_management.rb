@@ -175,7 +175,7 @@ class EnergyManagement
     puts "Avg power usage: #{avg_power_kw.round(1)} kW"
 
     battery_kwh = BATTERY_KWH * soc / 100.0
-    puts "Battery charge: #{battery_kwh.round(1)} kWh"
+    puts "Battery charge: #{soc}% #{battery_kwh.round(1)} kWh"
 
     # improve accuracy of forecast by telling how much is produced so far today
     produced_solar_today = @devices.next3.solar.total_day_energy / 1000.0
@@ -183,20 +183,19 @@ class EnergyManagement
     @solar_forecast.actual = produced_solar_today if produced_solar_today > 1 # don't report too early in the day
 
     last_time = Time.now
-    @solar_forecast.estimate_watts.each do |t, watts|
+    @solar_forecast.estimate_watt_hours.each do |t, watthours|
       time = Time.parse(t)
-      next if time <= last_time
 
       period = (time - last_time) / 3600
-      battery_kwh += (watts / 1000.0 - avg_power_kw) * period
+      battery_kwh += ((watthours / 1000.0) - (avg_power_kw * period))
       estimated_soc = (battery_kwh / BATTERY_KWH * 100).round
-      puts "Estimated battery at #{time}: #{estimated_soc}% #{battery_kwh.round(1)} kWh"
-      return true if estimated_soc >= 95
+      puts "Estimated battery SoC at #{time}: #{estimated_soc}%"
+      return true if estimated_soc >= 85
       return false if estimated_soc <= 12 # % SoC required otherwise genset starts again
 
       last_time = time
     end
-    false # if we get here we have not received full charge within 2 days
+    true # we will be solar powered the rest of the day, so stop genset now
   rescue => e
     puts "[ERROR] #{e.inspect}"
     e.backtrace.each { |l| print "\t", l, "\n" }
