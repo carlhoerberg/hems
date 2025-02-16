@@ -25,7 +25,7 @@ class Devices
       loop do
         json, _from = udp.recvfrom(4096)
         begin
-          p data = JSON.parse(json)
+          data = JSON.parse(json)
           case data["method"]
           when "NotifyStatus", "NotifyFullStatus"
             notify_status(data["src"], data["params"])
@@ -114,7 +114,11 @@ class Devices
         device_id = "shellybluht-#{data["address"].delete(":")}"
         device = @devices[device_id] ||= {}
         if (v = data["temperature"])
-          device[:shelly_ht_temperature] = {v:, ts:}
+          if Numeric === v
+            device[:shelly_ht_temperature] = {v:, ts:}
+          else
+            p event
+          end
         end
         if (v = data["humidity"])
           device[:shelly_ht_humidity] = {v:, ts:}
