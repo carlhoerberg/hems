@@ -29,7 +29,6 @@ class EnergyManagement
     duration = 0
     until @stopped
       begin
-        sleep [5 - duration, 0].max
         duration = Time.measure do
           @phase_current_history.shift if @phase_current_history.size >= 60
           @phase_current_history.push phase_current
@@ -38,6 +37,7 @@ class EnergyManagement
           load_shedding(soc)
         end
         puts "Energy management loop duration: #{duration.round(2)}s" if duration > 1
+        sleep [5 - duration, 0].max
       rescue => e
         puts "[ERROR] #{e.inspect}"
         e.backtrace.each { |l| print "\t", l, "\n" }
