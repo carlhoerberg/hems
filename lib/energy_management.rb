@@ -163,6 +163,7 @@ class EnergyManagement
       if discharge_limit - discharge_current < 130 || soc <= 7
         puts "Starting genset. SoC=#{soc}% discharge_limit=#{discharge_limit}A discharge_current=#{discharge_current}A"
         start_genset
+        @last_solar_check = Time.monotonic # don't check solar estimate for a while
       end
     end
   end
