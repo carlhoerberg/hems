@@ -1,0 +1,7 @@
+<%measurements.each do |key, value|%>
+# TYPE ecowitt_<%=key%> gauge
+ecowitt_<%=key%> <%=value%>
+<%end%>
+
+# TYPE metrics_gather_time gauge
+metrics_gather_time{device="ecowitt"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>
