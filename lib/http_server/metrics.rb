@@ -16,6 +16,7 @@ class HTTPServer
     @@unifi = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "unifi.erb")))
     @@topas = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "topas.erb")))
     @@weco = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "weco.erb")))
+    @@ecowitt = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "ecowitt.erb")))
 
     def do_GET(req, res)
       res.content_type = "text/plain"
@@ -28,6 +29,7 @@ class HTTPServer
         Thread.new { @@unifi.result_with_hash({ t:, unifi_health: @devices.unifi.health }) },
         Thread.new { @@topas.result_with_hash({ t:, measurements: @devices.topas.measurements, status: @devices.topas.status }) },
         Thread.new { @@weco.result_with_hash({ t:, modules: @devices.weco.modules, total: @devices.weco.total }) },
+        Thread.new { @@ecowitt.result_with_hash({ t:, measurements: @devices.ecowitt.measurements }) },
         Thread.new do
           @@genset.result_with_hash({ t:, measurements: @devices.genset.measurements })
         rescue EOFError
