@@ -183,9 +183,10 @@ class EnergyManagement
     puts "Solar produced today: #{produced_solar_today.round(1)} kWh"
     @solar_forecast.actual = produced_solar_today if produced_solar_today > 1 # don't report too early in the day
 
-    last_time = Time.now
+    last_time = start = Time.now
     @solar_forecast.estimate_watt_hours.each do |t, watthours|
       time = Time.parse(t)
+      next if time <= last_time # skip period before Time.now
 
       period = (time - last_time) / 3600
       battery_kwh += ((watthours / 1000.0) - (avg_power_kw * period))
@@ -196,6 +197,7 @@ class EnergyManagement
 
       last_time = time
     end
+    return false if last_time == start # this means that all estimates were before now
     true # we will be solar powered the rest of the day, so stop genset now
   rescue => e
     puts "[ERROR] #{e.inspect}"
