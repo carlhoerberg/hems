@@ -3,7 +3,7 @@ require "rexml"
 
 class Devices
   class ETA
-    def initialize(host = "192.168.0.12", port = 8080)
+    def initialize(host = "eta.hallfjallet.se", port = 8080)
       @host = host
       @port = port
       @http = Net::HTTP.new(host, port).tap do |h|
