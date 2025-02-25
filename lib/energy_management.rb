@@ -38,6 +38,7 @@ class EnergyManagement
           load_shedding(soc)
         end
         puts "Energy management loop duration: #{duration.round(2)}s" if duration > 1
+        break if @stopped
         sleep [5 - duration, 0].max
       rescue => e
         puts "[ERROR] #{e.inspect}"
