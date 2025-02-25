@@ -23,6 +23,7 @@ class EnergyManagement
     @phase_current_history = []
     @last_solar_check = 0
     @last_current_raise = 0 # last time the acsource.rated_current was increased
+    @genset_auto_started = @devices.genset.is_running? # assume it was auto started if it's already running
   end
 
   def start
@@ -138,6 +139,8 @@ class EnergyManagement
         puts "High phase current, keeping genset running"
       elsif @devices.next3.battery.errors != 0
         puts "Battery has errors, keeping genset running"
+      elsif !@genset_auto_started # was manually started
+        puts "Genset manually started, keep running"
       elsif @devices.weco.min_soc >= 97
         puts "SoC #{soc}%, battery current limited, stopping genset"
         stop_genset
@@ -206,6 +209,7 @@ class EnergyManagement
   end
 
   def start_genset
+    @genset_auto_started = true
     @devices.relays.open_air_vents
 
     puts "Starting genset"
@@ -230,6 +234,7 @@ class EnergyManagement
   end
 
   def stop_genset
+    @genset_auto_started = false
     puts "Turning of load to cool down"
     @devices.next3.acsource.disable
     loop do
