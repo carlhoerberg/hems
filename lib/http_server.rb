@@ -4,9 +4,10 @@ require_relative "./http_server/relays"
 require_relative "./http_server/genset"
 require_relative "./http_server/button"
 require_relative "./http_server/topas"
+require_relative "./http_server/em"
 
 class HTTPServer
-  def initialize(devices)
+  def initialize(devices, em)
     @server = WEBrick::HTTPServer.new(Port: ENV.fetch("PORT", 8000).to_i,
                                       AccessLog: [])
     @server.mount "/metrics", Metrics, devices
@@ -14,6 +15,7 @@ class HTTPServer
     @server.mount "/genset", GensetControl, devices.genset
     @server.mount "/button1", ButtonControl, devices
     @server.mount "/topas", TopasControl, devices.topas
+    @server.mount "/em", EMControl, em
     @server.mount_proc("/eta") do |_req, res|
       res.content_type = "application/xml"
       res.body = devices.eta.menu
