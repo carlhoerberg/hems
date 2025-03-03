@@ -5,8 +5,8 @@
   <body>
     <h1>Energy Management control</h1>
     <form method="post">
-      <button name="action" value="genset_auto_started" <%=em.genset_auto_started ? "disabled" : ""%>>Genset auto started</button>
-      <button name="action" value="genset_not_auto_started" <%=em.genset_auto_started ? "" : "disabled"%>>Genset not auto started</button>
+      <button name="action" value="genset_auto_started" <%=em.genset_auto_started ? "disabled" : ""%>>Genset is auto started</button>
+      <button name="action" value="genset_manually_started" <%=em.genset_auto_started ? "" : "disabled"%>>Genset is manually started</button>
       <button name="action" value="start_genset">Start genset</button>
       <button name="action" value="stop_genset">Stop genset</button>
     </form>
