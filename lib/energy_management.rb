@@ -26,6 +26,8 @@ class EnergyManagement
     @genset_auto_started = @devices.genset.is_running? # assume it was auto started if it's already running
   end
 
+  attr_accessor :genset_auto_started
+
   def start
     duration = 0
     until @stopped

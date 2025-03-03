@@ -7,7 +7,7 @@ $stdout.sync = true
 Thread.abort_on_exception = true
 devices = Devices.new
 em = EnergyManagement.new(devices)
-srv = HTTPServer.new(devices)
+srv = HTTPServer.new(devices, em)
 
 trap('INT') { em.stop; srv.stop }
 trap('TERM') { em.stop; srv.stop }
