@@ -16,7 +16,7 @@ class HTTPServer
       form = URI.decode_www_form(req.body).to_h
       case form["action"]
       when "genset_auto_started" then @em.genset_auto_started = true
-      when "genset_not_auto_started" then @em.genset_auto_started = false
+      when "genset_manually_started" then @em.genset_auto_started = false
       when "stop_genset" then @em.stop_genset
       when "start_genset" then @em.start_genset
       else raise "no action selected"
