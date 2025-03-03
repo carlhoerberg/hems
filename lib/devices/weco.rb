@@ -19,6 +19,12 @@ class Devices
       end
     end
 
+    def charge_limit
+      lock do
+        read_holding_register(203) / 10.0
+      end
+    end
+
     def currents
       lock do
         values = read_holding_registers(203, 3)
