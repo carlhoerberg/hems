@@ -55,12 +55,13 @@ class EnergyManagement
 
   # Start water heaters when close to excess solar/battery capacity
   def load_shedding(soc = @devices.next3.battery.soc)
+    voltage_drop = nil
     if @devices.relays.heater_6kw?
-      if soc <= 90
-        puts "SOC #{soc}%, turning off 6kw heater"
-        @devices.relays.heater_6kw = false
-      elsif voltage_drop?
+      if voltage_drop ||= voltage_drop?
         puts "Over power, turning off 6kw heater"
+        @devices.relays.heater_6kw = false
+      elsif soc <= 90
+        puts "SOC #{soc}%, turning off 6kw heater"
         @devices.relays.heater_6kw = false
       #elsif @devices.next3.solar.total_power < 1000
       #  puts "Weak solar power, turning off 6kw heater"
@@ -74,11 +75,11 @@ class EnergyManagement
       end
     end
     if @devices.relays.heater_9kw?
-      if soc <= 90
-        puts "SOC #{soc}%, turning off 9kw heater"
-        @devices.relays.heater_9kw = false
-      elsif voltage_drop?
+      if voltage_drop ||= voltage_drop?
         puts "Over power, turning off 9kw heater"
+        @devices.relays.heater_9kw = false
+      elsif soc <= 90
+        puts "SOC #{soc}%, turning off 9kw heater"
         @devices.relays.heater_9kw = false
       #elsif @devices.next3.solar.total_power < 1000
       #  puts "Weak solar power, turning off 9kw heater"
