@@ -13,5 +13,5 @@ trap('INT') { em.stop; srv.stop }
 trap('TERM') { em.stop; srv.stop }
 em_thread = Thread.new { em.start }
 srv.start
-em_thread.wakeup
+em_thread.wakeup if em_thread.alive?
 em_thread.join
