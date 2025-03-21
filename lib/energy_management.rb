@@ -59,7 +59,7 @@ class EnergyManagement
       if soc <= 90
         puts "SOC #{soc}%, turning off 6kw heater"
         @devices.relays.heater_6kw = false
-      elsif high_phase_current?
+      elsif voltage_drop?
         puts "Over power, turning off 6kw heater"
         @devices.relays.heater_6kw = false
       #elsif @devices.next3.solar.total_power < 1000
@@ -79,7 +79,7 @@ class EnergyManagement
       if soc <= 90
         puts "SOC #{soc}%, turning off 9kw heater"
         @devices.relays.heater_9kw = false
-      elsif high_phase_current?
+      elsif voltage_drop?
         puts "Over power, turning off 9kw heater"
         @devices.relays.heater_9kw = false
       #elsif @devices.next3.solar.total_power < 1000
@@ -128,6 +128,12 @@ class EnergyManagement
       end
     end
     true
+  end
+
+  def voltage_drop?
+    (1..3).any? do |phase|
+      @devices.next3.acload.voltage(phase) < 210
+    end
   end
 
   BATTERY_KWH = 31.2
