@@ -67,9 +67,7 @@ class EnergyManagement
       #  @devices.relays.heater_6kw = false
       end
     else # 6kw heater is off
-      if soc > 95 &&
-          phase_current_capacity?(6000.0 / 3 / 230) &&
-          @devices.next3.solar.total_power > 5000
+      if @devices.next3.solar.excess? && phase_current_capacity?(6000.0 / 3 / 230)
         puts "Solar excess, turning on 6kw heater"
         @devices.relays.heater_6kw = true
         return # so that we don't enable the 9kW too
@@ -87,9 +85,7 @@ class EnergyManagement
       #  @devices.relays.heater_9kw = false
       end
     else # 9kw heater is off
-      if soc > 95 &&
-          phase_current_capacity?(9000.0 / 3 / 230) &&
-          @devices.next3.solar.total_power > 5000
+      if @devices.next3.solar.excess? && phase_current_capacity?(9000.0 / 3 / 230)
         puts "Solar excess, turning on 9kw heater"
         @devices.relays.heater_9kw = true
       end
