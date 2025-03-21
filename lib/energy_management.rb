@@ -57,7 +57,8 @@ class EnergyManagement
   def load_shedding(soc = @devices.next3.battery.soc)
     voltage_drop = nil
     if @devices.relays.heater_6kw?
-      if voltage_drop ||= voltage_drop?
+      voltage_drop = voltage_drop? if voltage_drop.nil?
+      if voltage_drop
         puts "Over power, turning off 6kw heater"
         @devices.relays.heater_6kw = false
       elsif soc <= 90
@@ -75,7 +76,8 @@ class EnergyManagement
       end
     end
     if @devices.relays.heater_9kw?
-      if voltage_drop ||= voltage_drop?
+      voltage_drop = voltage_drop? if voltage_drop.nil?
+      if voltage_drop
         puts "Over power, turning off 9kw heater"
         @devices.relays.heater_9kw = false
       elsif soc <= 90
