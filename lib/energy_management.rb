@@ -98,7 +98,7 @@ class EnergyManagement
     end
   end
 
-  INVERTER_CURRENT_LIMIT = 20
+  INVERTER_CURRENT_LIMIT = 22
 
   # Returns true if the current on any phase has been over 20A for 25s in a row,
   # during the last 5 minutes. That will result in a voltage drop. 
