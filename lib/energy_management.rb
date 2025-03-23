@@ -60,21 +60,21 @@ class EnergyManagement
     if @devices.relays.heater_6kw?
       voltage_drop = voltage_drop? if voltage_drop.nil?
       if voltage_drop
-        puts "Voltage drop, turning off 6kw heater"
+        puts "Voltage drop, turning off 6kW heater"
         @devices.relays.heater_6kw = false
-      elsif (solar_total_power ||= @devices.next3.solar.total_power) < 6000
-        puts "Solar power #{solar_total_power}W, turning off 6kW heater"
-        @devices.relays.heater_6kw = false
-      #elsif soc <= 90
-      #  puts "SOC #{soc}%, turning off 6kw heater"
+      #elsif (solar_total_power ||= @devices.next3.solar.total_power) < 6000
+      #  puts "Solar power #{solar_total_power}W, turning off 6kW heater"
       #  @devices.relays.heater_6kw = false
+      elsif soc <= 90
+        puts "SOC #{soc}%, turning off 6kW heater"
+        @devices.relays.heater_6kw = false
       #elsif @devices.next3.solar.total_power < 1000
       #  puts "Weak solar power, turning off 6kw heater"
       #  @devices.relays.heater_6kw = false
       end
     else # 6kw heater is off
       if @devices.next3.solar.excess? && phase_current_capacity?(6000.0 / 3 / 230)
-        puts "Solar excess, turning on 6kw heater"
+        puts "Solar excess, turning on 6kW heater"
         @devices.relays.heater_6kw = true
         return # so that we don't enable the 9kW too
       end
@@ -82,10 +82,13 @@ class EnergyManagement
     if @devices.relays.heater_9kw?
       voltage_drop = voltage_drop? if voltage_drop.nil?
       if voltage_drop
-        puts "Voltage drop, turning off 9kw heater"
+        puts "Voltage drop, turning off 9kW heater"
         @devices.relays.heater_9kw = false
-      elsif (solar_total_power ||= @devices.next3.solar.total_power) < 9000
-        puts "Solar power #{solar_total_power}W, turning off 9kW heater"
+      #elsif (solar_total_power ||= @devices.next3.solar.total_power) < 9000
+      #  puts "Solar power #{solar_total_power}W, turning off 9kW heater"
+      #  @devices.relays.heater_9kw = false
+      elsif soc <= 90
+        puts "SOC #{soc}%, turning off 9kW heater"
         @devices.relays.heater_9kw = false
       #elsif @devices.next3.solar.total_power < 1000
       #  puts "Weak solar power, turning off 9kw heater"
@@ -93,7 +96,7 @@ class EnergyManagement
       end
     else # 9kw heater is off
       if @devices.next3.solar.excess? && phase_current_capacity?(9000.0 / 3 / 230)
-        puts "Solar excess, turning on 9kw heater"
+        puts "Solar excess, turning on 9kW heater"
         @devices.relays.heater_9kw = true
       end
     end
