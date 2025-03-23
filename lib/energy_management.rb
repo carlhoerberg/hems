@@ -60,7 +60,7 @@ class EnergyManagement
     if @devices.relays.heater_6kw?
       voltage_drop = voltage_drop? if voltage_drop.nil?
       if voltage_drop
-        puts "Over power, turning off 6kw heater"
+        puts "Voltage drop, turning off 6kw heater"
         @devices.relays.heater_6kw = false
       elsif (solar_total_power ||= @devices.next3.solar.total_power) < 6000
         puts "Solar power #{solar_total_power}W, turning off 6kW heater"
@@ -82,7 +82,7 @@ class EnergyManagement
     if @devices.relays.heater_9kw?
       voltage_drop = voltage_drop? if voltage_drop.nil?
       if voltage_drop
-        puts "Over power, turning off 9kw heater"
+        puts "Voltage drop, turning off 9kw heater"
         @devices.relays.heater_9kw = false
       elsif (solar_total_power ||= @devices.next3.solar.total_power) < 9000
         puts "Solar power #{solar_total_power}W, turning off 9kW heater"
