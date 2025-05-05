@@ -166,6 +166,30 @@ class Devices
       get "/user/var/74/10101/0/11125/2127"
     end
 
+    def staff_floor_should_temp
+      get "/user/var/73/10101/0/11125/2120"
+    end
+
+    def staff_floor_supply_temp
+      get "/user/var/73/10101/0/11125/2121"
+    end
+
+    def staff_floor_valve
+      get "/user/var/73/10101/0/11125/2127"
+    end
+
+    def hotel_floor_should_temp
+      get "/user/var/74/10101/0/11125/2120"
+    end
+
+    def hotel_floor_supply_temp
+      get "/user/var/74/10101/0/11125/2121"
+    end
+
+    def hotel_floor_valve
+      get "/user/var/74/10101/0/11125/2127"
+    end
+
     def menu
       Net::HTTP.start(@host, @port) do |http|
         res = http.get("/user/menu")

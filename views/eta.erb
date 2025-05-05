@@ -97,6 +97,9 @@ eta_valve{room="Radiatorerna"} <%=eta.hotel_radiators_valve%>
 eta_supply_temp{room="Golvvärme"} <%=eta.hotel_floor_supply_temp%>
 eta_should_temp{room="Golvvärme"} <%=eta.hotel_floor_should_temp%>
 eta_valve{room="Golvvärme"} <%=eta.hotel_floor_valve%>
+eta_supply_temp{room="Golvvärme personal"} <%=eta.staff_floor_supply_temp%>
+eta_should_temp{room="Golvvärme personal"} <%=eta.staff_floor_should_temp%>
+eta_valve{room="Golvvärme personal"} <%=eta.staff_floor_valve%>
 
 # TYPE metrics_gather_time gauge
 metrics_gather_time{device="eta"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>
