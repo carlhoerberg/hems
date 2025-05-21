@@ -52,7 +52,7 @@ class Devices
         if (v = params.dig("temperature:0", "tC"))
           device["shelly_ht_temperature"] = { v:, ts: }
         end
-      when /^shellyplusplugs-/, /^shellyplugsg3-/
+      when /^shellyplusplugs-/, /^shellyplugsg3-/, /^shelly2pmg3-/
         if (v = params.dig("switch:0", "current"))
           device["shelly_plug_current"] = { v:, ts: }
         end
