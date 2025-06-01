@@ -81,6 +81,19 @@ class Devices
         if (v = params.dig("em1data:0", "total_act_energy"))
           device["shelly_plug_aenergy_total"] = { v:, ts:, counter: true }
         end
+      when /^shellypro3em-/
+        if (v = params.dig("em:0", "total_current"))
+          device["shelly_plug_current"] = { v:, ts: }
+        end
+        if (v = params.dig("em:0", "total_act_power"))
+          device["shelly_plug_apower"] = { v:, ts: }
+        end
+        if (v = params.dig("em:0", "total_aprt_power"))
+          device["shelly_plug_aprtpower"] = { v:, ts: }
+        end
+        if (v = params.dig("emdata:0", "total_act"))
+          device["shelly_plug_aenergy_total"] = { v:, ts:, counter: true }
+        end
       else raise "Unknown device id #{device_id}"
       end
     end
