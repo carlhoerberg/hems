@@ -1,0 +1,7 @@
+<%status.each_with_index do |s, i|%>
+# TYPE relay_status gauge
+relay_status{relay="<%=i%>"} <%=s ? 1 : 0%>
+<%end%>
+
+# TYPE metrics_gather_time gauge
+metrics_gather_time{device="relays"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>

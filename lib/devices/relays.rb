@@ -18,6 +18,7 @@ class Devices
       @modbus.write_coil(id, 0x5500)
     end
 
+    # Returns a 8 item array of true/false, one for each relay
     def status
       @modbus.read_coils(0, 8)
     end
