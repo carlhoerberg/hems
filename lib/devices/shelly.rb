@@ -52,7 +52,7 @@ class Devices
         if (v = params.dig("temperature:0", "tC"))
           device["shelly_ht_temperature"] = { v:, ts: }
         end
-      when /^shellyplusplugs-/, /^shellyplugsg3-/, /^shelly2pmg3-/
+      when /^shellyplusplugs-/, /^shellyplugsg3-/, /^shelly2pmg3-/, /^shelly1pmg4-/
         if (v = params.dig("switch:0", "current"))
           device["shelly_plug_current"] = { v:, ts: }
         end
@@ -94,6 +94,34 @@ class Devices
         if (v = params.dig("emdata:0", "total_act"))
           device["shelly_plug_aenergy_total"] = { v:, ts:, counter: true }
         end
+      when /^shellypmminig3-/
+        if (v = params.dig("pm1:0", "current"))
+          device["shelly_plug_current"] = { v:, ts: }
+        end
+        if (v = params.dig("pm1:0", "voltage"))
+          device["shelly_plug_voltage"] = { v:, ts: }
+        end
+        if (v = params.dig("pm1:0", "apower"))
+          device["shelly_plug_apower"] = { v:, ts: }
+        end
+        if (v = params.dig("pm1:0", "aenergy", "total"))
+          device["shelly_plug_aenergy_total"] = { v:, ts:, counter: true }
+        end
+      when /^shelly0110dimg3-/
+        if (v = params.dig("light:0", "current"))
+          device["shelly_plug_current"] = { v:, ts: }
+        end
+        if (v = params.dig("light:0", "voltage"))
+          device["shelly_plug_voltage"] = { v:, ts: }
+        end
+        if (v = params.dig("light:0", "apower"))
+          device["shelly_plug_apower"] = { v:, ts: }
+        end
+        if (v = params.dig("light:0", "aenergy", "total"))
+          device["shelly_plug_aenergy_total"] = { v:, ts:, counter: true }
+        end
+        # "{\"src\":\"shelly0110dimg3-e4b3233d2ac4\",\"dst\":\"*\",\"method\":\"NotifyStatus\",\"params\":{\"ts\":1748813001.71,\"light:0\":{\"brightness\":52,\"output\":true,\"source\":\"SHC\"}}}"
+        # "{\"src\":\"shelly0110dimg3-e4b3233d2ac4\",\"dst\":\"*\",\"method\":\"NotifyStatus\",\"params\":{\"ts\":1748813165.50,\"light:0\":{\"brightness\":52,\"output\":false,\"source\":\"SHC\"}}}"
       else raise "Unknown device id #{device_id}"
       end
     end
