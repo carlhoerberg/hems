@@ -1,7 +1,0 @@
-<%measurements.each do |key, value|%>
-# TYPE ecocirc_<%=key%> gauge
-ecocirc_<%=key%> <%=value%>
-<%end%>
-
-# TYPE metrics_gather_time gauge
-metrics_gather_time{device="ecocirc"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>
