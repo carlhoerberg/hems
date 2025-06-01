@@ -24,9 +24,11 @@ class EnergyManagement
     @last_solar_check = 0
     @last_current_raise = 0 # last time the acsource.rated_current was increased
     @genset_auto_started = @devices.genset.is_running? # assume it was auto started if it's already running
+    @manually_started_at = nil
   end
 
   attr_accessor :genset_auto_started
+  attr_accessor :manually_started_at
 
   def start
     duration = 0
@@ -147,6 +149,7 @@ class EnergyManagement
   def genset_support(soc = @devices.next3.battery.soc)
     if @devices.genset.is_running?
       @devices.relays.open_air_vents # should already be open, but make sure
+      @manually_started_at ||= Time.monotonic unless @genset_auto_started
 
       keep_hz
 
@@ -154,8 +157,8 @@ class EnergyManagement
         puts "High phase current, keeping genset running"
       elsif @devices.next3.battery.errors != 0
         puts "Battery has errors, keeping genset running"
-      elsif !@genset_auto_started # was manually started
-        puts "Genset manually started, keep running"
+      elsif Time.monotonic - @manually_started_at < 1800 # keep running for 30min after manual start
+        puts "Genset manually started #{(Time.monotonic - @manually_started_at).round}s ago, keep running"
       elsif @devices.weco.min_soc >= 97
         puts "SoC #{soc}%, battery current limited, stopping genset"
         stop_genset
@@ -225,6 +228,7 @@ class EnergyManagement
 
   def start_genset
     @genset_auto_started = true
+    @manually_started_at = nil
     @devices.relays.open_air_vents
 
     puts "Starting genset"
@@ -250,6 +254,7 @@ class EnergyManagement
 
   def stop_genset
     @genset_auto_started = false
+    @manually_started_at = nil
     puts "Turning of load to cool down"
     @devices.next3.acsource.disable
     loop do
