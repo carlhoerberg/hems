@@ -55,7 +55,6 @@ class EnergyManagement
 
   # Start water heaters when close to excess solar/battery capacity
   def load_shedding(soc = @devices.next3.battery.soc)
-    return # relays are offline
     voltage_drop = nil
     solar_total_power = nil
     if @devices.relays.heater_6kw?
@@ -147,7 +146,7 @@ class EnergyManagement
 
   def genset_support(soc = @devices.next3.battery.soc)
     if @devices.genset.is_running?
-      #@devices.relays.open_air_vents # should already be open, but make sure
+      @devices.relays.open_air_vents # should already be open, but make sure
 
       keep_hz
 
@@ -168,9 +167,9 @@ class EnergyManagement
       battery_current = @devices.weco.currents
       discharge_limit = battery_current[:discharge_limit]
       if discharge_limit <= 350 # open air vents well before any battery problems
-        #@devices.relays.open_air_vents
+        @devices.relays.open_air_vents
       else # close vents if genset is not running and we are ok on batteries
-        #@devices.relays.close_air_vents
+        @devices.relays.close_air_vents
       end
 
       discharge_current = battery_current[:current]
@@ -226,7 +225,7 @@ class EnergyManagement
 
   def start_genset
     @genset_auto_started = true
-    #@devices.relays.open_air_vents
+    @devices.relays.open_air_vents
 
     puts "Starting genset"
     @devices.genset.start
