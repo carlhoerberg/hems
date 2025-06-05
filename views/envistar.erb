@@ -1,35 +1,35 @@
 # TYPE envistar_temperature gauge
 # UNIT envistar_temperature C
-envistar_temperature{name="uteluft"} <%=m.read("3x072") / 10.0%>
-envistar_temperature{name="tilluft vvx"} <%=m.read("3x078") / 10.0%>
-envistar_temperature{name="frysvakt"} <%=m.read("3x074") / 10.0%>
-envistar_temperature{name="tilluft"} <%=m.read("3x073") / 10.0%>
+envistar_temperature{name="Uteluft"} <%=m.read("3x072") / 10.0%>
+envistar_temperature{name="Tilluft VVX"} <%=m.read("3x078") / 10.0%>
+envistar_temperature{name="Frysvakt"} <%=m.read("3x074") / 10.0%>
+envistar_temperature{name="Tilluft"} <%=m.read("3x073") / 10.0%>
 
-envistar_temperature{name="frånluft"} <%=m.read("3x076") / 10.0%>
-envistar_temperature{name="avluft"} <%=m.read("3x077") / 10.0%>
+envistar_temperature{name="Frånluft"} <%=m.read("3x076") / 10.0%>
+envistar_temperature{name="Avluft"} <%=m.read("3x077") / 10.0%>
 
 # TYPE envistar_flow gauge
 # UNIT envistar_flow l/s
-envistar_flow{name="tilluft"} <%=m.read("3x095")%>
-envistar_flow{name="frånluft"} <%=m.read("3x096")%>
+envistar_flow{name="Tilluft"} <%=m.read("3x095")%>
+envistar_flow{name="Frånluft"} <%=m.read("3x096")%>
 
 # TYPE envistar_pressure gauge
 # UNIT envistar_pressure Pa
-envistar_pressure{name="tilluftstryck"} <%=m.read("3x097")%>
-envistar_pressure{name="frånluftstryck"} <%=m.read("3x098")%>
-envistar_pressure{name="tilluftstryck bör"} <%=m.read("3x399") / 100.0%>
-envistar_pressure{name="frånluftstryck bör"} <%=m.read("3x401") / 100.0%>
-envistar_pressure{name="tilluftsfilter"} <%=m.read("3x148") / 10.0%>
-envistar_pressure{name="frånluftsfilter"} <%=m.read("3x149") / 10.0%>
+envistar_pressure{name="Tilluftstryck"} <%=m.read("3x097")%>
+envistar_pressure{name="Frånluftstryck"} <%=m.read("3x098")%>
+envistar_pressure{name="Tilluftstryck bör"} <%=m.read("3x400") / 100.0%>
+envistar_pressure{name="Frånluftstryck bör"} <%=m.read("3x402") / 100.0%>
+envistar_pressure{name="Tilluftsfilter"} <%=m.read("3x148") / 10.0%>
+envistar_pressure{name="Frånluftsfilter"} <%=m.read("3x149") / 10.0%>
 
 # TYPE envistar_fanspeed gauge
 # UNIT envistar_fanspeed %
-envistar_fanspeed{name="tilluftsfläkt"} <%=m.read("3x029")%>
-envistar_fanspeed{name="frånluftsfläkt"} <%=m.read("3x031")%>
+envistar_fanspeed{name="Tilluftsfläkt"} <%=m.read("3x029")%>
+envistar_fanspeed{name="Frånluftsfläkt"} <%=m.read("3x031")%>
 
 # TYPE envistar_valve gauge
 # UNIT envistar_valve %
-envistar_valve{name="värme"} <%=m.read("3x040")%>
+envistar_valve{name="Värme"} <%=m.read("3x040")%>
 
 # TYPE metrics_gather_time gauge
 metrics_gather_time{device="envistar"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>
