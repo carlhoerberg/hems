@@ -13,6 +13,10 @@ class Devices
       @lock = Mutex.new
     end
 
+    def vvb_heat_now(value)
+      post("/user/var/125/10111/0/0/12134", value ? 1803 : 1802)
+    end
+
     def tank_sensors
       5
     end
