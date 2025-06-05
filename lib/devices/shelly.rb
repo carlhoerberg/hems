@@ -122,6 +122,16 @@ class Devices
         end
         # "{\"src\":\"shelly0110dimg3-e4b3233d2ac4\",\"dst\":\"*\",\"method\":\"NotifyStatus\",\"params\":{\"ts\":1748813001.71,\"light:0\":{\"brightness\":52,\"output\":true,\"source\":\"SHC\"}}}"
         # "{\"src\":\"shelly0110dimg3-e4b3233d2ac4\",\"dst\":\"*\",\"method\":\"NotifyStatus\",\"params\":{\"ts\":1748813165.50,\"light:0\":{\"brightness\":52,\"output\":false,\"source\":\"SHC\"}}}"
+      #when /^shelly1g3-/
+      #  if (v = params.dig("temperature:100", "tC"))
+      #    device["shelly_ht_temperature:100"] = { v:, ts: }
+      #  end
+      #  if (v = params.dig("temperature:101", "tC"))
+      #    device["shelly_ht_temperature"] = { v:, ts: }
+      #  end
+      #  if (v = params.dig("temperature:102", "tC"))
+      #    device["shelly_ht_temperature"] = { v:, ts: }
+      #  end
       else raise "Unknown device id #{device_id}"
       end
     end
