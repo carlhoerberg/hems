@@ -84,12 +84,18 @@ class EnergyManagement
       if voltage_drop
         puts "Voltage drop, turning off 9kW heater"
         @devices.relays.heater_9kw = false
+        @devices.eta.vvb_heat_now(false)
+      elsif @devices.next3.solar.excess?
+        # if there's excess solar power when the 9kW heater is on it means
+        # that the tank is full, then heat the VVB as well
+        @devices.eta.vvb_heat_now(true)
       #elsif (solar_total_power ||= @devices.next3.solar.total_power) < 9000
       #  puts "Solar power #{solar_total_power}W, turning off 9kW heater"
       #  @devices.relays.heater_9kw = false
       elsif soc <= 95
         puts "SOC #{soc}%, turning off 9kW heater"
         @devices.relays.heater_9kw = false
+        @devices.eta.vvb_heat_now(false)
       #elsif @devices.next3.solar.total_power < 1000
       #  puts "Weak solar power, turning off 9kw heater"
       #  @devices.relays.heater_9kw = false
