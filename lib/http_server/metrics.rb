@@ -18,6 +18,7 @@ class HTTPServer
     @@weco = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "weco.erb")))
     @@relays = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "relays.erb")))
     @@ecowitt = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "ecowitt.erb")))
+    @@envistar = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "envistar.erb")))
 
     def do_GET(req, res)
       res.content_type = "text/plain"
@@ -31,6 +32,7 @@ class HTTPServer
         Thread.new { @@topas.result_with_hash({ t:, measurements: @devices.topas.measurements, status: @devices.topas.status }) },
         Thread.new { @@weco.result_with_hash({ t:, modules: @devices.weco.modules, total: @devices.weco.total }) },
         Thread.new { @@relays.result_with_hash({ t:, status: @devices.relays.status }) },
+        Thread.new { @@envistar.result_with_hash({ t:, m: @devices.envistar }) },
         #Thread.new { @@ecowitt.result_with_hash({ t:, measurements: @devices.ecowitt.measurements }) },
         Thread.new do
           @@genset.result_with_hash({ t:, measurements: @devices.genset.measurements })
