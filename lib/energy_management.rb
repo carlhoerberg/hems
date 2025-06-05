@@ -65,7 +65,7 @@ class EnergyManagement
       #elsif (solar_total_power ||= @devices.next3.solar.total_power) < 6000
       #  puts "Solar power #{solar_total_power}W, turning off 6kW heater"
       #  @devices.relays.heater_6kw = false
-      elsif soc <= 90
+      elsif soc <= 95
         puts "SOC #{soc}%, turning off 6kW heater"
         @devices.relays.heater_6kw = false
       #elsif @devices.next3.solar.total_power < 1000
@@ -87,7 +87,7 @@ class EnergyManagement
       #elsif (solar_total_power ||= @devices.next3.solar.total_power) < 9000
       #  puts "Solar power #{solar_total_power}W, turning off 9kW heater"
       #  @devices.relays.heater_9kw = false
-      elsif soc <= 90
+      elsif soc <= 95
         puts "SOC #{soc}%, turning off 9kW heater"
         @devices.relays.heater_9kw = false
       #elsif @devices.next3.solar.total_power < 1000
