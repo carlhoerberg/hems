@@ -5,7 +5,7 @@ class Devices
     def initialize
       @lock = Mutex.new
       @key = 0x85F9 # rand(0xFFFF)
-      #set_key
+      set_key
     end
 
     def min_soc
