@@ -162,7 +162,8 @@ class EnergyManagement
         puts "Battery has errors, keeping genset running"
       elsif !@genset_auto_started # was manually started
         puts "Genset manually started, keep running"
-      elsif @devices.weco.min_soc >= 97
+      #elsif @devices.weco.min_soc >= 97
+      elsif @devices.next3.battery.soc >= 97
         puts "SoC #{soc}%, battery current limited, stopping genset"
         stop_genset
       elsif will_reach_full_battery_with_solar?(soc)
@@ -170,15 +171,17 @@ class EnergyManagement
         stop_genset
       end
     else # genset is not running
-      battery_current = @devices.weco.currents
-      discharge_limit = battery_current[:discharge_limit]
+      #battery_current = @devices.weco.currents
+      #discharge_limit = battery_current[:discharge_limit]
+      discharge_limit = @devices.next3.battery.bms_recommended_discharging_current
       if discharge_limit <= 350 # open air vents well before any battery problems
         @devices.relays.open_air_vents
       else # close vents if genset is not running and we are ok on batteries
         @devices.relays.close_air_vents
       end
 
-      discharge_current = battery_current[:current]
+      #discharge_current = battery_current[:current]
+      discharge_current = @devices.next3.battery.charging_current
       #if high_phase_current?
       #  puts "Starting genset. High phase current, avoid voltage drop"
       #  start_genset
