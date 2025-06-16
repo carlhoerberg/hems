@@ -5,7 +5,7 @@ class Devices
     def initialize
       @lock = Mutex.new
       @key = 0x85F9 # rand(0xFFFF)
-      #set_key
+      set_key
     end
 
     def min_soc
@@ -126,12 +126,14 @@ class Devices
     end
 
     def set_key(key = @key)
-      @serial.write [0, 3, key, 1].pack("CCS>S>")
-      response = @serial.read(6) || raise(EOFError.new)
-      unit, func, addr, len = response.unpack("CCS>S>")
-      raise("Unexpected response: #{response.dump}") if unit != 1 || func != 3 || addr != 0x0323 || len != 0
-      crc = @serial.read(2).unpack1("S<")
-      raise("Unexpected crc #{crc} != #{checksum(response, key)}") if crc != checksum(response, key)
+      lock do |serial|
+        serial.write [0, 3, key, 1].pack("CCS>S>")
+        response = serial.read(6) || raise(EOFError.new)
+        unit, func, addr, len = response.unpack("CCS>S>")
+        raise("Unexpected response: #{response.dump}") if unit != 1 || func != 3 || addr != 0x0323 || len != 0
+        crc = serial.read(2).unpack1("S<")
+        raise("Unexpected crc #{crc} != #{checksum(response, key)}") if crc != checksum(response, key)
+      end
     end
 
     def checksum(data, key = @key)
