@@ -56,6 +56,11 @@ class Devices
       @genset.read_input_register(23) / 10.0
     end
 
+    def status_integer
+      v = @genset.read_discrete_inputs(0x0020, 40)
+      v.each_with_index.sum { |bool, index| bool ? (1 << index) : 0 }
+    end
+
     def status
       v = @genset.read_discrete_inputs(0x0020, 40)
       {

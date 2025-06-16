@@ -35,7 +35,7 @@ class HTTPServer
         Thread.new { @@envistar.result_with_hash({ t:, m: @devices.envistar }) },
         #Thread.new { @@ecowitt.result_with_hash({ t:, measurements: @devices.ecowitt.measurements }) },
         Thread.new do
-          @@genset.result_with_hash({ t:, measurements: @devices.genset.measurements })
+          @@genset.result_with_hash({ t:, measurements: @devices.genset.measurements, status: @devices.genset.status_integer })
         rescue EOFError
           warn "Genset is offline"
         end,
