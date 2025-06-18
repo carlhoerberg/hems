@@ -1,0 +1,18 @@
+# TYPE casa_temperature gauge
+<%casa.temperatures.each do |k, v|%>
+casa_temperature{name="<%=k.upcase%>"} <%=v%>
+<%end%>
+
+# TYPE casa_fan_rpm gauge
+<%casa.fan_rpms.each do |k, v|%>
+casa_fan_rpm{name="<%=k.upcase%>"} <%=v%>
+<%end%>
+
+# TYPE casa_unit_state gauge
+casa_unit_state <%=casa.unit_state%>
+
+# TYPE casa_operating_mode gauge
+casa_operating_mode <%=casa.operating_mode%>
+
+# TYPE metrics_gather_time gauge
+metrics_gather_time{device="casa"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>
