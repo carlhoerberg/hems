@@ -73,7 +73,7 @@ class Devices
     # 2 = Home
     # 3 = Boost
     # 4 = Travelling
-    def operting_mode
+    def operating_mode
       read "3x6302"
     end
 
