@@ -1,11 +1,11 @@
 # TYPE casa_temperature gauge
 <%casa.temperatures.each do |k, v|%>
-casa_temperature{name="<%=k.upcase%>"} <%=v%>
+casa_temperature{name="<%=k.capitalize%>"} <%=v%>
 <%end%>
 
 # TYPE casa_fan_rpm gauge
 <%casa.fan_rpms.each do |k, v|%>
-casa_fan_rpm{name="<%=k.upcase%>"} <%=v%>
+casa_fan_rpm{name="<%=k.capitalize%>"} <%=v%>
 <%end%>
 
 # TYPE casa_unit_state gauge
