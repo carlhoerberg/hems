@@ -7,56 +7,95 @@ class Devices
     end
 
     def temperature_setpoint
-      read("4x5406")
+      read("4x5101")
     end
 
-    def fresh_air_temperature
-      read("3x6201") / 10.0
-    end
-
-    def supply_air_temperature
-      read("3x6203") / 10.0
-    end
-
-    def extract_air_temperature
-      read("3x6204") / 10.0
+    def temperature_setpoint=(value)
+      write("4x5101", value)
     end
 
     def temperatures
-      values = @modbus.read_input_registers(6200, 3)
+      v = @modbus.read_input_registers(6200, 6)
       {
-        fresh: values[0] / 10.0,
-        supply: values[1] / 10.0,
-        extract: values[2] / 10.0
+        fresh: v[0] / 10.0,
+        supply_before_reheater: v[1] / 10.0,
+        supply: v[2] / 10.0,
+        extract: v[3] / 10.0,
+        exhaust: v[4] / 10.0,
+        room: v[5] / 10.0,
       }
     end
 
-    def co2_ppm
-      read("3x6213") / 10.0
-    end
-
-    def rh
+    def relative_humidity
       read "3x6214"
     end
 
-    def voc_ppm
-      read "3x6217"
+    def absolute_humidity
+      read "3x6215"
     end
 
-    def supply_fan_rpm
-      read "3x6205"
+    def absolute_humidity_setpoint
+      read "3x6216"
     end
 
-    def extract_fan_rpm
-      read "3x6206"
-    end
-
-    def fan_rpms
-      v = @modbus.read_input_registers(6204, 2)
+    def humidity
+      v = @modbus.read_input_registers(6213, 3)
       {
-        supply: v[0],
-        extract: v[1]
+        relative: v[0],
+        absolute: v[1] / 10.0,
+        absolute_setpoint: v[2] / 10.0
       }
+    end
+
+    def measurements
+      v = @modbus.read_input_registers(6200, 21)
+      {
+        fresh_air_temperature: v[0] / 10.0,
+        supply_air_before_heater_temperature: v[1] / 10.0,
+        supply_air_temperature: v[2] / 10.0,
+        extract_air_temperature: v[3] / 10.0,
+        exhaust_air_temperature: v[4] / 10.0,
+        room_air_temperature: v[5] / 10.0,
+        user_panel_1_air_temperature: v[6] / 10.0,
+        user_panel_2_air_temperature: v[7] / 10.0,
+        water_radiator_temperature: v[8] / 10.0,
+        preheater_temperature: v[9] / 10.0,
+        external_fresh_air_temperature: v[10] / 10.0,
+        co2_unfiltered: v[11],
+        co2_filtered: v[12],
+        relative_humidity: v[13],
+        absolute_humidity: v[14] / 10.0,
+        absolute_humidity_setpoint: v[15] / 10.0,
+        voc: v[16],
+        supply_duct_pressure: v[17],
+        exhaust_duct_pressure: v[18],
+        supply_air_flow: v[19],
+        exhaust_air_flow: v[20],
+      }
+    end
+
+    def supply_control_power_output
+      read "3x6317"
+    end
+
+    def supply_fan_control
+      read "3x6303"
+    end
+
+    def exhaust_fan_control
+      read "3x6304"
+    end
+
+    def active_alarms
+      read "3x6136"
+    end
+
+    def info_alarms
+      read "3x6137"
+    end
+
+    def reset_info_alarms
+      write "4x5406", 1
     end
 
     # 0 = Ext. stop
@@ -100,16 +139,6 @@ class Devices
       when "3" then @modbus.write_input_register(reg, value)
       when "4" then @modbus.write_holding_register(reg, value)
       end
-    end
-
-    def alarms
-      alarms = @modbus.read_discrete_inputs(0, 4)
-      {
-        danger: alarms[0],
-        high: alarms[1],
-        low: alarms[2],
-        warning: alarms[3]
-      }
     end
   end
 end

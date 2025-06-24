@@ -1,12 +1,25 @@
 # TYPE casa_temperature gauge
 <%casa.temperatures.each do |k, v|%>
-casa_temperature{name="<%=k.capitalize%>"} <%=v%>
+casa_temperature{name="<%=k.capitalize.gsub("_", " ")%>"} <%=v%>
 <%end%>
 
-# TYPE casa_fan_rpm gauge
-<%casa.fan_rpms.each do |k, v|%>
-casa_fan_rpm{name="<%=k.capitalize%>"} <%=v%>
-<%end%>
+# TYPE casa_relative_humidity gauge
+casa_relative_humidity <%=casa.relative_humidity%>
+
+# TYPE casa_absolute_humidity gauge
+casa_absolute_humidity <%=casa.absolute_humidity%>
+
+# TYPE casa_absolute_humidity_setpoint gauge
+casa_absolute_humidity_setpoint <%=casa.absolute_humidity_setpoint%>
+
+# TYPE casa_power_control gauge
+casa_power_control{name="Supply fan"} <%=casa.supply_fan_control%>
+casa_power_control{name="Exhaust fan"} <%=casa.exhaust_fan_control%>
+casa_power_control{name="Reheater"} <%=casa.supply_control_power_output%>
+
+# TYPE casa_alarms gauge
+casa_alarms{type="Active"} <%=casa.active_alarms%>
+casa_alarms{type="Info"} <%=casa.info_alarms%>
 
 # TYPE casa_unit_state gauge
 casa_unit_state <%=casa.unit_state%>
