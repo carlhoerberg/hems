@@ -31,11 +31,11 @@ class Devices
     end
 
     def absolute_humidity
-      read "3x6215"
+      read("3x6215") / 10.0
     end
 
     def absolute_humidity_setpoint
-      read "3x6216"
+      read("3x6216") / 10.0
     end
 
     def humidity
