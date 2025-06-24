@@ -1,6 +1,6 @@
 # TYPE casa_temperature gauge
 <%casa.temperatures.each do |k, v|%>
-casa_temperature{name="<%=k.capitalize.gsub("_", " ")%>"} <%=v%>
+casa_temperature{name="<%=k.to_s.capitalize.gsub("_", " ")%>"} <%=v%>
 <%end%>
 
 # TYPE casa_relative_humidity gauge
