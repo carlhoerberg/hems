@@ -116,6 +116,10 @@ class Devices
       read "3x6302"
     end
 
+    def operating_mode=(value)
+      write "4x5001", value
+    end
+
     # 3x6136 Combined alarm See full list
     # 3x6137 Combined info See full list
 
