@@ -5,6 +5,7 @@ require_relative "./http_server/genset"
 require_relative "./http_server/button"
 require_relative "./http_server/topas"
 require_relative "./http_server/em"
+require_relative "./http_server/eta"
 
 class HTTPServer
   def initialize(devices, em)
