@@ -15,11 +15,8 @@ class HTTPServer
     @server.mount "/genset", GensetControl, devices.genset
     @server.mount "/button1", ButtonControl, devices
     @server.mount "/topas", TopasControl, devices.topas
+    @server.mount "/eta", ETAControl, devices.eta
     @server.mount "/em", EMControl, em
-    @server.mount_proc("/eta") do |_req, res|
-      res.content_type = "application/xml"
-      res.body = devices.eta.menu
-    end
   end
 
   def start
