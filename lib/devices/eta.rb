@@ -13,6 +13,11 @@ class Devices
       @lock = Mutex.new
     end
 
+    def stop_boilers
+      post("/user/var/41/10021/0/0/12080", 1802)
+      post("/user/var/42/10021/0/0/12080", 1802)
+    end
+
     def vvb_heat_now(value)
       post("/user/var/125/10111/0/0/12134", value ? 1803 : 1802)
     end
