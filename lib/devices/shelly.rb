@@ -134,7 +134,8 @@ class Devices
       #  end
       when /^shellyplussmoke-/
 
-      else raise "Unknown device id #{device_id}"
+      else
+        puts "Unknown device id #{device_id}", params
       end
     end
 
