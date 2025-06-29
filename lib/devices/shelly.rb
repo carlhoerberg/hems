@@ -132,8 +132,6 @@ class Devices
       #  if (v = params.dig("temperature:102", "tC"))
       #    device["shelly_ht_temperature"] = { v:, ts: }
       #  end
-      when /^shellyplussmoke-/
-
       else
         puts "Unknown device id #{device_id}", params
       end
