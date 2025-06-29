@@ -31,7 +31,7 @@ class Devices
             notify_status(data["src"], data["params"])
           when "NotifyEvent"
             data.dig("params", "events").each do |event|
-              notify_event(event)
+              notify_event(event, data["src"])
             end
           end
         rescue => e
@@ -140,7 +140,7 @@ class Devices
     # {"src"=>"shellyplusplugs-fcb4670cf7fc", "dst"=>"*", "method"=>"NotifyEvent", "params"=>{"ts"=>1729713785.0, "events"=>[{"component"=>"script:1", "id"=>1, "event"=>"shelly-blu", "data"=>{"encryption"=>false, "BTHome_version"=>2, "pid"=>82, "battery"=>100, "humidity"=>50, "temperature"=>19.7, "rssi"=>-71, "address"=>"7c:c6:b6:62:46:80"}, "ts"=>1729713785.0}]}}
     #
     # {"src"=>"shellyplusplugs-d4d4daecd810", "dst"=>"*", "method"=>"NotifyEvent", "params"=>{"ts"=>1729893268.8, "events"=>[{"component"=>"script:1", "id"=>1, "event"=>"aranet", "data"=>{"status"=>{"integration"=>true, "dfu"=>false, "cal_state"=>0}, "sys"=>{"fw_patch"=>19, "fw_minor"=>4, "fw_major"=>1, "hw"=>9, "addr"=>"cc:37:b5:bf:d6:a7", "rssi"=>-71}, "region"=>15, "packaging"=>1, "co2_ppm"=>1275, "tC"=>21.6, "pressure_dPa"=>9459, "rh"=>34, "battery"=>93, "co2_aranet_level"=>2, "refresh_interval"=>300, "age"=>4, "packet_counter"=>221}, "ts"=>1729893268.8}]}}
-    def notify_event(event)
+    def notify_event(event, src)
       data = event["data"]
       ts = (event["ts"] * 1000).to_i
       case event["event"]
@@ -169,7 +169,7 @@ class Devices
           if Numeric === v
             device[:shelly_ht_temperature] = {v:, ts:}
           else
-            p event
+            puts "#{src}: #{event}"
           end
         end
         if (v = data["humidity"])
