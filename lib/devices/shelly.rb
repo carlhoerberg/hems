@@ -165,6 +165,7 @@ class Devices
           device[:aranet_battery] = { v:, ts: }
         end
       when "shelly-blu"
+        p event
         device_id = "shellybluht-#{data["address"].delete(":")}"
         device = @devices[device_id] ||= {}
         if (v = data["temperature"])
