@@ -13,7 +13,7 @@ class HTTPServer
         res.content_type = "application/xml"
         res.body = eta.menu
       else
-        raise HTTPStatus::NotFound, "not found."
+        raise WEBrick::HTTPStatus::NotFound
       end
     end
   end
