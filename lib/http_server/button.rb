@@ -18,7 +18,7 @@ class HTTPServer
         @devices.relays.open_air_vents
         @devices.genset.start
       else
-        raise HTTPStatus::NotFound, "not found."
+        raise WEBrick::HTTPStatus::NotFound
       end
     end
   end
