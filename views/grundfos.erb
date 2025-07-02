@@ -9,7 +9,7 @@ grundfos_<%=k%> <%=v%>
 <%end%>
 
 # TYPE grundfos_alarm gauge
-grundfos_alarm{type="Fault"} <%=grundfos.fault%>
+grundfos_alarm{type="Fault"} <%=grundfos.alarm%>
 grundfos_alarm{type="Warning"} <%=grundfos.warning%>
 
 # TYPE metrics_gather_time gauge
