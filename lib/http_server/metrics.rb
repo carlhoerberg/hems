@@ -20,6 +20,7 @@ class HTTPServer
     @@ecowitt = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "ecowitt.erb")))
     @@envistar = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "envistar.erb")))
     @@casa = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "casa.erb")))
+    @@grundfos = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "grundfos.erb")))
 
     def do_GET(req, res)
       res.content_type = "text/plain"
@@ -35,6 +36,7 @@ class HTTPServer
         Thread.new { @@relays.result_with_hash({ t:, status: @devices.relays.status }) },
         Thread.new { @@envistar.result_with_hash({ t:, m: @devices.envistar }) },
         Thread.new { @@casa.result_with_hash({ t:, casa: @devices.casa }) },
+        Thread.new { @@grundfos.result_with_hash({ t:, grundfos: @devices.grundfos }) },
         #Thread.new { @@ecowitt.result_with_hash({ t:, measurements: @devices.ecowitt.measurements }) },
         Thread.new do
           @@genset.result_with_hash({ t:, measurements: @devices.genset.measurements, status: @devices.genset.status_integer })
