@@ -1,0 +1,16 @@
+<%grundfos.measurements.each do |k, v|%>
+# TYPE grundfos_<%=k%> gauge
+grundfos_<%=k%> <%=v%>
+<%end%>
+
+<%grundfos.counters.each do |k, v|%>
+# TYPE grundfos_<%=k%> counter
+grundfos_<%=k%> <%=v%>
+<%end%>
+
+# TYPE grundfos_alarm gauge
+grundfos_alarm{type="Fault"} <%=grundfos.fault%>
+grundfos_alarm{type="Warning"} <%=grundfos.warning%>
+
+# TYPE metrics_gather_time gauge
+metrics_gather_time{device="grundfos"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>

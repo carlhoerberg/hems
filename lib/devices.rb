@@ -11,9 +11,10 @@ require_relative "./devices/weco"
 require_relative "./devices/ecowitt"
 require_relative "./devices/envistar"
 require_relative "./devices/casa"
+require_relative "./devices/grundfos"
 
 class Devices
-  attr_reader :next3, :genset, :eta, :starlink, :shelly, :relays, :ups, :unifi, :topas, :weco, :ecowitt, :envistar, :casa
+  attr_reader :next3, :genset, :eta, :starlink, :shelly, :relays, :ups, :unifi, :topas, :weco, :ecowitt, :envistar, :casa, :grundfos
 
   def initialize
     @next3 = Next3.new
@@ -29,5 +30,6 @@ class Devices
     @ecowitt = Ecowitt.new
     @envistar = Envistar.new
     @casa = Casa.new
+    @grundfos = Grundfos.new
   end
 end
