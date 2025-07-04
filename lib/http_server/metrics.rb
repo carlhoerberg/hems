@@ -27,7 +27,7 @@ class HTTPServer
       threads = [
         Thread.new { @@next3.result_with_hash({ t:, next3: @devices.next3 }) },
         Thread.new { @@eta.result_with_hash({ t:, eta: @devices.eta }) },
-        #Thread.new { @@starlink.result_with_hash({ t:, metrics: @devices.starlink.metrics }) },
+        Thread.new { @@starlink.result_with_hash({ t:, metrics: @devices.starlink.metrics }) },
         Thread.new { @@shelly.result_with_hash({ t:, devices: @devices.shelly.devices }) },
         Thread.new { @@ups.result_with_hash({ t:, ups: @devices.ups }) },
         Thread.new { @@unifi.result_with_hash({ t:, unifi_health: @devices.unifi.health }) },
