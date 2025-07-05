@@ -171,7 +171,7 @@ class ModbusRTU:
         async with self.lock:
             count = len(values)
             byte_count = count * 2
-            
+
             frame = bytes([
                 slave_id,
                 0x10,  # Function code
@@ -181,7 +181,7 @@ class ModbusRTU:
                 count & 0xFF,
                 byte_count
             ])
-            
+
             # Add register values
             for value in values:
                 frame += bytes([
@@ -295,7 +295,7 @@ class ModbusRTU:
         async with self.lock:
             count = len(values)
             byte_count = (count + 7) // 8  # Round up to nearest byte
-            
+
             frame = bytes([
                 slave_id,
                 0x0F,  # Function code
@@ -305,7 +305,7 @@ class ModbusRTU:
                 count & 0xFF,
                 byte_count
             ])
-            
+
             # Pack coil values into bytes
             coil_bytes = []
             for i in range(byte_count):
@@ -315,7 +315,7 @@ class ModbusRTU:
                     if coil_index < count and values[coil_index]:
                         byte_val |= (1 << bit)
                 coil_bytes.append(byte_val)
-            
+
             frame += bytes(coil_bytes)
 
             self._send_request(frame)
@@ -359,45 +359,45 @@ class ModbusTCPServer:
         """Handle Modbus TCP client connection"""
         try:
             client_socket.setblocking(False)
-            
+
             while True:
                 try:
                     # Read MBAP header (7 bytes)
                     header = await self._read_exact(client_socket, 7)
                     if not header:
                         break
-                    
+
                     # Parse MBAP header
                     transaction_id, protocol_id, length, unit_id = struct.unpack('>HHHB', header)
-                    
+
                     # Verify protocol ID (should be 0 for Modbus)
                     if protocol_id != 0:
                         print(f"Invalid protocol ID: {protocol_id}")
                         break
-                    
+
                     # Read PDU (length - 1 byte for unit_id)
                     pdu = await self._read_exact(client_socket, length - 1)
                     if not pdu:
                         break
-                    
+
                     # Process Modbus request
                     response_pdu = await self._process_modbus_request(unit_id, pdu)
-                    
+
                     if response_pdu:
                         # Create MBAP header for response
                         response_length = len(response_pdu) + 1  # +1 for unit_id
                         response_header = struct.pack('>HHHB', transaction_id, 0, response_length, unit_id)
-                        
+
                         # Send response
                         full_response = response_header + response_pdu
                         await self._send_all(client_socket, full_response)
-                    
+
                 except OSError:
                     break
                 except Exception as e:
                     print(f"Error processing Modbus TCP request: {e}")
                     break
-                    
+
         except Exception as e:
             print(f"Error handling Modbus TCP client: {e}")
         finally:
@@ -435,9 +435,9 @@ class ModbusTCPServer:
         """Process Modbus request and return response PDU"""
         if len(pdu) < 1:
             return None
-        
+
         function_code = pdu[0]
-        
+
         try:
             if function_code == 0x01:  # Read Coils
                 return await self._handle_read_coils(unit_id, pdu)
@@ -466,13 +466,13 @@ class ModbusTCPServer:
         """Handle Read Holding Registers (0x03)"""
         if len(pdu) < 5:
             return bytes([0x83, 0x03])  # Illegal data value
-        
+
         start_addr = struct.unpack('>H', pdu[1:3])[0]
         count = struct.unpack('>H', pdu[3:5])[0]
-        
+
         # Forward to RTU
         result = await self.modbus.read_holding_registers(unit_id, start_addr, count)
-        
+
         if result is None:
             return bytes([0x83, 0x04])  # Server device failure
         elif isinstance(result, dict) and 'error' in result:
@@ -489,13 +489,13 @@ class ModbusTCPServer:
         """Handle Read Input Registers (0x04)"""
         if len(pdu) < 5:
             return bytes([0x84, 0x03])  # Illegal data value
-        
+
         start_addr = struct.unpack('>H', pdu[1:3])[0]
         count = struct.unpack('>H', pdu[3:5])[0]
-        
+
         # Forward to RTU
         result = await self.modbus.read_input_registers(unit_id, start_addr, count)
-        
+
         if result is None:
             return bytes([0x84, 0x04])  # Server device failure
         elif isinstance(result, dict) and 'error' in result:
@@ -512,13 +512,13 @@ class ModbusTCPServer:
         """Handle Write Single Register (0x06)"""
         if len(pdu) < 5:
             return bytes([0x86, 0x03])  # Illegal data value
-        
+
         register_addr = struct.unpack('>H', pdu[1:3])[0]
         value = struct.unpack('>H', pdu[3:5])[0]
-        
+
         # Forward to RTU
         result = await self.modbus.write_single_register(unit_id, register_addr, value)
-        
+
         if result is None:
             return bytes([0x86, 0x04])  # Server device failure
         elif isinstance(result, dict) and 'error' in result:
@@ -531,26 +531,26 @@ class ModbusTCPServer:
         """Handle Write Multiple Holding Registers (0x10)"""
         if len(pdu) < 6:
             return bytes([0x90, 0x03])  # Illegal data value
-        
+
         start_addr = struct.unpack('>H', pdu[1:3])[0]
         count = struct.unpack('>H', pdu[3:5])[0]
         byte_count = pdu[5]
-        
+
         if len(pdu) < 6 + byte_count:
             return bytes([0x90, 0x03])  # Illegal data value
-        
+
         if byte_count != count * 2:
             return bytes([0x90, 0x03])  # Illegal data value
-        
+
         # Extract values
         values = []
         for i in range(0, byte_count, 2):
             value = struct.unpack('>H', pdu[6+i:6+i+2])[0]
             values.append(value)
-        
+
         # Forward to RTU
         result = await self.modbus.write_multiple_registers(unit_id, start_addr, values)
-        
+
         if result is None:
             return bytes([0x90, 0x04])  # Server device failure
         elif isinstance(result, dict) and 'error' in result:
@@ -563,13 +563,13 @@ class ModbusTCPServer:
         """Handle Read Coils (0x01)"""
         if len(pdu) < 5:
             return bytes([0x81, 0x03])  # Illegal data value
-        
+
         start_addr = struct.unpack('>H', pdu[1:3])[0]
         count = struct.unpack('>H', pdu[3:5])[0]
-        
+
         # Forward to RTU
         result = await self.modbus.read_coils(unit_id, start_addr, count)
-        
+
         if result is None:
             return bytes([0x81, 0x04])  # Server device failure
         elif isinstance(result, dict) and 'error' in result:
@@ -578,7 +578,7 @@ class ModbusTCPServer:
             # Build response
             byte_count = (len(result) + 7) // 8
             response = bytes([0x01, byte_count])
-            
+
             # Pack coils into bytes
             for i in range(byte_count):
                 byte_val = 0
@@ -587,20 +587,20 @@ class ModbusTCPServer:
                     if coil_index < len(result) and result[coil_index]:
                         byte_val |= (1 << bit)
                 response += bytes([byte_val])
-            
+
             return response
 
     async def _handle_read_discrete_inputs(self, unit_id, pdu):
         """Handle Read Discrete Inputs (0x02)"""
         if len(pdu) < 5:
             return bytes([0x82, 0x03])  # Illegal data value
-        
+
         start_addr = struct.unpack('>H', pdu[1:3])[0]
         count = struct.unpack('>H', pdu[3:5])[0]
-        
+
         # Forward to RTU
         result = await self.modbus.read_discrete_inputs(unit_id, start_addr, count)
-        
+
         if result is None:
             return bytes([0x82, 0x04])  # Server device failure
         elif isinstance(result, dict) and 'error' in result:
@@ -609,7 +609,7 @@ class ModbusTCPServer:
             # Build response
             byte_count = (len(result) + 7) // 8
             response = bytes([0x02, byte_count])
-            
+
             # Pack inputs into bytes
             for i in range(byte_count):
                 byte_val = 0
@@ -618,23 +618,23 @@ class ModbusTCPServer:
                     if input_index < len(result) and result[input_index]:
                         byte_val |= (1 << bit)
                 response += bytes([byte_val])
-            
+
             return response
 
     async def _handle_write_single_coil(self, unit_id, pdu):
         """Handle Write Single Coil (0x05)"""
         if len(pdu) < 5:
             return bytes([0x85, 0x03])  # Illegal data value
-        
+
         coil_addr = struct.unpack('>H', pdu[1:3])[0]
         coil_value = struct.unpack('>H', pdu[3:5])[0]
-        
+
         # Convert coil value (0xFF00 = ON, 0x0000 = OFF)
         value = coil_value == 0xFF00
-        
+
         # Forward to RTU
         result = await self.modbus.write_single_coil(unit_id, coil_addr, value)
-        
+
         if result is None:
             return bytes([0x85, 0x04])  # Server device failure
         elif isinstance(result, dict) and 'error' in result:
@@ -647,14 +647,14 @@ class ModbusTCPServer:
         """Handle Write Multiple Coils (0x0F)"""
         if len(pdu) < 6:
             return bytes([0x8F, 0x03])  # Illegal data value
-        
+
         start_addr = struct.unpack('>H', pdu[1:3])[0]
         count = struct.unpack('>H', pdu[3:5])[0]
         byte_count = pdu[5]
-        
+
         if len(pdu) < 6 + byte_count:
             return bytes([0x8F, 0x03])  # Illegal data value
-        
+
         # Extract coil values
         values = []
         for i in range(byte_count):
@@ -662,10 +662,10 @@ class ModbusTCPServer:
             for bit in range(8):
                 if len(values) < count:
                     values.append(bool(byte_val & (1 << bit)))
-        
+
         # Forward to RTU
         result = await self.modbus.write_multiple_coils(unit_id, start_addr, values)
-        
+
         if result is None:
             return bytes([0x8F, 0x04])  # Server device failure
         elif isinstance(result, dict) and 'error' in result:
@@ -718,14 +718,24 @@ class HTTPServer:
                     await asyncio.sleep(0.01)
 
             # Parse HTTP request
-            request_str = request.decode('utf-8', errors='ignore')
+            try:
+                request_str = request.decode('utf-8')
+            except:
+                request_str = request.decode()
             lines = request_str.split('\r\n')
 
-            if not lines:
+            if not lines or not lines[0]:
                 client_socket.close()
                 return
 
-            method, path, _ = lines[0].split(' ', 2)
+            # Parse HTTP request line safely
+            request_parts = lines[0].split(' ')
+            if len(request_parts) < 2:
+                client_socket.close()
+                return
+                
+            method = request_parts[0]
+            path = request_parts[1]
 
             # Route handling
             if path == '/':
@@ -736,7 +746,7 @@ class HTTPServer:
                 response = self.serve_404()
 
             # Send response
-            client_socket.send(response.encode('utf-8'))
+            client_socket.send(response.encode())
             client_socket.close()
 
         except Exception as e:
@@ -892,7 +902,7 @@ class HTTPServer:
 </body>
 </html>"""
 
-return f"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: {len(html)}\r\n\r\n{html}"
+        return f"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: {len(html)}\r\n\r\n{html}"
 
     def serve_404(self):
         """Serve 404 error"""
@@ -1031,7 +1041,7 @@ return f"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: {len(html
         slave_id = int(params.get('slave_id', 1))
         start_addr = int(params.get('start_addr', 0))
         values_str = params.get('values', '0')
-        
+
         # Parse values - expect comma-separated integers
         try:
             values = [int(v.strip()) for v in values_str.split(',')]
@@ -1057,7 +1067,7 @@ return f"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: {len(html
         slave_id = int(params.get('slave_id', 1))
         coil_addr = int(params.get('start_addr', 0))
         value_str = params.get('value', '0').lower()
-        
+
         # Parse boolean value
         value = value_str in ['1', 'true', 'on', 'yes']
 
@@ -1078,7 +1088,7 @@ return f"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: {len(html
         slave_id = int(params.get('slave_id', 1))
         start_addr = int(params.get('start_addr', 0))
         values_str = params.get('values', '0')
-        
+
         # Parse values - expect comma-separated boolean values
         try:
             values = []
@@ -1111,40 +1121,66 @@ return f"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: {len(html
 # WiFi connection
 def connect_wifi(ssid, password):
     """Connect to WiFi network"""
+    print(f"[DEBUG] Initializing WiFi connection to SSID: {ssid}")
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
+    print(f"[DEBUG] WiFi interface activated")
+    
     wlan.connect(ssid, password)
+    print(f"[DEBUG] Connection request sent to {ssid}")
 
     print("Connecting to WiFi...")
     timeout = 10
     while timeout > 0:
-        if wlan.status() < 0 or wlan.status() >= 3:
+        status = wlan.status()
+        if status < 0 or status >= 3:
             break
         timeout -= 1
-        print("Waiting for connection...")
+        print(f"[DEBUG] Connection status: {status}, timeout: {timeout}s")
         time.sleep(1)
 
-    if wlan.status() != 3:
-        print("Failed to connect to WiFi")
+    status = wlan.status()
+    if status != 3:
+        print(f"[ERROR] Failed to connect to WiFi. Status: {status}")
+        status_messages = {
+            0: "Link down",
+            1: "Link join",
+            2: "Link no IP",
+            -1: "Link fail",
+            -2: "No AP found",
+            -3: "Wrong password"
+        }
+        print(f"[ERROR] Status meaning: {status_messages.get(status, 'Unknown status')}")
         return False
     else:
-        print("Connected to WiFi")
-        print(f"IP: {wlan.ifconfig()[0]}")
+        print("[SUCCESS] Connected to WiFi!")
+        ifconfig = wlan.ifconfig()
+        print(f"[DEBUG] Network configuration:")
+        print(f"[DEBUG]   IP Address: {ifconfig[0]}")
+        print(f"[DEBUG]   Subnet Mask: {ifconfig[1]}")
+        print(f"[DEBUG]   Gateway: {ifconfig[2]}")
+        print(f"[DEBUG]   DNS Server: {ifconfig[3]}")
         return True
 
 # Main application
 async def main():
     """Main application"""
     # WiFi credentials - modify these for your network
-    WIFI_SSID = "YOUR_WIFI_SSID"
-    WIFI_PASSWORD = "YOUR_WIFI_PASSWORD"
+    WIFI_SSID = "E-lodge"
+    WIFI_PASSWORD = "Futurama"
 
     # Connect to WiFi
+    print("[DEBUG] Starting WiFi connection...")
     if not connect_wifi(WIFI_SSID, WIFI_PASSWORD):
-        print("Cannot start without WiFi connection")
+        print("[ERROR] Cannot start without WiFi connection")
         return
 
+    # Get IP address for display
+    wlan = network.WLAN(network.STA_IF)
+    ip_address = wlan.ifconfig()[0]
+
     # Initialize Modbus RTU
+    print("[DEBUG] Initializing Modbus RTU interface...")
     # Adjust pins according to your Waveshare RS485 HAT connections
     modbus = ModbusRTU(
         uart_id=0,      # UART0
@@ -1153,22 +1189,27 @@ async def main():
         rx_pin=1,       # RX pin
         de_pin=2        # Direction Enable pin for RS485
     )
+    print("[DEBUG] Modbus RTU initialized on UART0, 9600 baud")
 
     # Initialize HTTP server
+    print("[DEBUG] Initializing HTTP server on port 80...")
     http_server = HTTPServer(modbus, port=80)
-    
+
     # Initialize Modbus TCP server
+    print("[DEBUG] Initializing Modbus TCP server on port 502...")
     modbus_tcp_server = ModbusTCPServer(modbus, port=502)
 
-    print("Starting Modbus Gateway...")
-    print("Access the web interface at: http://[IP_ADDRESS]")
-    print("Modbus TCP available on port 502")
+    print("[SUCCESS] Starting Modbus Gateway...")
+    print(f"[INFO] Access the web interface at: http://{ip_address}")
+    print(f"[INFO] Modbus TCP server available at: {ip_address}:502")
 
     # Start both servers concurrently
+    print("[DEBUG] Starting HTTP and Modbus TCP servers...")
     await asyncio.gather(
         http_server.start(),
         modbus_tcp_server.start()
     )
+    print("[SUCCESS] All servers started successfully!")
 
 # Run the application
 if __name__ == "__main__":
