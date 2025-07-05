@@ -166,6 +166,40 @@ class ModbusRTU:
 
             return registers
 
+    async def write_multiple_registers(self, slave_id, start_addr, values):
+        """Write multiple holding registers (Function Code 16)"""
+        async with self.lock:
+            count = len(values)
+            byte_count = count * 2
+            
+            frame = bytes([
+                slave_id,
+                0x10,  # Function code
+                (start_addr >> 8) & 0xFF,
+                start_addr & 0xFF,
+                (count >> 8) & 0xFF,
+                count & 0xFF,
+                byte_count
+            ])
+            
+            # Add register values
+            for value in values:
+                frame += bytes([
+                    (value >> 8) & 0xFF,
+                    value & 0xFF
+                ])
+
+            self._send_request(frame)
+            response = self._receive_response()
+
+            if response is None:
+                return False
+
+            if response[1] & 0x80:  # Error response
+                return {'error': response[2]}
+
+            return True
+
 # Modbus TCP Server implementation
 class ModbusTCPServer:
     def __init__(self, modbus_rtu, port=502):
@@ -282,6 +316,8 @@ class ModbusTCPServer:
                 return await self._handle_read_input_registers(unit_id, pdu)
             elif function_code == 0x06:  # Write Single Register
                 return await self._handle_write_single_register(unit_id, pdu)
+            elif function_code == 0x10:  # Write Multiple Holding Registers
+                return await self._handle_write_multiple_registers(unit_id, pdu)
             else:
                 # Function not supported
                 return bytes([function_code | 0x80, 0x01])  # Illegal function
@@ -353,6 +389,38 @@ class ModbusTCPServer:
         else:
             # Echo back the request for successful write
             return pdu
+
+    async def _handle_write_multiple_registers(self, unit_id, pdu):
+        """Handle Write Multiple Holding Registers (0x10)"""
+        if len(pdu) < 6:
+            return bytes([0x90, 0x03])  # Illegal data value
+        
+        start_addr = struct.unpack('>H', pdu[1:3])[0]
+        count = struct.unpack('>H', pdu[3:5])[0]
+        byte_count = pdu[5]
+        
+        if len(pdu) < 6 + byte_count:
+            return bytes([0x90, 0x03])  # Illegal data value
+        
+        if byte_count != count * 2:
+            return bytes([0x90, 0x03])  # Illegal data value
+        
+        # Extract values
+        values = []
+        for i in range(0, byte_count, 2):
+            value = struct.unpack('>H', pdu[6+i:6+i+2])[0]
+            values.append(value)
+        
+        # Forward to RTU
+        result = await self.modbus.write_multiple_registers(unit_id, start_addr, values)
+        
+        if result is None:
+            return bytes([0x90, 0x04])  # Server device failure
+        elif isinstance(result, dict) and 'error' in result:
+            return bytes([0x90, result['error']])
+        else:
+            # Return start address and count for successful write
+            return pdu[0:5]  # Function code + start address + count
 
 # HTTP Server implementation
 class HTTPServer:
@@ -458,6 +526,7 @@ class HTTPServer:
                 <option value="read_holding">Read Holding Registers</option>
                 <option value="read_input">Read Input Registers</option>
                 <option value="write_single">Write Single Register</option>
+                <option value="write_multiple">Write Multiple Registers</option>
             </select>
         </div>
 
@@ -476,6 +545,11 @@ class HTTPServer:
             <input type="number" id="value" value="0" min="0" max="65535">
         </div>
 
+        <div class="form-group" id="valuesGroup" style="display:none;">
+            <label>Values:</label>
+            <input type="text" id="values" placeholder="1,2,3,4,5" title="Comma-separated values">
+        </div>
+
         <button onclick="executeModbus()">Execute</button>
 
         <div class="result" id="result"></div>
@@ -486,13 +560,20 @@ class HTTPServer:
             const func = this.value;
             const countGroup = document.getElementById('countGroup');
             const valueGroup = document.getElementById('valueGroup');
+            const valuesGroup = document.getElementById('valuesGroup');
 
             if (func === 'write_single') {
                 countGroup.style.display = 'none';
                 valueGroup.style.display = 'block';
+                valuesGroup.style.display = 'none';
+            } else if (func === 'write_multiple') {
+                countGroup.style.display = 'none';
+                valueGroup.style.display = 'none';
+                valuesGroup.style.display = 'block';
             } else {
                 countGroup.style.display = 'block';
                 valueGroup.style.display = 'none';
+                valuesGroup.style.display = 'none';
             }
         });
 
@@ -502,11 +583,14 @@ class HTTPServer:
             const startAddr = document.getElementById('startAddr').value;
             const count = document.getElementById('count').value;
             const value = document.getElementById('value').value;
+            const values = document.getElementById('values').value;
 
             let url = `/api/${func}?slave_id=${slaveId}&start_addr=${startAddr}`;
 
             if (func === 'write_single') {
                 url += `&value=${value}`;
+            } else if (func === 'write_multiple') {
+                url += `&values=${encodeURIComponent(values)}`;
             } else {
                 url += `&count=${count}`;
             }
@@ -553,6 +637,8 @@ return f"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: {len(html
                 return await self.api_read_input(params)
             elif path == '/api/write_single':
                 return await self.api_write_single(params)
+            elif path == '/api/write_multiple':
+                return await self.api_write_multiple(params)
             else:
                 return self.api_error("Unknown API endpoint")
 
@@ -609,6 +695,32 @@ return f"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: {len(html
             response = {"success": False, "error": f"Modbus error: {result['error']}"}
         else:
             response = {"success": True, "message": "Register written successfully"}
+
+        json_str = json.dumps(response)
+        return f"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {len(json_str)}\r\n\r\n{json_str}"
+
+    async def api_write_multiple(self, params):
+        """API: Write multiple holding registers"""
+        slave_id = int(params.get('slave_id', 1))
+        start_addr = int(params.get('start_addr', 0))
+        values_str = params.get('values', '0')
+        
+        # Parse values - expect comma-separated integers
+        try:
+            values = [int(v.strip()) for v in values_str.split(',')]
+        except ValueError:
+            response = {"success": False, "error": "Invalid values format. Use comma-separated integers."}
+            json_str = json.dumps(response)
+            return f"HTTP/1.1 400 Bad Request\r\nContent-Type: application/json\r\nContent-Length: {len(json_str)}\r\n\r\n{json_str}"
+
+        result = await self.modbus.write_multiple_registers(slave_id, start_addr, values)
+
+        if result is None:
+            response = {"success": False, "error": "Communication timeout"}
+        elif isinstance(result, dict) and 'error' in result:
+            response = {"success": False, "error": f"Modbus error: {result['error']}"}
+        else:
+            response = {"success": True, "message": f"Written {len(values)} registers successfully"}
 
         json_str = json.dumps(response)
         return f"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {len(json_str)}\r\n\r\n{json_str}"
