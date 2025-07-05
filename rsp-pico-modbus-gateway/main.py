@@ -13,6 +13,7 @@ class ModbusRTU:
         self.uart = UART(uart_id, baudrate=baudrate, tx=Pin(tx_pin), rx=Pin(rx_pin))
         self.de_pin = Pin(de_pin, Pin.OUT)  # Direction Enable pin for RS485
         self.de_pin.value(0)  # Start in receive mode
+        self.lock = asyncio.Lock()  # Prevent concurrent RTU requests
 
     def _calculate_crc(self, data):
         """Calculate Modbus CRC16"""
@@ -78,89 +79,92 @@ class ModbusRTU:
 
         return response
 
-    def read_holding_registers(self, slave_id, start_addr, count):
+    async def read_holding_registers(self, slave_id, start_addr, count):
         """Read holding registers (Function Code 3)"""
-        frame = bytes([
-            slave_id,
-            0x03,  # Function code
-            (start_addr >> 8) & 0xFF,
-            start_addr & 0xFF,
-            (count >> 8) & 0xFF,
-            count & 0xFF
-        ])
+        async with self.lock:
+            frame = bytes([
+                slave_id,
+                0x03,  # Function code
+                (start_addr >> 8) & 0xFF,
+                start_addr & 0xFF,
+                (count >> 8) & 0xFF,
+                count & 0xFF
+            ])
 
-        self._send_request(frame)
-        response = self._receive_response()
+            self._send_request(frame)
+            response = self._receive_response()
 
-        if response is None:
-            return None
+            if response is None:
+                return None
 
-        if response[1] & 0x80:  # Error response
-            return {'error': response[2]}
+            if response[1] & 0x80:  # Error response
+                return {'error': response[2]}
 
-        # Parse data
-        byte_count = response[2]
-        data = response[3:3+byte_count]
-        registers = []
+            # Parse data
+            byte_count = response[2]
+            data = response[3:3+byte_count]
+            registers = []
 
-        for i in range(0, byte_count, 2):
-            reg_val = (data[i] << 8) | data[i+1]
-            registers.append(reg_val)
+            for i in range(0, byte_count, 2):
+                reg_val = (data[i] << 8) | data[i+1]
+                registers.append(reg_val)
 
-        return registers
+            return registers
 
-    def write_single_register(self, slave_id, register_addr, value):
+    async def write_single_register(self, slave_id, register_addr, value):
         """Write single register (Function Code 6)"""
-        frame = bytes([
-            slave_id,
-            0x06,  # Function code
-            (register_addr >> 8) & 0xFF,
-            register_addr & 0xFF,
-            (value >> 8) & 0xFF,
-            value & 0xFF
-        ])
+        async with self.lock:
+            frame = bytes([
+                slave_id,
+                0x06,  # Function code
+                (register_addr >> 8) & 0xFF,
+                register_addr & 0xFF,
+                (value >> 8) & 0xFF,
+                value & 0xFF
+            ])
 
-        self._send_request(frame)
-        response = self._receive_response()
+            self._send_request(frame)
+            response = self._receive_response()
 
-        if response is None:
-            return False
+            if response is None:
+                return False
 
-        if response[1] & 0x80:  # Error response
-            return {'error': response[2]}
+            if response[1] & 0x80:  # Error response
+                return {'error': response[2]}
 
-        return True
+            return True
 
-    def read_input_registers(self, slave_id, start_addr, count):
+    async def read_input_registers(self, slave_id, start_addr, count):
         """Read input registers (Function Code 4)"""
-        frame = bytes([
-            slave_id,
-            0x04,  # Function code
-            (start_addr >> 8) & 0xFF,
-            start_addr & 0xFF,
-            (count >> 8) & 0xFF,
-            count & 0xFF
-        ])
+        async with self.lock:
+            frame = bytes([
+                slave_id,
+                0x04,  # Function code
+                (start_addr >> 8) & 0xFF,
+                start_addr & 0xFF,
+                (count >> 8) & 0xFF,
+                count & 0xFF
+            ])
 
-        self._send_request(frame)
-        response = self._receive_response()
+            self._send_request(frame)
+            response = self._receive_response()
 
-        if response is None:
-            return None
+            if response is None:
+                return None
 
-        if response[1] & 0x80:  # Error response
-            return {'error': response[2]}
+            if response[1] & 0x80:  # Error response
+                return {'error': response[2]}
 
-        # Parse data
-        byte_count = response[2]
-        data = response[3:3+byte_count]
-        registers = []
+            # Parse data
+            byte_count = response[2]
+            data = response[3:3+byte_count]
+            registers = []
 
-        for i in range(0, byte_count, 2):
-            reg_val = (data[i] << 8) | data[i+1]
-            registers.append(reg_val)
+            for i in range(0, byte_count, 2):
+                reg_val = (data[i] << 8) | data[i+1]
+                registers.append(reg_val)
 
-        return registers
+            return registers
 
 # Modbus TCP Server implementation
 class ModbusTCPServer:
@@ -294,7 +298,7 @@ class ModbusTCPServer:
         count = struct.unpack('>H', pdu[3:5])[0]
         
         # Forward to RTU
-        result = self.modbus.read_holding_registers(unit_id, start_addr, count)
+        result = await self.modbus.read_holding_registers(unit_id, start_addr, count)
         
         if result is None:
             return bytes([0x83, 0x04])  # Server device failure
@@ -317,7 +321,7 @@ class ModbusTCPServer:
         count = struct.unpack('>H', pdu[3:5])[0]
         
         # Forward to RTU
-        result = self.modbus.read_input_registers(unit_id, start_addr, count)
+        result = await self.modbus.read_input_registers(unit_id, start_addr, count)
         
         if result is None:
             return bytes([0x84, 0x04])  # Server device failure
@@ -340,7 +344,7 @@ class ModbusTCPServer:
         value = struct.unpack('>H', pdu[3:5])[0]
         
         # Forward to RTU
-        result = self.modbus.write_single_register(unit_id, register_addr, value)
+        result = await self.modbus.write_single_register(unit_id, register_addr, value)
         
         if result is None:
             return bytes([0x86, 0x04])  # Server device failure
@@ -544,24 +548,24 @@ return f"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: {len(html
 
             # API routing
             if path == '/api/read_holding':
-                return self.api_read_holding(params)
+                return await self.api_read_holding(params)
             elif path == '/api/read_input':
-                return self.api_read_input(params)
+                return await self.api_read_input(params)
             elif path == '/api/write_single':
-                return self.api_write_single(params)
+                return await self.api_write_single(params)
             else:
                 return self.api_error("Unknown API endpoint")
 
         except Exception as e:
             return self.api_error(f"API Error: {str(e)}")
 
-    def api_read_holding(self, params):
+    async def api_read_holding(self, params):
         """API: Read holding registers"""
         slave_id = int(params.get('slave_id', 1))
         start_addr = int(params.get('start_addr', 0))
         count = int(params.get('count', 1))
 
-        result = self.modbus.read_holding_registers(slave_id, start_addr, count)
+        result = await self.modbus.read_holding_registers(slave_id, start_addr, count)
 
         if result is None:
             response = {"success": False, "error": "Communication timeout"}
@@ -573,13 +577,13 @@ return f"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: {len(html
         json_str = json.dumps(response)
         return f"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {len(json_str)}\r\n\r\n{json_str}"
 
-    def api_read_input(self, params):
+    async def api_read_input(self, params):
         """API: Read input registers"""
         slave_id = int(params.get('slave_id', 1))
         start_addr = int(params.get('start_addr', 0))
         count = int(params.get('count', 1))
 
-        result = self.modbus.read_input_registers(slave_id, start_addr, count)
+        result = await self.modbus.read_input_registers(slave_id, start_addr, count)
 
         if result is None:
             response = {"success": False, "error": "Communication timeout"}
@@ -591,13 +595,13 @@ return f"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: {len(html
         json_str = json.dumps(response)
         return f"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {len(json_str)}\r\n\r\n{json_str}"
 
-    def api_write_single(self, params):
+    async def api_write_single(self, params):
         """API: Write single register"""
         slave_id = int(params.get('slave_id', 1))
         register_addr = int(params.get('start_addr', 0))
         value = int(params.get('value', 0))
 
-        result = self.modbus.write_single_register(slave_id, register_addr, value)
+        result = await self.modbus.write_single_register(slave_id, register_addr, value)
 
         if result is None:
             response = {"success": False, "error": "Communication timeout"}
