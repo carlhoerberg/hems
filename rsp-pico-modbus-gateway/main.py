@@ -200,6 +200,135 @@ class ModbusRTU:
 
             return True
 
+    async def read_coils(self, slave_id, start_addr, count):
+        """Read coils (Function Code 1)"""
+        async with self.lock:
+            frame = bytes([
+                slave_id,
+                0x01,  # Function code
+                (start_addr >> 8) & 0xFF,
+                start_addr & 0xFF,
+                (count >> 8) & 0xFF,
+                count & 0xFF
+            ])
+
+            self._send_request(frame)
+            response = self._receive_response()
+
+            if response is None:
+                return None
+
+            if response[1] & 0x80:  # Error response
+                return {'error': response[2]}
+
+            # Parse data
+            byte_count = response[2]
+            data = response[3:3+byte_count]
+            coils = []
+
+            for byte_val in data:
+                for bit in range(8):
+                    if len(coils) < count:
+                        coils.append(bool(byte_val & (1 << bit)))
+
+            return coils[:count]
+
+    async def read_discrete_inputs(self, slave_id, start_addr, count):
+        """Read discrete inputs (Function Code 2)"""
+        async with self.lock:
+            frame = bytes([
+                slave_id,
+                0x02,  # Function code
+                (start_addr >> 8) & 0xFF,
+                start_addr & 0xFF,
+                (count >> 8) & 0xFF,
+                count & 0xFF
+            ])
+
+            self._send_request(frame)
+            response = self._receive_response()
+
+            if response is None:
+                return None
+
+            if response[1] & 0x80:  # Error response
+                return {'error': response[2]}
+
+            # Parse data
+            byte_count = response[2]
+            data = response[3:3+byte_count]
+            inputs = []
+
+            for byte_val in data:
+                for bit in range(8):
+                    if len(inputs) < count:
+                        inputs.append(bool(byte_val & (1 << bit)))
+
+            return inputs[:count]
+
+    async def write_single_coil(self, slave_id, coil_addr, value):
+        """Write single coil (Function Code 5)"""
+        async with self.lock:
+            coil_value = 0xFF00 if value else 0x0000
+            frame = bytes([
+                slave_id,
+                0x05,  # Function code
+                (coil_addr >> 8) & 0xFF,
+                coil_addr & 0xFF,
+                (coil_value >> 8) & 0xFF,
+                coil_value & 0xFF
+            ])
+
+            self._send_request(frame)
+            response = self._receive_response()
+
+            if response is None:
+                return False
+
+            if response[1] & 0x80:  # Error response
+                return {'error': response[2]}
+
+            return True
+
+    async def write_multiple_coils(self, slave_id, start_addr, values):
+        """Write multiple coils (Function Code 15)"""
+        async with self.lock:
+            count = len(values)
+            byte_count = (count + 7) // 8  # Round up to nearest byte
+            
+            frame = bytes([
+                slave_id,
+                0x0F,  # Function code
+                (start_addr >> 8) & 0xFF,
+                start_addr & 0xFF,
+                (count >> 8) & 0xFF,
+                count & 0xFF,
+                byte_count
+            ])
+            
+            # Pack coil values into bytes
+            coil_bytes = []
+            for i in range(byte_count):
+                byte_val = 0
+                for bit in range(8):
+                    coil_index = i * 8 + bit
+                    if coil_index < count and values[coil_index]:
+                        byte_val |= (1 << bit)
+                coil_bytes.append(byte_val)
+            
+            frame += bytes(coil_bytes)
+
+            self._send_request(frame)
+            response = self._receive_response()
+
+            if response is None:
+                return False
+
+            if response[1] & 0x80:  # Error response
+                return {'error': response[2]}
+
+            return True
+
 # Modbus TCP Server implementation
 class ModbusTCPServer:
     def __init__(self, modbus_rtu, port=502):
@@ -310,12 +439,20 @@ class ModbusTCPServer:
         function_code = pdu[0]
         
         try:
-            if function_code == 0x03:  # Read Holding Registers
+            if function_code == 0x01:  # Read Coils
+                return await self._handle_read_coils(unit_id, pdu)
+            elif function_code == 0x02:  # Read Discrete Inputs
+                return await self._handle_read_discrete_inputs(unit_id, pdu)
+            elif function_code == 0x03:  # Read Holding Registers
                 return await self._handle_read_holding_registers(unit_id, pdu)
             elif function_code == 0x04:  # Read Input Registers
                 return await self._handle_read_input_registers(unit_id, pdu)
+            elif function_code == 0x05:  # Write Single Coil
+                return await self._handle_write_single_coil(unit_id, pdu)
             elif function_code == 0x06:  # Write Single Register
                 return await self._handle_write_single_register(unit_id, pdu)
+            elif function_code == 0x0F:  # Write Multiple Coils
+                return await self._handle_write_multiple_coils(unit_id, pdu)
             elif function_code == 0x10:  # Write Multiple Holding Registers
                 return await self._handle_write_multiple_registers(unit_id, pdu)
             else:
@@ -422,6 +559,121 @@ class ModbusTCPServer:
             # Return start address and count for successful write
             return pdu[0:5]  # Function code + start address + count
 
+    async def _handle_read_coils(self, unit_id, pdu):
+        """Handle Read Coils (0x01)"""
+        if len(pdu) < 5:
+            return bytes([0x81, 0x03])  # Illegal data value
+        
+        start_addr = struct.unpack('>H', pdu[1:3])[0]
+        count = struct.unpack('>H', pdu[3:5])[0]
+        
+        # Forward to RTU
+        result = await self.modbus.read_coils(unit_id, start_addr, count)
+        
+        if result is None:
+            return bytes([0x81, 0x04])  # Server device failure
+        elif isinstance(result, dict) and 'error' in result:
+            return bytes([0x81, result['error']])
+        else:
+            # Build response
+            byte_count = (len(result) + 7) // 8
+            response = bytes([0x01, byte_count])
+            
+            # Pack coils into bytes
+            for i in range(byte_count):
+                byte_val = 0
+                for bit in range(8):
+                    coil_index = i * 8 + bit
+                    if coil_index < len(result) and result[coil_index]:
+                        byte_val |= (1 << bit)
+                response += bytes([byte_val])
+            
+            return response
+
+    async def _handle_read_discrete_inputs(self, unit_id, pdu):
+        """Handle Read Discrete Inputs (0x02)"""
+        if len(pdu) < 5:
+            return bytes([0x82, 0x03])  # Illegal data value
+        
+        start_addr = struct.unpack('>H', pdu[1:3])[0]
+        count = struct.unpack('>H', pdu[3:5])[0]
+        
+        # Forward to RTU
+        result = await self.modbus.read_discrete_inputs(unit_id, start_addr, count)
+        
+        if result is None:
+            return bytes([0x82, 0x04])  # Server device failure
+        elif isinstance(result, dict) and 'error' in result:
+            return bytes([0x82, result['error']])
+        else:
+            # Build response
+            byte_count = (len(result) + 7) // 8
+            response = bytes([0x02, byte_count])
+            
+            # Pack inputs into bytes
+            for i in range(byte_count):
+                byte_val = 0
+                for bit in range(8):
+                    input_index = i * 8 + bit
+                    if input_index < len(result) and result[input_index]:
+                        byte_val |= (1 << bit)
+                response += bytes([byte_val])
+            
+            return response
+
+    async def _handle_write_single_coil(self, unit_id, pdu):
+        """Handle Write Single Coil (0x05)"""
+        if len(pdu) < 5:
+            return bytes([0x85, 0x03])  # Illegal data value
+        
+        coil_addr = struct.unpack('>H', pdu[1:3])[0]
+        coil_value = struct.unpack('>H', pdu[3:5])[0]
+        
+        # Convert coil value (0xFF00 = ON, 0x0000 = OFF)
+        value = coil_value == 0xFF00
+        
+        # Forward to RTU
+        result = await self.modbus.write_single_coil(unit_id, coil_addr, value)
+        
+        if result is None:
+            return bytes([0x85, 0x04])  # Server device failure
+        elif isinstance(result, dict) and 'error' in result:
+            return bytes([0x85, result['error']])
+        else:
+            # Echo back the request for successful write
+            return pdu
+
+    async def _handle_write_multiple_coils(self, unit_id, pdu):
+        """Handle Write Multiple Coils (0x0F)"""
+        if len(pdu) < 6:
+            return bytes([0x8F, 0x03])  # Illegal data value
+        
+        start_addr = struct.unpack('>H', pdu[1:3])[0]
+        count = struct.unpack('>H', pdu[3:5])[0]
+        byte_count = pdu[5]
+        
+        if len(pdu) < 6 + byte_count:
+            return bytes([0x8F, 0x03])  # Illegal data value
+        
+        # Extract coil values
+        values = []
+        for i in range(byte_count):
+            byte_val = pdu[6 + i]
+            for bit in range(8):
+                if len(values) < count:
+                    values.append(bool(byte_val & (1 << bit)))
+        
+        # Forward to RTU
+        result = await self.modbus.write_multiple_coils(unit_id, start_addr, values)
+        
+        if result is None:
+            return bytes([0x8F, 0x04])  # Server device failure
+        elif isinstance(result, dict) and 'error' in result:
+            return bytes([0x8F, result['error']])
+        else:
+            # Return start address and count for successful write
+            return pdu[0:5]  # Function code + start address + count
+
 # HTTP Server implementation
 class HTTPServer:
     def __init__(self, modbus_rtu, port=80):
@@ -523,9 +775,13 @@ class HTTPServer:
         <div class="form-group">
             <label>Function:</label>
             <select id="function">
+                <option value="read_coils">Read Coils</option>
+                <option value="read_discrete">Read Discrete Inputs</option>
                 <option value="read_holding">Read Holding Registers</option>
                 <option value="read_input">Read Input Registers</option>
+                <option value="write_coil">Write Single Coil</option>
                 <option value="write_single">Write Single Register</option>
+                <option value="write_coils">Write Multiple Coils</option>
                 <option value="write_multiple">Write Multiple Registers</option>
             </select>
         </div>
@@ -550,6 +806,19 @@ class HTTPServer:
             <input type="text" id="values" placeholder="1,2,3,4,5" title="Comma-separated values">
         </div>
 
+        <div class="form-group" id="coilValueGroup" style="display:none;">
+            <label>Coil Value:</label>
+            <select id="coilValue">
+                <option value="0">OFF (0)</option>
+                <option value="1">ON (1)</option>
+            </select>
+        </div>
+
+        <div class="form-group" id="coilValuesGroup" style="display:none;">
+            <label>Coil Values:</label>
+            <input type="text" id="coilValues" placeholder="1,0,1,0,1" title="Comma-separated boolean values (1/0, true/false, on/off)">
+        </div>
+
         <button onclick="executeModbus()">Execute</button>
 
         <div class="result" id="result"></div>
@@ -561,19 +830,27 @@ class HTTPServer:
             const countGroup = document.getElementById('countGroup');
             const valueGroup = document.getElementById('valueGroup');
             const valuesGroup = document.getElementById('valuesGroup');
+            const coilValueGroup = document.getElementById('coilValueGroup');
+            const coilValuesGroup = document.getElementById('coilValuesGroup');
+
+            // Hide all groups first
+            countGroup.style.display = 'none';
+            valueGroup.style.display = 'none';
+            valuesGroup.style.display = 'none';
+            coilValueGroup.style.display = 'none';
+            coilValuesGroup.style.display = 'none';
 
             if (func === 'write_single') {
-                countGroup.style.display = 'none';
                 valueGroup.style.display = 'block';
-                valuesGroup.style.display = 'none';
             } else if (func === 'write_multiple') {
-                countGroup.style.display = 'none';
-                valueGroup.style.display = 'none';
                 valuesGroup.style.display = 'block';
+            } else if (func === 'write_coil') {
+                coilValueGroup.style.display = 'block';
+            } else if (func === 'write_coils') {
+                coilValuesGroup.style.display = 'block';
             } else {
+                // Read functions
                 countGroup.style.display = 'block';
-                valueGroup.style.display = 'none';
-                valuesGroup.style.display = 'none';
             }
         });
 
@@ -584,6 +861,8 @@ class HTTPServer:
             const count = document.getElementById('count').value;
             const value = document.getElementById('value').value;
             const values = document.getElementById('values').value;
+            const coilValue = document.getElementById('coilValue').value;
+            const coilValues = document.getElementById('coilValues').value;
 
             let url = `/api/${func}?slave_id=${slaveId}&start_addr=${startAddr}`;
 
@@ -591,6 +870,10 @@ class HTTPServer:
                 url += `&value=${value}`;
             } else if (func === 'write_multiple') {
                 url += `&values=${encodeURIComponent(values)}`;
+            } else if (func === 'write_coil') {
+                url += `&value=${coilValue}`;
+            } else if (func === 'write_coils') {
+                url += `&values=${encodeURIComponent(coilValues)}`;
             } else {
                 url += `&count=${count}`;
             }
@@ -631,12 +914,20 @@ return f"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: {len(html
                 params = {}
 
             # API routing
-            if path == '/api/read_holding':
+            if path == '/api/read_coils':
+                return await self.api_read_coils(params)
+            elif path == '/api/read_discrete':
+                return await self.api_read_discrete(params)
+            elif path == '/api/read_holding':
                 return await self.api_read_holding(params)
             elif path == '/api/read_input':
                 return await self.api_read_input(params)
+            elif path == '/api/write_coil':
+                return await self.api_write_coil(params)
             elif path == '/api/write_single':
                 return await self.api_write_single(params)
+            elif path == '/api/write_coils':
+                return await self.api_write_coils(params)
             elif path == '/api/write_multiple':
                 return await self.api_write_multiple(params)
             else:
@@ -644,6 +935,42 @@ return f"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: {len(html
 
         except Exception as e:
             return self.api_error(f"API Error: {str(e)}")
+
+    async def api_read_coils(self, params):
+        """API: Read coils"""
+        slave_id = int(params.get('slave_id', 1))
+        start_addr = int(params.get('start_addr', 0))
+        count = int(params.get('count', 1))
+
+        result = await self.modbus.read_coils(slave_id, start_addr, count)
+
+        if result is None:
+            response = {"success": False, "error": "Communication timeout"}
+        elif isinstance(result, dict) and 'error' in result:
+            response = {"success": False, "error": f"Modbus error: {result['error']}"}
+        else:
+            response = {"success": True, "data": result}
+
+        json_str = json.dumps(response)
+        return f"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {len(json_str)}\r\n\r\n{json_str}"
+
+    async def api_read_discrete(self, params):
+        """API: Read discrete inputs"""
+        slave_id = int(params.get('slave_id', 1))
+        start_addr = int(params.get('start_addr', 0))
+        count = int(params.get('count', 1))
+
+        result = await self.modbus.read_discrete_inputs(slave_id, start_addr, count)
+
+        if result is None:
+            response = {"success": False, "error": "Communication timeout"}
+        elif isinstance(result, dict) and 'error' in result:
+            response = {"success": False, "error": f"Modbus error: {result['error']}"}
+        else:
+            response = {"success": True, "data": result}
+
+        json_str = json.dumps(response)
+        return f"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {len(json_str)}\r\n\r\n{json_str}"
 
     async def api_read_holding(self, params):
         """API: Read holding registers"""
@@ -721,6 +1048,56 @@ return f"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: {len(html
             response = {"success": False, "error": f"Modbus error: {result['error']}"}
         else:
             response = {"success": True, "message": f"Written {len(values)} registers successfully"}
+
+        json_str = json.dumps(response)
+        return f"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {len(json_str)}\r\n\r\n{json_str}"
+
+    async def api_write_coil(self, params):
+        """API: Write single coil"""
+        slave_id = int(params.get('slave_id', 1))
+        coil_addr = int(params.get('start_addr', 0))
+        value_str = params.get('value', '0').lower()
+        
+        # Parse boolean value
+        value = value_str in ['1', 'true', 'on', 'yes']
+
+        result = await self.modbus.write_single_coil(slave_id, coil_addr, value)
+
+        if result is None:
+            response = {"success": False, "error": "Communication timeout"}
+        elif isinstance(result, dict) and 'error' in result:
+            response = {"success": False, "error": f"Modbus error: {result['error']}"}
+        else:
+            response = {"success": True, "message": "Coil written successfully"}
+
+        json_str = json.dumps(response)
+        return f"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {len(json_str)}\r\n\r\n{json_str}"
+
+    async def api_write_coils(self, params):
+        """API: Write multiple coils"""
+        slave_id = int(params.get('slave_id', 1))
+        start_addr = int(params.get('start_addr', 0))
+        values_str = params.get('values', '0')
+        
+        # Parse values - expect comma-separated boolean values
+        try:
+            values = []
+            for v in values_str.split(','):
+                v = v.strip().lower()
+                values.append(v in ['1', 'true', 'on', 'yes'])
+        except ValueError:
+            response = {"success": False, "error": "Invalid values format. Use comma-separated boolean values."}
+            json_str = json.dumps(response)
+            return f"HTTP/1.1 400 Bad Request\r\nContent-Type: application/json\r\nContent-Length: {len(json_str)}\r\n\r\n{json_str}"
+
+        result = await self.modbus.write_multiple_coils(slave_id, start_addr, values)
+
+        if result is None:
+            response = {"success": False, "error": "Communication timeout"}
+        elif isinstance(result, dict) and 'error' in result:
+            response = {"success": False, "error": f"Modbus error: {result['error']}"}
+        else:
+            response = {"success": True, "message": f"Written {len(values)} coils successfully"}
 
         json_str = json.dumps(response)
         return f"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {len(json_str)}\r\n\r\n{json_str}"
