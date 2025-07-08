@@ -4,7 +4,6 @@ envistar_temperature{name="Uteluft"} <%=m.read("3x072") / 10.0%>
 envistar_temperature{name="Tilluft VVX"} <%=m.read("3x078") / 10.0%>
 envistar_temperature{name="Frysvakt"} <%=m.read("3x074") / 10.0%>
 envistar_temperature{name="Tilluft"} <%=m.read("3x073") / 10.0%>
-
 envistar_temperature{name="Frånluft"} <%=m.read("3x076") / 10.0%>
 envistar_temperature{name="Avluft"} <%=m.read("3x077") / 10.0%>
 
@@ -12,13 +11,13 @@ envistar_temperature{name="Avluft"} <%=m.read("3x077") / 10.0%>
 # UNIT envistar_flow l/s
 envistar_flow{name="Tilluft"} <%=m.read("3x095")%>
 envistar_flow{name="Frånluft"} <%=m.read("3x096")%>
+envistar_flow{name="Tilluft bör"} <%=m.read("3x400") / 100.0%>
+envistar_flow{name="Frånluft bör"} <%=m.read("3x402") / 100.0%>
 
 # TYPE envistar_pressure gauge
 # UNIT envistar_pressure Pa
 envistar_pressure{name="Tilluftstryck"} <%=m.read("3x097")%>
 envistar_pressure{name="Frånluftstryck"} <%=m.read("3x098")%>
-envistar_pressure{name="Tilluftstryck bör"} <%=m.read("3x400") / 100.0%>
-envistar_pressure{name="Frånluftstryck bör"} <%=m.read("3x402") / 100.0%>
 envistar_pressure{name="Tilluftsfilter"} <%=m.read("3x148") / 10.0%>
 envistar_pressure{name="Frånluftsfilter"} <%=m.read("3x149") / 10.0%>
 
