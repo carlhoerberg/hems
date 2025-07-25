@@ -8,6 +8,12 @@ class Devices
       set_key
     end
 
+    def system_voltage
+      lock do
+        read_holding_register(14) / 100.0
+      end
+    end
+
     def min_soc
       lock do
         min = read_holding_register(20) / 2.5 # master module

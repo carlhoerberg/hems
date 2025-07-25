@@ -184,8 +184,9 @@ class EnergyManagement
       #  start_genset
       #  return
       #end
-      if discharge_limit - discharge_current < 130 || soc <= 7
-        puts "Starting genset. SoC=#{soc}% discharge_limit=#{discharge_limit}A discharge_current=#{discharge_current}A"
+      battery_voltage = @devices.weco.system_voltage
+      if battery_voltage <= 50.5 || discharge_limit - discharge_current < 150 || soc <= 7
+        puts "Starting genset. SoC=#{soc}% discharge_limit=#{discharge_limit}A battery_voltage=#{battery_voltage}V"
         start_genset
         @last_solar_check = Time.monotonic + 600 # don't check solar estimate for a while
       end
