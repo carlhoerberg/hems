@@ -132,6 +132,11 @@ class Devices
       #  if (v = params.dig("temperature:102", "tC"))
       #    device["shelly_ht_temperature"] = { v:, ts: }
       #  end
+      when /^shellyplusuni-/
+        if (v = params.dig("input:2", "counts", "xtotal"))
+          device["shelly_count"] = { v:, ts:, counter: true }
+        end
+        # {"ts"=>1754010420.05, "input:2"=>{"counts"=>{"by_minute"=>[0, 0, 0], "minute_ts"=>1754010420, "total"=>41, "xby_minute"=>[0.0, 0.0, 0.0], "xtotal"=>41.0}}}
       else
         puts "Unknown device id #{device_id}", params
       end
