@@ -273,7 +273,7 @@ class EnergyManagement
       raise "Genset didn't stop"
     end
     puts "Restoring AC source values"
-    @devices.next3.acsource.rated_current = 23 # safe for +0 outdoor temp
+    @devices.next3.acsource.rated_current = 20 # safe for +0 outdoor temp
     @devices.next3.acsource.enable
   end
 
@@ -289,7 +289,7 @@ class EnergyManagement
       rated_current = @devices.next3.acsource.rated_current
       puts "hz=#{hz} adjusting current down to #{rated_current - 1}"
       @devices.next3.acsource.rated_current = rated_current - 1
-    elsif hz >= 50.7
+    elsif hz >= 50.5
       rated_current = @devices.next3.acsource.rated_current
       # never try to draw more than 25A
       if rated_current < 24
