@@ -162,7 +162,7 @@ class EnergyManagement
         puts "Battery has errors, keeping genset running"
       elsif !@genset_auto_started # was manually started
         puts "Genset manually started, keep running"
-      elsif @devices.weco.min_soc >= 97
+      elsif @devices.weco.charge_limit <= 200
         puts "SoC #{soc}%, battery current limited, stopping genset"
         stop_genset
       elsif will_reach_full_battery_with_solar?(soc)
