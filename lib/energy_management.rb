@@ -261,7 +261,7 @@ class EnergyManagement
     @devices.next3.acsource.disable
     loop do
       temp = @devices.genset.coolant_temperature
-      break if temp < 70
+      break if temp <= 80
       puts "Idling genset, temperature=#{temp}"
       sleep 10
     end
