@@ -1,0 +1,142 @@
+// Shelly i4 Dimming Control Script
+// Short press = toggle lights, Hold = dim while pressed, Double press = 100%, Triple press = 60%
+
+const CONFIG = {
+  triple_press_brightness: 60, // Brightness level for triple press
+  long_press_brightness: 10, // Brightness level for long press
+  buttons: {
+    0: { // Button for cellar lights
+      dimmers: [
+        { ip: 'shellydimmer2-C8C9A33CD98C', id: 0 },
+        { ip: 'shellydimmerg3-b08184f16124', id: 0 },
+        { ip: 'shellydimmerg3-b08184f149a4', id: 0 },
+        { ip: 'shellydimmerg3-b08184f29bb8', id: 0 }
+      ]
+    },
+    1: { // Button for lounge lights
+      dimmers: [
+        { ip: 'shellyprodm2pm-a0dd6c9e824c', id: 0 },
+        { ip: 'shellyprodm2pm-a0dd6c9e824c', id: 1 },
+        { ip: 'shellyprodm2pm-a0dd6c9de504', id: 0 },
+        { ip: 'shellyprodm2pm-a0dd6c9de504', id: 1 },
+        { ip: 'shellyprodm1pm-34987aa95f98', id: 0 },
+        { ip: 'shellydimmerg3-b08184ef979c', id: 0 },
+        { ip: 'shellydimmerg3-b08184ef8c18', id: 0 },
+        { ip: 'shellydimmerg3-b08184f02750', id: 0 }
+      ]
+    }
+  }
+}
+
+const dimming_state = {
+  0: { dim_direction: 1 }, // Button 1
+  1: { dim_direction: 1 } // Button 2
+}
+
+// Queue for managing HTTP requests with max 4 concurrent calls
+let httpQueue = {
+  head: null,
+  tail: null,
+  active: 0,
+  maxConcurrent: 4
+}
+
+function processHttpQueue() {
+  while (httpQueue.active < httpQueue.maxConcurrent && httpQueue.head) {
+    const request = httpQueue.head
+    httpQueue.head = request.next
+    if (!httpQueue.head) httpQueue.tail = null
+    httpQueue.active++
+    
+    Shelly.call('HTTP.GET', request.params, function(result, error_code, error_message) {
+      httpQueue.active--
+      if (request.callback) request.callback(result, error_code, error_message)
+      processHttpQueue()
+    })
+  }
+}
+
+function queueHttpGet(params, callback) {
+  const node = { params: params, callback: callback, next: null }
+  if (httpQueue.tail) {
+    httpQueue.tail.next = node
+  } else {
+    httpQueue.head = node
+  }
+  httpQueue.tail = node
+  processHttpQueue()
+}
+
+// Start dimming up or down for all dimmers
+function startDimming (button_id) {
+  const dimmers = CONFIG.buttons[button_id].dimmers
+  const direction = dimming_state[button_id].dim_direction > 0 ? 'DimUp' : 'DimDown'
+
+  for (let i = 0; i < dimmers.length; i++) {
+    queueHttpGet({
+      url: 'http://' + dimmers[i].ip + '/rpc/Light.' + direction + '?id=' + dimmers[i].id
+    })
+  }
+
+  // Toggle direction for next time
+  dimming_state[button_id].dim_direction *= -1
+}
+
+function stopDimming (button_id) {
+  const dimmers = CONFIG.buttons[button_id].dimmers
+
+  for (let i = 0; i < dimmers.length; i++) {
+    queueHttpGet({
+      url: 'http://' + dimmers[i].ip + '/rpc/Light.DimStop?id=' + dimmers[i].id
+    })
+  }
+}
+
+function toggleDimmers (button_id) {
+  const dimmers = CONFIG.buttons[button_id].dimmers
+  for (let i = 0; i < dimmers.length; i++) {
+    queueHttpGet({
+      url: 'http://' + dimmers[i].ip + '/rpc/Light.Toggle?id=' + dimmers[i].id
+    })
+  }
+}
+
+function dimDimmers (button_id, brightness) {
+  const dimmers = CONFIG.buttons[button_id].dimmers
+  for (let i = 0; i < dimmers.length; i++) {
+    queueHttpGet({
+      url: 'http://' + dimmers[i].ip + '/rpc/Light.Set?id=' + dimmers[i].id + '&on=true&brightness=' + brightness
+    })
+  }
+}
+
+// Button event handler
+Shelly.addEventHandler(function (event) {
+  // Extract button ID from component name (e.g., "input:0" -> 0)
+  if (event.component && event.component.indexOf('input:') === 0) {
+    const button_id = parseInt(event.component.split(':')[1])
+
+    // Check if this button is configured
+    if (!CONFIG.buttons[button_id]) return;
+
+    if (event.info.event === 'single_push') {
+      // Short press - toggle lights
+      toggleDimmers(button_id)
+    } else if (event.info.event === 'btn_down') {
+      // Button pressed down - start dimming
+      startDimming(button_id)
+    } else if (event.info.event === 'btn_up') {
+      // Button released - stop dimming
+      stopDimming(button_id)
+    } else if (event.info.event === 'double_push') {
+      // Double press - 100% brightness
+      dimDimmers(button_id, 100)
+    } else if (event.info.event === 'triple_push') {
+      // Triple press - configurable brightness
+      dimDimmers(button_id, CONFIG.triple_press_brightness)
+    } else if (event.info.event === 'long_push') {
+      // Triple press - configurable brightness
+      dimDimmers(button_id, CONFIG.long_press_brightness)
+    }
+  }
+})
