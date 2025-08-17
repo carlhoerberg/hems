@@ -113,22 +113,6 @@ else
   echo "$response"
 fi
 
-# 5) Always start the script after upload
-echo "Starting script..."
-curl -s \
-  -X POST \
-  -H "Content-Type: application/json" \
-  --data "$(jq -n --argjson scriptId "$script_id" '
-    {
-      "id": 1,
-      "method": "Script.Start",
-      "params": {
-        "id": $scriptId
-      }
-    }
-  ')" \
-  "http://${shelly_fqdn}/rpc" >/dev/null
-
 # 6) Generate random port for UDP logging
 udp_port=$((1024 + RANDOM % 32767))
 echo "Generated random UDP port: $udp_port"
@@ -158,7 +142,31 @@ echo "UDP logging configured to 192.168.51.2:$udp_port"
 # 7) Start UDP server to receive log messages
 echo "Starting UDP server on port $udp_port..."
 echo "Listening for UDP logs from Shelly device..."
-socat UDP4-LISTEN:$udp_port,fork -
+echo "Press Ctrl+C to stop"
+echo "----------------------------------------"
+
+# Use socat to listen for UDP messages
+#socat UDP4-RECVFROM:$udp_port,fork SYSTEM:"sed -e a\\\\"
+#nc --udp --listen "$udp_port" | while IFS= read -r line; do echo "$line"; done
+socat -u UDP-RECVFROM:$udp_port,fork SYSTEM:"cat; echo" &
+
+# 5) Always start the script after upload
+echo "Starting script..."
+curl -s \
+  -X POST \
+  -H "Content-Type: application/json" \
+  --data "$(jq -n --argjson scriptId "$script_id" '
+    {
+      "id": 1,
+      "method": "Script.Start",
+      "params": {
+        "id": $scriptId
+      }
+    }
+  ')" \
+  "http://${shelly_fqdn}/rpc" >/dev/null
 
 echo "Done."
 
+# Wait for the background socat process
+wait
