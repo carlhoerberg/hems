@@ -97,7 +97,7 @@ json_payload="$(jq -n \
 echo "Uploading new code to Shelly device @ $shelly_fqdn ..."
 
 # 4) Perform the upload (PutCode)
-response="$(curl -s \
+response="$(curl -s -i\
   -X POST \
   -H "Content-Type: application/json" \
   --data "${json_payload}" \
@@ -110,6 +110,7 @@ if echo "$response" | jq -e '.error' >/dev/null 2>&1; then
   exit 1
 else
   echo "Successfully uploaded new code for Script ID=$script_id"
+  echo "$response"
 fi
 
 # 5) Always start the script after upload
@@ -127,6 +128,37 @@ curl -s \
     }
   ')" \
   "http://${shelly_fqdn}/rpc" >/dev/null
+
+# 6) Generate random port for UDP logging
+udp_port=$((1024 + RANDOM % 32767))
+echo "Generated random UDP port: $udp_port"
+
+# Configure UDP logging to random port
+echo "Configuring UDP logging..."
+curl -s \
+  -X POST \
+  -H "Content-Type: application/json" \
+  --data "$(jq -n --arg addr "192.168.51.2:$udp_port" '{
+    "id": 1,
+    "method": "Sys.SetConfig",
+    "params": {
+      "config": {
+        "debug": {
+          "udp": {
+            "addr": $addr
+          }
+        }
+      }
+    }
+  }')" \
+  "http://${shelly_fqdn}/rpc" >/dev/null
+
+echo "UDP logging configured to 192.168.51.2:$udp_port"
+
+# 7) Start UDP server to receive log messages
+echo "Starting UDP server on port $udp_port..."
+echo "Listening for UDP logs from Shelly device..."
+socat UDP4-LISTEN:$udp_port,fork -
 
 echo "Done."
 
