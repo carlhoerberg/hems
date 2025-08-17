@@ -23,12 +23,9 @@ const MAX_SUPPLY     = 60.0;     // Maximum allowed supply temperature (°C)
 // desired supply temperature (°C)
 const SetpointTemperature = Virtual.getHandle("number:201")
 
-function getOutdoorTemperature() {
-  return Shelly.getComponentStatus("bthomesensor:202").tC;
-}
-
 // --- Regulation Function ---
-function regulateSupplyTemperature(T_outdoor) {
+function calculateSupplyTemperature() {
+  const T_outdoor = Shelly.getComponentStatus("bthomesensor:202").value;
   print("Outdoor Temperature: " + T_outdoor + "°C")
 
   // Example of a simple linear heating curve:
@@ -42,18 +39,8 @@ function regulateSupplyTemperature(T_outdoor) {
   // Update the supply temperature setpoint
   SetpointTemperature.setValue(T_supply);
   print("Updated supply setpoint to: " + T_supply + "°C");
-  
-  // Trigger regulation of the shunt after updating setpoint
-  regulate();
-}
 
-// Called on each Shelly event (avoid anonymous methods in shelly script)
-function onEvent(event) {
-  print(event)
-  if (event.component === "bthomesensor:202") {
-    const T_outdoor = event.info.tC
-    regulateSupplyTemperature(T_outdoor)
-  }
+  return T_supply;
 }
 
 // --- Shunt Control Integration ---
@@ -95,7 +82,7 @@ function regulate() {
     print("Shunt is currently moving. Skipping regulation cycle.");
     return;
   }
-  const T_setpoint = SetpointTemperature.getValue();
+  const T_setpoint = calculateSupplyTemperature();
   const T_p = getPrimaryTemperature();
   const T_supply = getSupplyTemperature();
   const T_r = getReturnTemperature();
@@ -197,6 +184,5 @@ function resetShuntPosition() {
 
 // Set up periodic regulation timer (reduced frequency since outdoor temp changes trigger regulation)
 Timer.set(30000, true, regulate);
-Shelly.addEventHandler(onEvent)
-regulateSupplyTemperature(getOutdoorTemperature())
 
+print("Heating regulation script initialized. Monitoring outdoor temperature and regulating supply temperature.");
