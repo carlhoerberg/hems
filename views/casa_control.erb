@@ -1,0 +1,27 @@
+<html>
+  <head>
+    <title>Casa</title>
+  </head>
+  <body>
+    <h1>Casa control</h1>
+    <form method="post">
+      <select name="operating_mode">
+        <option value="0" <%="selected" if operating_mode == 0%>>Stop</option>
+        <option value="1" <%="selected" if operating_mode == 1%>>Away</option>
+        <option value="2" <%="selected" if operating_mode == 2%>>Home</option>
+        <option value="3" <%="selected" if operating_mode == 3%>>Boost</option>
+        <option value="4" <%="selected" if operating_mode == 4%>>Travelling</option>
+      </select>
+      <input type="submit" name="action" value="Set operating mode">
+    </form>
+    <h2>Measurments</h2>
+    <table>
+      <%measurements.each do |key, value|%>
+        <tr>
+          <td><%=key%></td>
+          <td><%=value%></td>
+        </tr>
+      <%end%>
+    </table>
+  </body>
+</html>
