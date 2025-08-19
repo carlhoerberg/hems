@@ -56,7 +56,7 @@ class Devices
     end
 
     def status
-      v = @modbus.read_input_registers(6300, 47)
+      v = @modbus.read_input_registers(6300, 48)
       {
         unit_state: v[0],
         ventilation_speed_state: v[1],
@@ -73,9 +73,9 @@ class Devices
         auto_temperature_boost_control: v[12],
         fan_speed_limit_control: v[13],
         smart_control: v[14],
-        temperature_setpoint: v[15] / 10.0,
+        temperature_setpoint: v[15],
         supply_control_power_output: v[16],
-        room_controller_supply_setpoint: v[19] / 10.0,
+        room_controller_supply_setpoint: v[19],
         cooling_control_active: v[22],
         defrost_active: v[27],
         rotor_active: v[31],
