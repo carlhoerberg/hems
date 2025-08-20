@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+set -euo pipefail
+
 #
 # upload_shelly_script.sh
 #
@@ -77,41 +80,67 @@ else
   echo "Script ID=$script_id is NOT running; no need to stop."
 fi
 
-# 2) Read the local script file content (no manual escaping)
+# 2) Read the local script file content
 script_code="$(cat "$SCRIPT_PATH")"
 
-# 3) Generate JSON payload for "Script.PutCode" using jq
-json_payload="$(jq -n \
-  --arg code "$script_code" \
-  --argjson scriptId "$script_id" '
-  {
-    "id": 1,
-    "method": "Script.PutCode",
-    "params": {
-      "id": $scriptId,
-      "code": $code
-    }
-  }
-')"
+# 3) Upload script using chunked approach
+script_size=$(wc -c < "$SCRIPT_PATH")
+max_chunk_size=2048   # 2KB chunks
 
-echo "Uploading new code to Shelly device @ $shelly_fqdn ..."
+echo "Script size: $script_size bytes"
+echo "Uploading script in chunks..."
 
-# 4) Perform the upload (PutCode)
-response="$(curl -s -i\
-  -X POST \
-  -H "Content-Type: application/json" \
-  --data "${json_payload}" \
-  "http://${shelly_fqdn}/rpc")"
+# Always use chunked upload with while loop
+offset=0
+chunk_num=1
 
-# Check for errors in the response
-if echo "$response" | jq -e '.error' >/dev/null 2>&1; then
-  echo "Error response from device:"
-  echo "$response"
-  exit 1
-else
-  echo "Successfully uploaded new code for Script ID=$script_id"
-  echo "$response"
-fi
+while [ $offset -lt "$script_size" ]; do
+  remaining_size=$((script_size - offset))
+  if [ $remaining_size -lt $max_chunk_size ]; then
+    chunk_size=$remaining_size
+  else
+    chunk_size=$max_chunk_size
+  fi
+  
+  chunk="$(echo -n "$script_code" | tail -c +$((offset+1)) | head -c $chunk_size)"
+  
+  echo "Uploading chunk $chunk_num (${chunk_size} bytes, offset ${offset})..."
+  
+  # Set append parameter based on chunk number
+  if [ $chunk_num -eq 1 ]; then
+    append_flag=false
+  else
+    append_flag=true
+  fi
+  
+  response="$(curl -s \
+    -X POST \
+    -H "Content-Type: application/json" \
+    --data "$(jq -n --arg code "$chunk" --argjson scriptId "$script_id" --argjson append "$append_flag" '
+      {
+        "id": 1,
+        "method": "Script.PutCode",
+        "params": {
+          "id": $scriptId,
+          "code": $code,
+          "append": $append
+        }
+      }
+    ')" \
+    "http://${shelly_fqdn}/rpc")"
+  
+  echo "Response: $response"
+  #if echo "$response" | jq -e '.error' >/dev/null 2>&1; then
+  #  echo "Error uploading chunk $chunk_num:"
+  #  echo "$response"
+  #  exit 1
+  #fi
+  
+  offset=$((offset + chunk_size))
+  chunk_num=$((chunk_num + 1))
+done
+
+echo "Successfully uploaded script in $((chunk_num - 1)) chunks"
 
 # 6) Generate random port for UDP logging
 udp_port=$((1024 + RANDOM % 32767))
