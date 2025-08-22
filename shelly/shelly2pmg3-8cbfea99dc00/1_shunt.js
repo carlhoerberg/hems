@@ -19,6 +19,7 @@ const SUPPLY_AIR_Kp  = 2.0;           // Proportional gain for supply air temper
 
 // desired supply temperature (°C)
 const SetpointTemperature = Virtual.getHandle("number:201")
+const SupplyAirTemperature = Virtual.getHandle("number:202")
 
 function calculateSupplyTemperature(callback) {
   fetchSupplyAirTemperature(function(T_supply_air, error) {
@@ -66,7 +67,7 @@ const FULL_MOVEMENT_TIME = 90; // time in s to move from fully closed (0%) to fu
 const ShuntPosition = Virtual.getHandle("number:200")
 
 function getPrimaryTemperature() {
-  return Shelly.getComponentStatus("temperature:101").tC;
+  return Shelly.getComponentStatus("temperature:100").tC;
 }
 
 function getSupplyTemperature() {
@@ -74,7 +75,7 @@ function getSupplyTemperature() {
 }
 
 function getReturnTemperature() {
-  return Shelly.getComponentStatus("temperature:100").tC
+  return Shelly.getComponentStatus("temperature:101").tC
 }
 
 function fetchSupplyAirTemperature(callback) {
@@ -90,6 +91,7 @@ function fetchSupplyAirTemperature(callback) {
         const response = JSON.parse(res.body);
         if (response.success && Array.isArray(response.data) && response.data.length > 0) {
           const tempValue = response.data[0] / 10.0; // Convert from 194 to 19.4°C
+          SupplyAirTemperature.setValue(tempValue);
           callback(tempValue);
         } else {
           callback(null, "Invalid response format or API call failed");
