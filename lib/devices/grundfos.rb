@@ -30,6 +30,38 @@ class Devices
       @modbus.write_holding_register(101, v)
     end
 
+    # Percentage
+    def setpoint
+      @modbus.read_holding_register(307) / 100.0
+    end
+
+    def setpoint=(v)
+      raise ArgumentError, "Setpoint must be between 0 and 100" unless (0..100).include?(v)
+      @modbus.write_holding_register(103, v * 100)
+    end
+
+    def setpoint_unit
+      v = @modbus.read_holding_register(208)
+      case v
+      when 0 then "bar"
+      when 1 then "mbar"
+      when 2 then "m"
+      when 3 then "kPa"
+      when 4 then "psi"
+      when 5 then "ft"
+      when 6 then "m3/h"
+      when 7 then "m3/s"
+      when 8 then "l/s"
+      when 9 then "gpm"
+      when 10 then "°C"
+      when 11 then "°F"
+      when 12 then "%"
+      when 13 then "K"
+      when 14 then "W"
+      else raise ArgumentError, "Unknown setpoint unit: #{v}"
+      end
+    end
+
     # 0: Auto-control (normal, setpoint control according to selected control mode)
     # 4: OpenLoopMin (running at minimum speed)
     # 6: OpenLoopMax (running at maximum speed)
@@ -63,6 +95,7 @@ class Devices
 
     def measurements
       v = @modbus.read_input_registers(300, 26)
+      w = @modbus.read_input_registers(337, 2)
       { 
         head: v[0] / 1000.0, # bar
         flow: v[1] / 10.0, # m3/h
@@ -76,6 +109,8 @@ class Devices
         electronic_temp: (v[20]  - 27315) / 100.0, # celsius (from kelvin)
         pump_liquid_temp: (v[21] - 27315) / 100.0 , # celsius (from kelvin)
         specific_energy_consumption: v[25], # Wh/m3
+        user_setpoint: w[0] / 100.0, # %
+        diff_pressure: w[0] / 1000.0, # bar, pressure between pump flanges
       }
     end
 

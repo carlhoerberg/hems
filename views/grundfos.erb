@@ -12,5 +12,10 @@ grundfos_<%=k%> <%=v%>
 grundfos_alarm{type="Fault"} <%=grundfos.alarm%>
 grundfos_alarm{type="Warning"} <%=grundfos.warning%>
 
+# TYPE grundfos_status gauge
+<%grundfos.status.each do |k, v|%>
+grundfos_status{type="<%=k%>"} <%=v ? 1 : 0%>
+<%end%>
+
 # TYPE metrics_gather_time gauge
 metrics_gather_time{device="grundfos"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>
