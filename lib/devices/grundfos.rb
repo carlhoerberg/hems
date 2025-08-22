@@ -23,11 +23,11 @@ class Devices
     # 130: Closed-loop sensor
     # 131: AUTOADAPT(CP)
     def controlmode
-      @modbus.read_input_register(202)
+      @modbus.read_holding_register(202)
     end
 
     def controlmode=(v)
-      @modbus.write_input_register(101, v)
+      @modbus.write_holding_register(101, v)
     end
 
     # 0: Auto-control (normal, setpoint control according to selected control mode)
