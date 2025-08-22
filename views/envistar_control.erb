@@ -1,0 +1,37 @@
+<html>
+  <head>
+    <title>Envistar</title>
+  </head>
+  <body>
+    <h1>Envistar control</h1>
+    <h2>Operating Mode</h2>
+    <p>Current mode: <strong><%=operating_modes[current_operating_mode]%></strong></p>
+    <form method="get">
+      <label for="operating_mode">Change mode:</label>
+      <select name="operating_mode" id="operating_mode">
+        <%operating_modes.each do |mode_id, mode_name|%>
+          <option value="<%=mode_id%>" <%="selected" if mode_id == current_operating_mode%>><%=mode_name%></option>
+        <%end%>
+      </select>
+      <input type="submit" value="Update">
+    </form>
+    <h2>Alarms</h2>
+    <table>
+      <%alarms.each do |key, value|%>
+        <tr>
+          <td><%=key%></td>
+          <td><%=value%></td>
+        </tr>
+      <%end%>
+    </table>
+    <h2>Measurements</h2>
+    <table>
+      <%measurements.each do |key, value|%>
+        <tr>
+          <td><%=key%></td>
+          <td><%=value%></td>
+        </tr>
+      <%end%>
+    </table>
+  </body>
+</html>
