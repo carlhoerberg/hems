@@ -2,7 +2,7 @@
 module Modbus
   class Base
     # FC01, read bit values
-    def read_coils(addr, count, unit = 255)
+    def read_coils(addr, count, unit = 1)
       function = 1
       request([unit, function, addr, count].pack("CCnn")) do
         len = read(1).unpack1("C")
@@ -12,7 +12,7 @@ module Modbus
     end
 
     # FC02, read bit values
-    def read_discrete_inputs(addr, count, unit = 255)
+    def read_discrete_inputs(addr, count, unit = 1)
       function = 2
       request([unit, function, addr, count].pack("CCnn")) do
         len = read(1).unpack1("C")
@@ -21,12 +21,12 @@ module Modbus
       end
     end
 
-    def read_discrete_input(addr, unit = 255)
+    def read_discrete_input(addr, unit = 1)
       read_discrete_inputs(addr, 1, unit).first
     end
 
     # FC03, read 16-bit values
-    def read_holding_registers(addr, count, unit = 255)
+    def read_holding_registers(addr, count, unit = 1)
       function = 3
       request([unit, function, addr, count].pack("CCnn")) do
         len = read(1).unpack1("C")
@@ -34,12 +34,12 @@ module Modbus
       end
     end
 
-    def read_holding_register(addr, unit = 255)
+    def read_holding_register(addr, unit = 1)
       read_holding_registers(addr, 1, unit).first
     end
 
     # FC04. read 16-bit values
-    def read_input_registers(addr, count, unit = 255)
+    def read_input_registers(addr, count, unit = 1)
       function = 4
       request([unit, function, addr, count].pack("CCnn")) do
         len = read(1).unpack1("C")
@@ -47,12 +47,12 @@ module Modbus
       end
     end
 
-    def read_input_register(addr, unit = 255)
+    def read_input_register(addr, unit = 1)
       read_input_registers(addr, 1, unit).first
     end
 
     # FC05
-    def write_coil(addr, value, unit = 255)
+    def write_coil(addr, value, unit = 1)
       function = 5
       v = case value
           when true then 0xFF00
@@ -67,7 +67,7 @@ module Modbus
     end
 
     # FC16, write 16 bit integers
-    def write_holding_registers(addr, values, unit = 255)
+    def write_holding_registers(addr, values, unit = 1)
       values.each do |v|
         unless -2**15 < v && v < 2**15
           raise ArgumentError, "Values are not 16 bit integers: #{values.inspect}"
@@ -83,7 +83,7 @@ module Modbus
     end
 
     # FC16, write 16 bit integer
-    def write_holding_register(addr, value, unit = 255)
+    def write_holding_register(addr, value, unit = 1)
       write_holding_registers(addr, [value], unit)
     end
 
@@ -92,7 +92,7 @@ module Modbus
     end
 
     class Unit
-      def initialize(modbus, unit = 255)
+      def initialize(modbus, unit = 1)
         @modbus = modbus
         @unit = unit
       end
