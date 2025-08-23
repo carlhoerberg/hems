@@ -8,10 +8,17 @@ class HTTPServer
     @@view = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "envistar_control.erb")))
 
     def do_GET(req, res)
-      # Handle operating mode change if requested
-      if req.query["operating_mode"]
-        mode = req.query["operating_mode"].to_i
-        @envistar.operating_mode = mode + 1 if (-1..3).include?(mode)
+      if req.path == "/envistar/set"
+        # Handle operating mode change
+        if req.query["operating_mode"]
+          mode = req.query["operating_mode"].to_i
+          @envistar.operating_mode = mode + 1 if (-1..3).include?(mode)
+        end
+        
+        # Redirect back to index
+        res.status = 302
+        res["Location"] = "/envistar"
+        return
       end
       
       res.content_type = "text/html"

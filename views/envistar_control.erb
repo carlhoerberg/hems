@@ -6,7 +6,7 @@
     <h1>Envistar control</h1>
     <h2>Operating Mode</h2>
     <p>Current mode: <strong><%=operating_modes[current_operating_mode]%></strong></p>
-    <form method="get">
+    <form method="get" action="/envistar/set">
       <label for="operating_mode">Change mode:</label>
       <select name="operating_mode" id="operating_mode">
         <%operating_modes.each do |mode_id, mode_name|%>
