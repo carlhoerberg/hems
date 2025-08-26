@@ -156,15 +156,9 @@ const BTHomeDecoder = {
 
 let lastPacketId = 0x100;
 
-// BLE scanner callback
 function onBLEResult(ev, res) {
-  if (ev !== BLE.Scanner.SCAN_RESULT) {
-    return;
-  }
-
-  if (res.addr !== CONFIG.motionDeviceMac) {
-    return;
-  }
+  if (ev !== BLE.Scanner.SCAN_RESULT) return;
+  if (res.addr !== CONFIG.motionDeviceMac) return;
 
   if (
     typeof res.service_data === "undefined" ||
@@ -173,33 +167,22 @@ function onBLEResult(ev, res) {
     return;
   }
 
-  let unpackedData = BTHomeDecoder.unpack(
-    res.service_data[BTHOME_SVC_ID_STR]
-  );
+  let unpackedData = BTHomeDecoder.unpack(res.service_data[BTHOME_SVC_ID_STR]);
 
-  if (
-    unpackedData === null ||
-    typeof unpackedData === "undefined" ||
-    unpackedData["encryption"]
-  ) {
+  if (unpackedData["encryption"]) {
     console.log("Encrypted devices are not supported");
     return;
   }
 
-  if (lastPacketId === unpackedData.pid) {
-    return;
-  }
-
+  if (lastPacketId === unpackedData.pid) return;
   lastPacketId = unpackedData.pid;
 
   console.log("Hotel corridor BLE data:", JSON.stringify(unpackedData));
 
-  if (typeof unpackedData.motion !== "undefined") {
-    if (unpackedData.motion === 1) {
-      handleMotionDetected();
-    } else {
-      handleNoMotion();
-    }
+  if (unpackedData.motion === 1) {
+    handleMotionDetected();
+  } else {
+    handleNoMotion();
   }
 }
 
