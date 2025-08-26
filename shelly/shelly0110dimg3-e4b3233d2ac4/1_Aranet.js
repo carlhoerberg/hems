@@ -123,6 +123,10 @@ let Aranet4Parser = {
       'packet_counter'
     ]);
 
+    //skip if packet counter has not changed
+    if (this.lastPC === aranet_data.packet_counter) return null;
+    this.lastPC = aranet_data.packet_counter;
+
     aranet_data.tC = aranet_data.tC / 20.0;
 
     let dIdx;
@@ -141,6 +145,8 @@ function scanCB(ev, res) {
   if (measurement === null) return;
   print("aranet measurement:", JSON.stringify(measurement));
   
+  if (measurement.addr !== "c7:07:44:62:63:4c") return;
+
   temperature.setValue(measurement.tC)
   co2.setValue(measurement.co2_ppm)
   humidity.setValue(measurement.rh)
