@@ -85,6 +85,8 @@ function handleNoMotion() {
 
 // BLE scanner callback
 function onBLEResult(ev, res) {
+  if (ev !== BLE.Scanner.EVENT_RESULT || !res) return;
+
   if (res.addr === CONFIG.motionDeviceMac) {
     print(JSON.stringify(res));
     // Check for motion in advertisement data
@@ -97,9 +99,10 @@ function onBLEResult(ev, res) {
 }
 
 // Start BLE scanning
-BLE.Scanner.Start({
-  duration_ms: 0, // Continuous scanning
-  interval_ms: 100
-}, onBLEResult);
-
-console.log("Motion lighting script started - monitoring device:", CONFIG.motionDeviceMac);
+const bleScanner = BLE.Scanner.Start({ duration_ms: BLE.Scanner.INFINITE_SCAN }, onBLEResult);
+if (bleScanner) {
+  print("BLE scanner started", bleScanner);
+  console.log("Motion lighting script started - monitoring device:", CONFIG.motionDeviceMac);
+} else {
+  console.log("Error: Can not start new scanner");
+}

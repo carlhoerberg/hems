@@ -186,8 +186,8 @@ function onBLEResult(ev, res) {
   }
 }
 
-// Start BLE scanning
-BLE.Scanner.Start({
-  duration_ms: 0, // Continuous scanning
-  interval_ms: 100
-}, onBLEResult);
+// Start continous BLE scanning
+const bleScanner = BLE.Scanner.Start({ duration_ms: BLE.Scanner.INFINITE_SCAN }, onBLEResult);
+if (!bleScanner) {
+  console.log("Error: Can not start new scanner");
+}

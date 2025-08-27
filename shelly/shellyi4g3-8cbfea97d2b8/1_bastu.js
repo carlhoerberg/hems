@@ -23,8 +23,8 @@ const CONFIG = {
 }
 
 const dimming_state = {
-  0: { dim_direction: 1 }, // Button 1
-  1: { dim_direction: 1 } // Button 2
+  0: { dim_direction: 1, is_dimming: false }, // Button 1
+  1: { dim_direction: 1, is_dimming: false } // Button 2
 }
 
 
@@ -41,9 +41,11 @@ function startDimming (button_id) {
 
   // Toggle direction for next time
   dimming_state[button_id].dim_direction *= -1
+  dimming_state[button_id].is_dimming = true
 }
 
 function stopDimming (button_id) {
+  if (!dimming_state[button_id].is_dimming) return;
   const dimmers = CONFIG.buttons[button_id].dimmers
 
   for (let i = 0; i < dimmers.length; i++) {
@@ -51,6 +53,7 @@ function stopDimming (button_id) {
       url: 'http://' + dimmers[i].ip + '/rpc/Light.DimStop?id=' + dimmers[i].id
     })
   }
+  dimming_state[button_id].is_dimming = false
 }
 
 function toggleDimmers (button_id) {
@@ -83,9 +86,6 @@ Shelly.addEventHandler(function (event) {
     if (event.info.event === 'single_push') {
       // Short press - toggle lights
       toggleDimmers(button_id)
-    } else if (event.info.event === 'btn_down') {
-      // Button pressed down - start dimming
-      startDimming(button_id)
     } else if (event.info.event === 'btn_up') {
       // Button released - stop dimming
       stopDimming(button_id)
@@ -96,8 +96,8 @@ Shelly.addEventHandler(function (event) {
       // Triple press - configurable brightness
       dimDimmers(button_id, CONFIG.triple_press_brightness)
     } else if (event.info.event === 'long_push') {
-      // Triple press - configurable brightness
-      dimDimmers(button_id, CONFIG.long_press_brightness)
+      // Button pressed down - start dimming
+      startDimming(button_id)
     }
   }
 })

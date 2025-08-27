@@ -95,9 +95,6 @@ function onBLEResult(ev, res) {
 }
 
 // Start BLE scanning
-BLE.Scanner.Start({
-  duration_ms: 0, // Continuous scanning
-  interval_ms: 100
-}, onBLEResult);
+BLE.Scanner.Start({ duration_ms: BLE.Scanner.INFINITE_SCAN }, onBLEResult);
 
 console.log("Motion lighting script started - monitoring device:", CONFIG.motionDeviceMac);

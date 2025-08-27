@@ -83,6 +83,7 @@ function startDimming (button_id) {
 }
 
 function stopDimming (button_id) {
+  if (!dimming_state[button_id].is_dimming) return;
   const dimmers = CONFIG.buttons[button_id].dimmers
   for (let i = 0; i < dimmers.length; i++) {
     queueHttpGet({
@@ -129,7 +130,7 @@ Shelly.addEventHandler(function (event) {
     } else if (event.info.event === 'long_push') {
       // Button pressed down - start dimming
       startDimming(button_id)
-    } else if (event.info.event === 'btn_up' && dimming_state[button_id].is_dimming) {
+    } else if (event.info.event === 'btn_up') {
       // Button released - stop dimming
       stopDimming(button_id)
     }
