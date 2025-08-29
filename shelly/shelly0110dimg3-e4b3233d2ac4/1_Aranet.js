@@ -145,7 +145,7 @@ function scanCB(ev, res) {
   if (measurement === null) return;
   print("aranet measurement:", JSON.stringify(measurement));
   
-  if (measurement.addr !== "c7:07:44:62:63:4c") return;
+  if (measurement.sys.addr !== "c7:07:44:62:63:4c") return;
 
   temperature.setValue(measurement.tC)
   co2.setValue(measurement.co2_ppm)
