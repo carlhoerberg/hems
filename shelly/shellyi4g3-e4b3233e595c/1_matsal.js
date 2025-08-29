@@ -6,8 +6,14 @@ const CONFIG = {
   buttons: {
     0: { // Button for hallway/entrence lights
       dimmers: [
-        { ip: 'shellyprodm2pm-a0dd6c9de748', id: 0 }, // Spottar
+        { ip: 'shellyprodm2pm-a0dd6c9de748', id: 0 }, // Spottar infällda hall
         { ip: 'shellyprodm2pm-a0dd6c9de748', id: 1 }, // Entre innergård
+        { ip: 'shellyprodm2pm-a0dd6c9e5ccc', id: 0 }, // Väggarmatur hall
+        { ip: 'shellyprodm2pm-a0dd6c9e5ccc', id: 1 }, // Huvudentre
+        { ip: 'shellyprodm2pm-a0dd6c9e702c', id: 0 }, // Skena reception
+        { ip: 'shellyprodm2pm-a0dd6c9e702c', id: 1 }, // Skena utanför WC
+        { ip: 'shellyprodm1pm-34987aa90254', id: 0 }, // Ledlist hatthylla
+        { ip: 'shellyprodm2pm-a0dd6c9e6510', id: 0 } // Skena innegårdsentren
       ]
     },
     1: { // Button for dinner lights
