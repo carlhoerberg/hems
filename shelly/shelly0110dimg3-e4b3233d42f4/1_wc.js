@@ -1,12 +1,6 @@
-// Motion-triggered lighting control driven by events from ble-shelly-blu
+// Motion-triggered lighting control driven by bthomesensor:200 status changes
 
 let CONFIG = {
-  // BLU device to react to (case-insensitive)
-  motionDeviceMac: "38:39:8f:82:52:62",
-
-  // Event name used by the ble-shelly-blu emitter
-  bluEventName: "shelly-blu",
-
   dimmers: [
     { id: 0, brightLevel: 40, dimLevel: 20 },
     { ip: "shellyprodm2pm-a0dd6c9e5ea0", id: 0, brightLevel: 100, dimLevel: 15 }, // Spottar
@@ -21,32 +15,19 @@ let CONFIG = {
 let motionTimer = null;
 
 /* ---------- helpers ---------- */
-function normMac(s) { return (s || "").toLowerCase(); }
-
-function motionToBool(value) {
-  // motion may be: 1/0, true/false, or an array of those
-  if (Array.isArray(value)) {
-    for (let i = 0; i < value.length; i++) {
-      if (value[i] === 1 || value[i] === true) return true;
-    }
-    return false;
-  }
-  return (value === 1 || value === true);
-}
 
 function setDimmersForMotion(motionDetected) {
   for (let i = 0; i < CONFIG.dimmers.length; i++) {
     let d = CONFIG.dimmers[i];
     let target = motionDetected ? d.brightLevel : d.dimLevel;
 
+    const params = { id: d.id, on: target > 0, brightness: target }
     if (d.ip === undefined) {
-      Shelly.call("light.set", { id: d.id, on: target > 0, brightness: target });
+      Shelly.call("light.set", params);
     } else {
-      let url = "http://" + d.ip + "/light/" + d.id +
-        "?turn=" + (target > 0 ? "on" : "off") +
-        "&brightness=" + target;
-
-      Shelly.call("HTTP.GET", { url: url }, function (res, code, msg) {
+      let url = "http://" + d.ip + "/rpc";
+      let payload = { id: 1, method: "Light.Set", params: params };
+      Shelly.call("HTTP.POST", { url: url, body: JSON.stringify(payload) }, function (res, code, msg) {
         if (code !== 0) console.log("Failed to control dimmer", d.ip, ":", msg);
       });
     }
@@ -71,41 +52,21 @@ function handleNoMotion() {
   console.log("No motion - countdown continues");
 }
 
-/* ---------- event-driven part ---------- */
-// ble-shelly-blu emits events via Shelly.emitEvent(CONFIG.eventName, data)
-// We subscribe to all events and filter by name + MAC.
-function onEvent(ev, _ud) {
-  print(JSON.stringify(ev))
-  if (!ev || ev.event !== CONFIG.bluEventName) return;
+/* ---------- status handler ---------- */
 
-  let data = ev.data || {};
+console.log("Motion lighting started. Listening for bthomesensor:200 status changes");
 
-  // Basic sanity: make sure this is BTHome v2 payload with an address
-  if (typeof data.address === "undefined" || data.BTHome_version !== 2) return;
-
-  if (normMac(data.address) !== normMac(CONFIG.motionDeviceMac)) return;
-
-  // Per your typedef, motion can be number or number[]
-  if (typeof data.motion === "undefined") {
-    // Some BLU variants might use different keys; add quick fallbacks if you ever need them:
-    // if (typeof data.pir !== "undefined") data.motion = data.pir;
-    // else if (typeof data.moving !== "undefined") data.motion = data.moving;
-    console.log("BLU event for device but no 'motion' field:", JSON.stringify(data));
-    return;
+Shelly.addStatusHandler(function (ev, _ud) {
+  print(JSON.stringify(ev));
+  
+  // Handle bthomesensor:200 motion events
+  if (ev && ev.component === "bthomesensor:200" && ev.name === "bthomesensor" && ev.id === 200) {
+    if (ev.delta && typeof ev.delta.value === "boolean") {
+      if (ev.delta.value) {
+        handleMotionDetected();
+      } else {
+        handleNoMotion();
+      }
+    }
   }
-
-  if (motionToBool(data.motion)) {
-    handleMotionDetected();
-  } else {
-    handleNoMotion();
-  }
-}
-
-// Subscribe once; no BLE scanning here — we rely entirely on the emitter script
-Shelly.addEventHandler(onEvent);
-
-console.log(
-  "Motion lighting (event-driven) started. Listening for '%s' from %s",
-  CONFIG.bluEventName,
-  CONFIG.motionDeviceMac
-);
+});
