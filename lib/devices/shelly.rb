@@ -137,6 +137,10 @@ class Devices
           device["shelly_count"] = { v:, ts:, counter: true }
         end
         # {"ts"=>1754010420.05, "input:2"=>{"counts"=>{"by_minute"=>[0, 0, 0], "minute_ts"=>1754010420, "total"=>41, "xby_minute"=>[0.0, 0.0, 0.0], "xtotal"=>41.0}}}
+      when /^(shellyprodm1pm|shellyprodm2pm|shellydimmerg3)-/
+        #if (v = params.dig("light:0", "apower"))
+        #  device["shelly_plug_apower"] = { v:, ts: }
+        #end
       else
         puts "Unknown device id #{device_id}", params
       end
