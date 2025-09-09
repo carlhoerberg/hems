@@ -101,3 +101,18 @@ Shelly.addEventHandler(function (event) {
     }
   }
 })
+
+// Motion sensor status handler
+Shelly.addStatusHandler(function (ev, _ud) {
+  // Handle bthomesensor:200 motion events
+  if (ev && ev.component === "bthomesensor:200") {
+    if (ev.delta && typeof ev.delta.value === "boolean") {
+      if (ev.delta.value) {
+        // Motion detected - same action as single push on button 1
+        toggleDimmers(1);
+      }
+    }
+  }
+});
+
+console.log("Sauna control started. Listening for button presses and bthomesensor:200 motion events");
