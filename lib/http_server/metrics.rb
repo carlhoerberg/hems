@@ -37,7 +37,7 @@ class HTTPServer
         Thread.new { @@envistar.result_with_hash({ t:, m: @devices.envistar }) },
         Thread.new { @@casa.result_with_hash({ t:, casa: @devices.casa }) },
         Thread.new { @@grundfos.result_with_hash({ t:, grundfos: @devices.grundfos }) },
-        #Thread.new { @@ecowitt.result_with_hash({ t:, measurements: @devices.ecowitt.measurements }) },
+        Thread.new { @@ecowitt.result_with_hash({ t:, measurements: @devices.ecowitt.measurements }) },
         Thread.new do
           @@genset.result_with_hash({ t:, measurements: @devices.genset.measurements, status: @devices.genset.status_integer })
         rescue EOFError
