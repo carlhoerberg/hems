@@ -103,6 +103,10 @@ class Devices
         @unit = next3.unit(7)
       end
 
+      def enabled?
+        @unit.read_holding_register(1207) != 0
+      end
+
       def enable
         @unit.write_holding_register(1207, 1)
       end
