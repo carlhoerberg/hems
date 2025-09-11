@@ -45,40 +45,9 @@ echo "Detected Script ID: $script_id"
 echo "Script file path  : $SCRIPT_PATH"
 echo "--------------------------------------------------"
 
-# 1) Check if script is currently running (Script.GetStatus)
-#    We parse .result.running (true/false)
-is_running=$(curl -s \
-  -X POST \
-  -H "Content-Type: application/json" \
-  --data "$(jq -n --argjson scriptId "$script_id" '
-    {
-      "id": 1,
-      "method": "Script.GetStatus",
-      "params": {
-        "id": $scriptId
-      }
-    }
-  ')" \
-  "http://${shelly_fqdn}/rpc" | jq -r '.result.running')
-
-if [ "$is_running" = "true" ]; then
-  echo "Script ID=$script_id is currently running; stopping it..."
-  curl -s \
-    -X POST \
-    -H "Content-Type: application/json" \
-    --data "$(jq -n --argjson scriptId "$script_id" '
-      {
-        "id": 1,
-        "method": "Script.Stop",
-        "params": {
-          "id": $scriptId
-        }
-      }
-    ')" \
-    "http://${shelly_fqdn}/rpc" >/dev/null
-else
-  echo "Script ID=$script_id is NOT running; no need to stop."
-fi
+# 1) Stop scrip
+echo "Stopping script ID=$script_id"
+curl -s --fail "http://${shelly_fqdn}/rpc/Script.Stop?id=${script_id}" >/dev/null
 
 # 2) Read the local script file content
 script_code="$(cat "$SCRIPT_PATH")"
@@ -113,7 +82,7 @@ while [ $offset -lt "$script_size" ]; do
     append_flag=true
   fi
   
-  response="$(curl -s \
+  curl -s --fail \
     -X POST \
     -H "Content-Type: application/json" \
     --data "$(jq -n --arg code "$chunk" --argjson scriptId "$script_id" --argjson append "$append_flag" '
@@ -127,14 +96,7 @@ while [ $offset -lt "$script_size" ]; do
         }
       }
     ')" \
-    "http://${shelly_fqdn}/rpc")"
-  
-  echo "Response: $response"
-  #if echo "$response" | jq -e '.error' >/dev/null 2>&1; then
-  #  echo "Error uploading chunk $chunk_num:"
-  #  echo "$response"
-  #  exit 1
-  #fi
+    "http://${shelly_fqdn}/rpc" >/dev/null
   
   offset=$((offset + chunk_size))
   chunk_num=$((chunk_num + 1))
@@ -148,23 +110,8 @@ echo "Generated random UDP port: $udp_port"
 
 # Configure UDP logging to random port
 echo "Configuring UDP logging..."
-curl -s \
-  -X POST \
-  -H "Content-Type: application/json" \
-  --data "$(jq -n --arg addr "192.168.51.2:$udp_port" '{
-    "id": 1,
-    "method": "Sys.SetConfig",
-    "params": {
-      "config": {
-        "debug": {
-          "udp": {
-            "addr": $addr
-          }
-        }
-      }
-    }
-  }')" \
-  "http://${shelly_fqdn}/rpc" >/dev/null
+curl -s --fail \
+  "http://${shelly_fqdn}/rpc/Sys.SetConfig?config=$(printf '{"debug":{"udp":{"addr":"192.168.51.2:%s"}}}' "$udp_port" | jq -r @uri)" >/dev/null
 
 echo "UDP logging configured to 192.168.51.2:$udp_port"
 
@@ -175,25 +122,11 @@ echo "Press Ctrl+C to stop"
 echo "----------------------------------------"
 
 # Use socat to listen for UDP messages
-#socat UDP4-RECVFROM:$udp_port,fork SYSTEM:"sed -e a\\\\"
-#nc --udp --listen "$udp_port" | while IFS= read -r line; do echo "$line"; done
-socat -u UDP-RECVFROM:$udp_port,fork SYSTEM:"cat; echo" &
+socat -u UDP-RECVFROM:$udp_port,fork SYSTEM:'awk -v RS="\\\\0" "{print}"' &
 
 # 5) Always start the script after upload
 echo "Starting script..."
-curl -s \
-  -X POST \
-  -H "Content-Type: application/json" \
-  --data "$(jq -n --argjson scriptId "$script_id" '
-    {
-      "id": 1,
-      "method": "Script.Start",
-      "params": {
-        "id": $scriptId
-      }
-    }
-  ')" \
-  "http://${shelly_fqdn}/rpc" >/dev/null
+curl -s --fail "http://${shelly_fqdn}/rpc/Script.Start?id=${script_id}" >/dev/null
 
 echo "Done."
 
