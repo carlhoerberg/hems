@@ -141,6 +141,7 @@ class Devices
         #if (v = params.dig("light:0", "apower"))
         #  device["shelly_plug_apower"] = { v:, ts: }
         #end
+      when /^shellyblugwg3-/
       else
         puts "Unknown device id #{device_id}", params
       end
