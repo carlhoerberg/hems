@@ -192,9 +192,11 @@ class EnergyManagement
       end
     end
   rescue EOFError
-    puts "[ERROR] Genset offline, enabling AC Source"
-    puts "Enabling ACSource"
-    @devices.next3.acsource.enable
+    puts "[ERROR] Genset offline"
+    unless @devices.next3.acsource.enabled?
+      puts "Enabling ACSource"
+      @devices.next3.acsource.enable
+    end
   end
 
   def will_reach_full_battery_with_solar?(soc)
