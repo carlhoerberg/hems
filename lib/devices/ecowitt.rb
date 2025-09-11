@@ -3,7 +3,7 @@ require_relative "../modbus/rtu"
 class Devices
   class Ecowitt
     def initialize
-      @m = Modbus::RTU.new("/dev/ttyUSB1").unit(0x90)
+      @m = Modbus::RTU.new("/dev/ttyUSB0").unit(0x90)
     end
 
     def measurements
