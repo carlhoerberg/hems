@@ -191,6 +191,10 @@ class EnergyManagement
         @last_solar_check = Time.monotonic + 600 # don't check solar estimate for a while
       end
     end
+  rescue EOFError
+    puts "[ERROR] Genset offline, enabling AC Source"
+    puts "Enabling ACSource"
+    @devices.next3.acsource.enable
   end
 
   def will_reach_full_battery_with_solar?(soc)
