@@ -81,7 +81,7 @@ class Devices
         if (v = params.dig("em1data:0", "total_act_energy"))
           device["shelly_plug_aenergy_total"] = { v:, ts:, counter: true }
         end
-      when /^shellypro3em-/
+      when /^shellypro3em-|^shelly3em63g3-/
         if (v = params.dig("em:0", "total_current"))
           device["shelly_plug_current"] = { v:, ts: }
         end
