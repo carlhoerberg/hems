@@ -29,7 +29,7 @@ class HTTPServer
         res.body = @@view.result_with_hash({
           measurements: @envistar.measurements,
           alarms: @envistar.alarms,
-          current_operating_mode: @envistar.operating_mode - 1,
+          current_operating_mode: @envistar.current_operating_mode - 1,
           operating_modes: {
             -1 => "Auto",
             0 => "Off", 

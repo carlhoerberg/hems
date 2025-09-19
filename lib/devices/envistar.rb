@@ -30,7 +30,7 @@ class Devices
       end
     end
 
-    def actual_operating_mode
+    def current_operating_mode
       read("3x0018")
     end
 
