@@ -11,8 +11,8 @@ envistar_temperature{name="Avluft"} <%=m.read("3x077") / 10.0%>
 # UNIT envistar_flow l/s
 envistar_flow{name="Tilluft"} <%=m.read("3x095")%>
 envistar_flow{name="Frånluft"} <%=m.read("3x096")%>
-envistar_flow{name="Tilluft bör"} <%=m.read("3x400") / 100.0%>
-envistar_flow{name="Frånluft bör"} <%=m.read("3x402") / 100.0%>
+envistar_flow{name="Tilluft bör"} <%=m.read_u16("3x400") / 100.0%>
+envistar_flow{name="Frånluft bör"} <%=m.read_u16("3x402") / 100.0%>
 
 # TYPE envistar_pressure gauge
 # UNIT envistar_pressure Pa

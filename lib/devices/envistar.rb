@@ -20,6 +20,17 @@ class Devices
       end
     end
 
+    # Same as read but for unsigned 16 bit values
+    def read_u16(addr, signed: true)
+      reg = addr[2..].to_i - 1
+      case addr[0]
+      when "0" then @modbus.read_coil(reg)
+      when "1" then @modbus.read_discrete_input(reg)
+      when "3" then @modbus.read_input_register(reg)
+      when "4" then @modbus.read_holding_register(reg)
+      end
+    end
+
     def write(addr, value)
       reg = addr[2..].to_i - 1
       case addr[0]
@@ -67,8 +78,8 @@ class Devices
         avluft_temperature: read("3x077") / 10.0,
         tilluft_flow: read("3x095"),
         franluft_flow: read("3x096"),
-        tilluft_bor_flow: read("3x400") / 100.0,
-        franluft_bor_flow: read("3x402") / 100.0,
+        tilluft_bor_flow: read_u16("3x400") / 100.0,
+        franluft_bor_flow: read_u16("3x402") / 100.0,
         tilluftstryck_pressure: read("3x097"),
         franluftstryck_pressure: read("3x098"),
         tilluftsfilter_pressure: read("3x148") / 10.0,
