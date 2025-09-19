@@ -30,8 +30,12 @@ class Devices
       end
     end
 
-    def operating_mode
+    def actual_operating_mode
       read("3x0018")
+    end
+
+    def operating_mode
+      read("4x0005")
     end
 
     # 0 = Auto
