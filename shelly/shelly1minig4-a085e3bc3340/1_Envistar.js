@@ -3,10 +3,9 @@ const operatingMode = Virtual.getHandle("enum:200");
 function updateOperatingMode(result, error_code, error_message) {
   if (error_code === 0 && result && result.body) {
     try {
-      let data = JSON.parse(result.body);
-      print("Received data:", data);
+      const data = JSON.parse(result.body);
       if (data.operating_mode !== undefined) {
-        operatingMode.setValue(JSON.stringify(data.operating_mode));
+        operatingMode.setValue(data.operating_mode.toString());
       }
     } catch (e) {
       print("Error parsing JSON:", e);
