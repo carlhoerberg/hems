@@ -24,7 +24,7 @@ class HTTPServer
         res.body = {
           operating_mode: @envistar.operating_mode - 1,
         }.to_json
-      else
+      when "/envistar"
         res.content_type = "text/html"
         res.body = @@view.result_with_hash({
           measurements: @envistar.measurements,
@@ -38,6 +38,9 @@ class HTTPServer
             3 => "Stage 3"
           }
         })
+      else
+        res.status = 404
+        res.body = "Not Found"
       end
     end
   end
