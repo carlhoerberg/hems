@@ -4,15 +4,7 @@
 const CONFIG = {
   triple_press_brightness: 40, // Brightness level for triple press
   buttons: {
-    0: { // Button for cellar lights
-      dimmers: [
-        { ip: 'shellydimmerg3-b08184f26d28', id: 0 }, // Korridor
-        { ip: 'shellydimmerg3-b08184f16124', id: 0 },
-        { ip: 'shellydimmerg3-b08184f149a4', id: 0 },
-        { ip: 'shellydimmerg3-b08184f29bb8', id: 0 }
-      ]
-    },
-    1: { // Button for lounge lights
+    0: { // Button for lounge lights
       dimmers: [
         { ip: 'shellyprodm2pm-a0dd6c9e824c', id: 0 },
         { ip: 'shellyprodm2pm-a0dd6c9e824c', id: 1 },
@@ -23,7 +15,22 @@ const CONFIG = {
         { ip: 'shellydimmerg3-b08184ef8c18', id: 0 },
         { ip: 'shellydimmerg3-b08184f02750', id: 0 }
       ]
-    }
+    },
+    1: { // Button for kitchen lights
+      dimmers: [
+        { ip: 'shellydimmerg3-b08184f26d28', id: 0 }, // Korridor
+        { ip: 'shellydimmerg3-b08184f16124', id: 0 }, // Lampetter källaren
+        { ip: 'shellydimmerg3-b08184f149a4', id: 0 }, // Källarhall spot
+        //{ ip: 'shellydimmerg3-b08184f29bb8', id: 0 }, // Vinkällaren
+        { ip: 'shellyprodm2pm-2cbcbb9f69e4', id: 0 }, // I köksskåpen
+        { ip: 'shellyprodm2pm-2cbcbb9f69e4', id: 1 }, // Under köksskåpen
+        { ip: 'shellyprodm2pm-a0dd6c9e8668', id: 0 }, // Spottar kök
+        { ip: 'shellyprodm2pm-a0dd6c9e8668', id: 1 }, // Spottar infälda kök
+        { ip: 'shellyprodm1pm-34987aa8d98c', id: 0 }, // Köksön
+        { ip: 'shellydimmerg3-b08184f15270', id: 0 }, // Spiskåpa lister
+        { ip: 'shellyddimmerg3-e4b063d574bc', id: 0 }, // Spiskåpa armatur
+      ]
+    },
   }
 }
 
@@ -114,7 +121,7 @@ function dimDimmers (button_id, brightness) {
 let isDimming = false
 
 // Button event handler
-Shelly.addEventHandler(function (event) {
+function onEvent (event) {
   // Extract button ID from component name (e.g., "input:0" -> 0)
   if (event.component && event.component.indexOf('input:') === 0) {
     const button_id = parseInt(event.component.split(':')[1])
@@ -135,4 +142,6 @@ Shelly.addEventHandler(function (event) {
       stopDimming(button_id)
     }
   }
-})
+}
+
+Shelly.addEventHandler(onEvent)
