@@ -32,7 +32,7 @@ function calculateSupplyTemperature(callback) {
 
     // Calculate supply temperature based on supply air temperature error
     const airTempError = TARGET_SUPPLY_AIR_TEMP - T_supply_air;
-    let T_supply = 20 + (SUPPLY_AIR_Kp * airTempError); // Base temperature + correction
+    let T_supply = 10 + (SUPPLY_AIR_Kp * airTempError); // Base temperature + correction
 
     // Clamp to min/max values
     T_supply = Math.max(MIN_SUPPLY, Math.min(MAX_SUPPLY, T_supply));
