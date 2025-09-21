@@ -4,9 +4,10 @@
 // Configuration
 let CONFIG = {
   PRO3EM_IP: "shellypro3em-2cbcbba57ef8",  // Shelly Pro 3 EM hostname
-  OWN_LOAD_CURRENT: 13,        // Current draw of this device's load in Amps
-  MAX_PHASE_CURRENT: 22,       // Maximum allowed current per phase in Amps
+  OWN_LOAD_CURRENT: 14.5,        // Current draw of this device's load in Amps
+  MAX_PHASE_CURRENT: 21,       // Maximum allowed current per phase in Amps
   MIN_PHASE_VOLTAGE: 210,      // Minimum allowed voltage per phase in Volts
+  GENSET_VOLTAGE_THRESHOLD: 230.1, // Voltage threshold to detect genset operation in Volts
   MONITOR_INTERVAL: 1000,      // Monitoring interval in milliseconds (5 seconds)
   HTTP_TIMEOUT: 800           // HTTP request timeout in milliseconds
 };
@@ -37,9 +38,36 @@ function getEMData(callback) {
   });
 }
 
+// Function to check if genset is running (any phase above threshold voltage)
+function isGensetRunning(data) {
+  if (!data) return false;
+  
+  let voltage_a = Math.abs(data.a_voltage || 0);
+  let voltage_b = Math.abs(data.b_voltage || 0);
+  let voltage_c = Math.abs(data.c_voltage || 0);
+  
+  let gensetRunning = (voltage_a > CONFIG.GENSET_VOLTAGE_THRESHOLD ||
+                       voltage_b > CONFIG.GENSET_VOLTAGE_THRESHOLD ||
+                       voltage_c > CONFIG.GENSET_VOLTAGE_THRESHOLD);
+  
+  if (gensetRunning) {
+    print("Genset detected! Phase voltages - A:", voltage_a.toFixed(1) + "V", 
+          "B:", voltage_b.toFixed(1) + "V", 
+          "C:", voltage_c.toFixed(1) + "V");
+  }
+  
+  return gensetRunning;
+}
+
 // Function to check if load can be safely added
 function canAddLoad(data) {
   if (!data) return false;
+  
+  // If genset is running, always allow load addition
+  if (isGensetRunning(data)) {
+    print("Genset is running - load can be added regardless of current limits");
+    return true;
+  }
   
   let current_a = Math.abs(data.a_current || 0);
   let current_b = Math.abs(data.b_current || 0);
@@ -64,6 +92,11 @@ function canAddLoad(data) {
 // Function to check for voltage drop
 function hasVoltageDrop(data) {
   if (!data) return true; // Assume voltage drop if no data
+  
+  // If genset is running, skip voltage drop check
+  if (isGensetRunning(data)) {
+    return false;
+  }
   
   let voltage_a = Math.abs(data.a_voltage || 0);
   let voltage_b = Math.abs(data.b_voltage || 0);
@@ -109,7 +142,7 @@ function monitorPhases() {
     }
     
     if (switchState) {
-      // Switch is ON - check for voltage drop
+      // Switch is ON - check for voltage drop (unless genset is running)
       if (hasVoltageDrop(data)) {
         print("Voltage drop detected! Turning off switch");
         controlSwitch(false);
@@ -195,4 +228,5 @@ print("- Pro 3 EM device:", CONFIG.PRO3EM_IP);
 print("- Own load current:", CONFIG.OWN_LOAD_CURRENT, "A");
 print("- Max phase current:", CONFIG.MAX_PHASE_CURRENT, "A");
 print("- Min phase voltage:", CONFIG.MIN_PHASE_VOLTAGE, "V");
+print("- Genset voltage threshold:", CONFIG.GENSET_VOLTAGE_THRESHOLD, "V");
 print("- Monitor interval:", CONFIG.MONITOR_INTERVAL, "ms");
