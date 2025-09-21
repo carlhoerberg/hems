@@ -12,8 +12,8 @@
 // Adjust the constants and regulation interval for your setup.
 
 // --- Constants and Configuration ---
-const TARGET_SUPPLY_AIR_TEMP = 18.0;  // Target supply air temperature (°C)
-const MIN_SUPPLY     = 20.0;          // Minimum allowed supply temperature (°C)
+const TARGET_SUPPLY_AIR_TEMP = 17.0;  // Target supply air temperature (°C)
+const MIN_SUPPLY     = 5.0;          // Minimum allowed supply temperature (°C)
 const MAX_SUPPLY     = 60.0;          // Maximum allowed supply temperature (°C)
 const SUPPLY_AIR_Kp  = 2.0;           // Proportional gain for supply air temperature control
 
