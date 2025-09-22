@@ -33,11 +33,17 @@ function startDimming (button_id) {
   const dimmers = CONFIG.buttons[button_id].dimmers
   const direction = dimming_state[button_id].dim_direction > 0 ? 'DimUp' : 'DimDown'
 
-  for (let i = 0; i < dimmers.length; i++) {
+  function callNext(index) {
+    if (index >= dimmers.length) return;
+
     Shelly.call('HTTP.GET', {
-      url: 'http://' + dimmers[i].ip + '/rpc/Light.' + direction + '?id=' + dimmers[i].id
+      url: 'http://' + dimmers[index].ip + '/rpc/Light.' + direction + '?id=' + dimmers[index].id
+    }, function() {
+      callNext(index + 1)
     })
   }
+
+  callNext(0)
 
   // Toggle direction for next time
   dimming_state[button_id].dim_direction *= -1
@@ -48,30 +54,50 @@ function stopDimming (button_id) {
   if (!dimming_state[button_id].is_dimming) return;
   const dimmers = CONFIG.buttons[button_id].dimmers
 
-  for (let i = 0; i < dimmers.length; i++) {
+  function callNext(index) {
+    if (index >= dimmers.length) return;
+
     Shelly.call('HTTP.GET', {
-      url: 'http://' + dimmers[i].ip + '/rpc/Light.DimStop?id=' + dimmers[i].id
+      url: 'http://' + dimmers[index].ip + '/rpc/Light.DimStop?id=' + dimmers[index].id
+    }, function() {
+      callNext(index + 1)
     })
   }
+
+  callNext(0)
   dimming_state[button_id].is_dimming = false
 }
 
 function toggleDimmers (button_id) {
   const dimmers = CONFIG.buttons[button_id].dimmers
-  for (let i = 0; i < dimmers.length; i++) {
+
+  function callNext(index) {
+    if (index >= dimmers.length) return;
+
     Shelly.call('HTTP.GET', {
-      url: 'http://' + dimmers[i].ip + '/rpc/Light.Toggle?id=' + dimmers[i].id
+      url: 'http://' + dimmers[index].ip + '/rpc/Light.Toggle?id=' + dimmers[index].id
+    }, function() {
+      callNext(index + 1)
     })
   }
+
+  callNext(0)
 }
 
 function dimDimmers (button_id, brightness) {
   const dimmers = CONFIG.buttons[button_id].dimmers
-  for (let i = 0; i < dimmers.length; i++) {
+
+  function callNext(index) {
+    if (index >= dimmers.length) return;
+
     Shelly.call('HTTP.GET', {
-      url: 'http://' + dimmers[i].ip + '/rpc/Light.Set?id=' + dimmers[i].id + '&on=true&brightness=' + brightness
+      url: 'http://' + dimmers[index].ip + '/rpc/Light.Set?id=' + dimmers[index].id + '&on=true&brightness=' + brightness
+    }, function() {
+      callNext(index + 1)
     })
   }
+
+  callNext(0)
 }
 
 // Button event handler
