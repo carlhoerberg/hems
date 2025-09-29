@@ -6,7 +6,7 @@ require_relative "../modbus"
 module Modbus
   # https://modbus.org/docs/Modbus_Messaging_Implementation_Guide_V1_0b.pdf
   class TCP < Base
-    def initialize(host, port = 502, timeout: 4)
+    def initialize(host, port = 502, timeout: 3)
       @host = host
       @port = port
       @timeout = timeout
