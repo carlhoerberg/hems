@@ -5,7 +5,7 @@ class Devices
     using Modbus::TypeExtensions
 
     def initialize(host = "192.168.0.157", port = 502)
-      @modbus = Modbus::TCP.new(host, port, timeout: 3).unit(1)
+      @modbus = Modbus::TCP.new(host, port).unit(1)
     end
 
     # Read addresses as definied in the docs
