@@ -4,7 +4,6 @@ require_relative "../lib/http_server"
 require_relative "../lib/energy_management"
 
 $stdout.sync = true
-Thread.abort_on_exception = true
 devices = Devices.new
 em = EnergyManagement.new(devices)
 srv = HTTPServer.new(devices, em)
@@ -12,6 +11,7 @@ srv = HTTPServer.new(devices, em)
 trap('INT') { em.stop; srv.stop }
 trap('TERM') { em.stop; srv.stop }
 em_thread = Thread.new { em.start }
+em_thread.abort_on_exception = true
 srv.start
 em_thread.wakeup if em_thread.alive?
 em_thread.join
