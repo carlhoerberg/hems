@@ -74,11 +74,12 @@ class Devices
         begin
           yield @serial
         rescue
+          @serial.flock(File::LOCK_UN)
           @serial.close
           @serial = nil
           raise
-        ensure
-          @serial.flock(File::LOCK_UN) if @serial
+        else
+          @serial.flock(File::LOCK_UN)
         end
       end
     end
