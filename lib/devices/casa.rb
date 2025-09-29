@@ -3,7 +3,7 @@ require_relative "../modbus/tcp"
 class Devices
   class Casa
     def initialize(host = "192.168.0.8", port = 502)
-      @modbus = Modbus::TCP.new(host, port).unit(1)
+      @modbus = Modbus::TCP.new(host, port, timeout: 3).unit(1)
     end
 
     def temperature_setpoint

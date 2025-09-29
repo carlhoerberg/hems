@@ -6,9 +6,10 @@ require_relative "../modbus"
 module Modbus
   # https://modbus.org/docs/Modbus_Messaging_Implementation_Guide_V1_0b.pdf
   class TCP < Base
-    def initialize(host, port = 502)
+    def initialize(host, port = 502, timeout: 1)
       @host = host
       @port = port
+      @timeout = timeout
       @lock = Mutex.new
     end
 
@@ -44,7 +45,7 @@ module Modbus
       end
     end
 
-    def read(count, timeout = 1)
+    def read(count, timeout = @timeout)
       if IO.select([@socket], nil, nil, timeout)
         @socket.read(count) || raise(EOFError.new)
       else
@@ -53,7 +54,7 @@ module Modbus
     end
 
     def socket
-      @socket ||= Socket.tcp(@host, @port, connect_timeout: 1)
+      @socket ||= Socket.tcp(@host, @port, connect_timeout: @timeout)
     end
   end
 end
