@@ -174,7 +174,7 @@ class EnergyManagement
       discharge_limit = battery_current[:discharge_limit]
       if discharge_limit <= 350 # open air vents well before any battery problems
         @devices.relays.open_air_vents
-      else # close vents if genset is not running and we are ok on batteries
+      elsif @devices.genset.coolant_temperature < 15 # close vents when cold outside
         @devices.relays.close_air_vents
       end
 
