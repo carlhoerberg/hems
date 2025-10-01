@@ -15,6 +15,9 @@ class HTTPServer
       when %r(/stop$)
         @genset.stop
         res.body = "stopped"
+      when %r(/auto$)
+        @genset.auto
+        res.body = "auto"
       else
         res.content_type = "text/html"
         res.body = @@view.result_with_hash({ status: @genset.status,
@@ -27,6 +30,7 @@ class HTTPServer
       case form["action"]
       when "start" then @genset.start
       when "stop" then @genset.stop
+      when "auto" then @genset.auto
       else raise "no action selected"
       end
       res.status = 303
