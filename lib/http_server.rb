@@ -86,7 +86,7 @@ class HTTPServer
            end
 
     # Handle the request
-    request = Request.new(method, path, query, headers, body)
+    request = Request.new(method, path.chomp("/"), query, headers, body)
     response = Response.new
     first_part = path[0, path.index("/", 1) || path.length]
     if (controller = @controllers[first_part])
