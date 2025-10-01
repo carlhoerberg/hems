@@ -1,7 +1,6 @@
 class HTTPServer
-  class EMControl < WEBrick::HTTPServlet::AbstractServlet
-    def initialize(server, em)
-      super(server)
+  class EMControl
+    def initialize(em)
       @em = em
     end
 

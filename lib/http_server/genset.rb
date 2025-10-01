@@ -1,7 +1,6 @@
 class HTTPServer
-  class GensetControl < WEBrick::HTTPServlet::AbstractServlet
-    def initialize(server, genset)
-      super(server)
+  class GensetControl
+    def initialize(genset)
       @genset = genset
     end
 

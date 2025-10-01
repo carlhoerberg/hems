@@ -1,7 +1,6 @@
 class HTTPServer
-  class ETAControl < WEBrick::HTTPServlet::AbstractServlet
-    def initialize(server, eta)
-      super(server)
+  class ETAControl
+    def initialize(eta)
       @eta = eta
     end
 
@@ -13,7 +12,8 @@ class HTTPServer
         res.content_type = "application/xml"
         res.body = @eta.menu
       else
-        raise WEBrick::HTTPStatus::NotFound
+        res.status = 404
+        res.body = "Not Found"
       end
     end
   end

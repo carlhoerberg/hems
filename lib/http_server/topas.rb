@@ -1,7 +1,6 @@
 class HTTPServer
-  class TopasControl < WEBrick::HTTPServlet::AbstractServlet
-    def initialize(server, topas)
-      super(server)
+  class TopasControl
+    def initialize(topas)
       @topas = topas
     end
 

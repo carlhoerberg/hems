@@ -1,7 +1,6 @@
 class HTTPServer
-  class ButtonControl < WEBrick::HTTPServlet::AbstractServlet
-    def initialize(server, devices)
-      super(server)
+  class ButtonControl
+    def initialize(devices)
       @devices = devices
     end
 
@@ -18,7 +17,8 @@ class HTTPServer
         @devices.relays.open_air_vents
         @devices.genset.start
       else
-        raise WEBrick::HTTPStatus::NotFound
+        res.status = 404
+        res.body = 'Not Found'
       end
     end
   end

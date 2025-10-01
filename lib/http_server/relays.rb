@@ -1,7 +1,6 @@
 class HTTPServer
-  class RelaysControl < WEBrick::HTTPServlet::AbstractServlet
-    def initialize(server, relays)
-      super(server)
+  class RelaysControl
+    def initialize(relays)
       @relays = relays
     end
 

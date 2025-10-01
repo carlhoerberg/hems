@@ -1,7 +1,6 @@
 class HTTPServer
-  class CasaControl < WEBrick::HTTPServlet::AbstractServlet
-    def initialize(server, casa)
-      super(server)
+  class CasaControl
+    def initialize(casa)
       @casa = casa
     end
 

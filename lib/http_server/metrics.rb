@@ -1,9 +1,8 @@
 require "zlib"
 
 class HTTPServer
-  class Metrics < WEBrick::HTTPServlet::AbstractServlet
-    def initialize(server, devices)
-      super(server)
+  class Metrics
+    def initialize(devices)
       @devices = devices
     end
 
@@ -83,8 +82,8 @@ class HTTPServer
           res.status = 404
           "Not Found"
         end
-      if req.accept_encoding.include? "gzip"
-        res["content-encoding"] = "gzip"
+      if req.headers["accept-encoding"]&.include? "gzip"
+        res.headers["content-encoding"] = "gzip"
         res.body = Zlib.gzip(metrics)
       else
         res.body = metrics

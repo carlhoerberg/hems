@@ -1,7 +1,8 @@
+require "json"
+
 class HTTPServer
-  class EnvistarControl < WEBrick::HTTPServlet::AbstractServlet
-    def initialize(server, envistar)
-      super(server)
+  class EnvistarControl
+    def initialize(envistar)
       @envistar = envistar
     end
 
@@ -11,8 +12,7 @@ class HTTPServer
       case req.path
       when "/envistar/set"
         # Handle operating mode change
-        if req.query["operating_mode"]
-          mode = req.query["operating_mode"].to_i
+        if (mode = req.query["operating_mode"]&.to_i)
           @envistar.operating_mode = mode + 1 if (-1..3).include?(mode)
         end
 

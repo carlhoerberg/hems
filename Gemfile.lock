@@ -5,7 +5,6 @@ GEM
     ruby-termios (1.1.0)
     uart (1.0.0)
       ruby-termios
-    webrick (1.8.2)
 
 PLATFORMS
   x86_64-linux
@@ -13,7 +12,6 @@ PLATFORMS
 DEPENDENCIES
   rexml
   uart
-  webrick
 
 BUNDLED WITH
    2.4.14
