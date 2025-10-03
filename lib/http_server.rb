@@ -59,7 +59,7 @@ class HTTPServer
   private
 
   def handle_client(socket)
-    request_line = socket.gets("\r\n", chomp: true) # read request line
+    request_line = socket.gets("\r\n", chomp: true) || return # read request line
     method, path_query, _http_version = request_line.split(" ", 3) # ["GET", "/path", "HTTP/1.1"]
 
     # Parse path and query string
@@ -73,7 +73,7 @@ class HTTPServer
     # Parse headers
     headers = {}
     loop do
-      line = socket.gets("\r\n", chomp: true)
+      line = socket.gets("\r\n", chomp: true) || return
       break if line.empty?
       key, value = line.split(": ", 2)
       headers[key.downcase] = value
