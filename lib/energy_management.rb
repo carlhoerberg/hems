@@ -23,7 +23,7 @@ class EnergyManagement
     @phase_current_history = []
     @last_solar_check = 0
     @last_current_raise = 0 # last time the acsource.rated_current was increased
-    @genset_auto_started = @devices.genset.is_running? rescue true # assume it was auto started if it's already running
+    @genset_auto_started = @devices.genset.ready_to_load? rescue true # assume it was auto started if it's already running
   end
 
   attr_accessor :genset_auto_started

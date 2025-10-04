@@ -57,7 +57,7 @@ class Devices
     end
 
     def binary_io
-      v = @genset.read_coils(0x60, 13)
+      v = @genset.read_discrete_inputs(0x60, 13)
       {
         emergency_stop: v[0],
         remote_start: v[1],
@@ -131,10 +131,7 @@ class Devices
     end
 
     def measurements
-      m = []
-      15.times do |i|
-        m.concat @genset.read_input_registers(i * 3, 3)
-      end
+      m = @genset.read_input_registers(0, 45)
       power_reading_precision = 10.0
       {
         voltage_l1_n: m[0],
