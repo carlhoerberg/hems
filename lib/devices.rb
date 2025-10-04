@@ -27,7 +27,7 @@ class Devices
     @unifi = Unifi.new
     @topas = Topas.new
     @weco = Weco.new
-    @ecowitt = Ecowitt.new
+    #@ecowitt = Ecowitt.new
     @envistar = Envistar.new
     @casa = Casa.new
     @grundfos = Grundfos.new
