@@ -13,6 +13,7 @@ module Modbus
     end
 
     def close
+      @@serial&.flock(File::LOCK_UN)
       @@serial&.close
       @@serial = nil
     end
@@ -22,6 +23,7 @@ module Modbus
     def request(request)
       try = 0
       @@lock.synchronize do
+        serial.flock(File::LOCK_EX)
         @response = ""
         serial.write request, CRC16.compute(request)
         unit, function = read(2).unpack("CC")
@@ -37,6 +39,8 @@ module Modbus
         close
         retry if (try += 1) < 2
         raise e
+      ensure
+        @@serial&.flock(File::LOCK_UN)
       end
     end
 

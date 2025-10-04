@@ -56,6 +56,25 @@ class Devices
       @genset.read_input_register(23) / 10.0
     end
 
+    def binary_io
+      v = @genset.read_coils(0x60, 13)
+      {
+        emergency_stop: v[0],
+        remote_start: v[1],
+        access_lock: v[2],
+        gcb_feedback: v[3],
+        external_warning1: v[4],
+        external_warning2: v[5],
+        external_warning3: v[6],
+        external_shutdown1: v[7],
+        external_shutdown2: v[8],
+        external_shutdown3: v[9],
+        low_fuel_level: v[10],
+        low_oil_pressure: v[11],
+        high_coolant_temperature: v[12],
+      }
+    end
+
     def status_integer
       v = @genset.read_discrete_inputs(0x0020, 40)
       v.each_with_index.sum { |bool, index| bool ? (1 << index) : 0 }
