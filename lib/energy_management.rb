@@ -151,7 +151,7 @@ class EnergyManagement
   BATTERY_KWH = 31.2
 
   def genset_support(soc = @devices.next3.battery.soc)
-    if @devices.genset.is_running?
+    if @devices.genset.is_running? || @devices.genset.ready_to_load?
       @devices.relays.open_air_vents # should already be open, but make sure
 
       keep_hz
