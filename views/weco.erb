@@ -25,5 +25,8 @@ weco_charge_current_recommended <%=total[:charge_current_recommended]%>
 # TYPE weco_forced_state gauge
 weco_forced_state <%=total[:forced_state]%>
 
+# TYPE weco_forced_seconds counter
+weco_forced_seconds <%=total[:forced_seconds]%>
+
 # TYPE metrics_gather_time gauge
 metrics_gather_time{device="weco"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>
