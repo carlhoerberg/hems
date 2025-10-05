@@ -142,6 +142,8 @@ class Devices
         #  device["shelly_plug_apower"] = { v:, ts: }
         #end
       when /^shellyblugwg3-/
+      when /^shelly1g3-/
+      when /^shelly1pmg4-/
       else
         puts "Unknown device id #{device_id}", params
       end
@@ -178,8 +180,8 @@ class Devices
         if (v = data["temperature"])
           if Numeric === v
             device[:shelly_ht_temperature] = {v:, ts:}
-          else
-            puts "#{src}: #{event}"
+          else # array, multiple sensors
+            #puts "#{src}: #{event}"
           end
         end
         if (v = data["humidity"])
