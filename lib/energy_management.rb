@@ -151,7 +151,7 @@ class EnergyManagement
   BATTERY_KWH = 31.2
 
   def genset_support(soc = @devices.next3.battery.soc)
-    if @devices.genset.is_running? || @devices.genset.ready_to_load?
+    if @devices.genset.ready_to_load? || @devices.genset.is_running?
       @devices.relays.open_air_vents # should already be open, but make sure
 
       keep_hz
@@ -240,24 +240,23 @@ class EnergyManagement
     @genset_auto_started = true
     @devices.relays.open_air_vents
 
+    puts "Disable AC source until genset is ready"
+    @devices.next3.acsource.disable
+
     puts "Starting genset"
     @devices.genset.start
-    sleep 3 # should have started in this time
-    unless @devices.genset.is_running?
+    15.times do |i|
+      sleep 1
+      break if @devices.genset.ready_to_load?
       status = @devices.genset.status.select { |_, v| v }.keys
-      puts "Genset didn't start, status:", status
+      puts "Genset not ready to load, status:", status
       if status == [:general_alarm, :common_shutdown, :min_generator_frequency]
         puts "Min generator frequency alarm, resetting"
         @devices.genset.stop
+        @devices.genset.start
       end
-      raise "Genset didn't start"
     end
-
-    until @devices.genset.ready_to_load?
-      puts "Genset not ready to load"
-      sleep 1
-    end
-    puts "Enabling ACSource"
+    puts "Enabling ACSource because genset is ready to load"
     @devices.next3.acsource.enable
   end
 
