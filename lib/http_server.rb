@@ -59,64 +59,82 @@ class HTTPServer
   private
 
   def handle_client(socket)
-    request_line = socket.gets("\r\n", chomp: true) || return # read request line
-    method, path_query, _http_version = request_line.split(" ", 3) # ["GET", "/path", "HTTP/1.1"]
-
-    # Parse path and query string
-    path, query_string = path_query.split("?", 2)
-    query = {}
-    query_string&.split("&") do |pair|
-      key, value = pair.split("=", 2)
-      query[key] = value
-    end
-
-    # Parse headers
-    headers = {}
     loop do
-      line = socket.gets("\r\n", chomp: true) || return
-      break if line.empty?
-      key, value = line.split(": ", 2)
-      headers[key.downcase] = value
-    end
-    # Read body if Content-Length is present
-    body = if headers["content-length"]
-             socket.read(headers["content-length"].to_i)
-           else
-              ""
-           end
+      request_line = socket.gets("\r\n", chomp: true)
+      break unless request_line # client closed connection
 
-    # Handle the request
-    request = Request.new(method, path.chomp("/"), query, headers, body)
-    response = Response.new
-    first_part = path[0, path.index("/", 1) || path.length]
-    if (controller = @controllers[first_part])
-      begin
-        case method
-        when "GET"
-          controller.do_GET(request, response)
-        when "POST"
-          controller.do_POST(request, response)
-        else
-        end
-      rescue => e
-        response.status = 500
-        response.headers = {}
-        response.content_type = "text/plain"
-        response.body = "Internal Server Error\n#{e.message}\n"
+      method, path_query, http_version = request_line.split(" ", 3) # ["GET", "/path", "HTTP/1.1"]
+
+      # Parse path and query string
+      path, query_string = path_query.split("?", 2)
+      query = {}
+      query_string&.split("&") do |pair|
+        key, value = pair.split("=", 2)
+        query[key] = value
       end
-    else
-      response.status = 404
-      response.body = "Not Found\n"
-    end
 
-    # Send the response
-    socket.print "HTTP/1.0 #{response.status_header}\r\n"
-    (response.headers || {}).each do |key, value|
-      socket.print "#{key}: #{value}\r\n"
+      # Parse headers
+      headers = {}
+      loop do
+        line = socket.gets("\r\n", chomp: true) || break
+        break if line.empty?
+        key, value = line.split(": ", 2)
+        headers[key.downcase] = value
+      end
+      # Read body if Content-Length is present
+      body = if headers["content-length"]
+               socket.read(headers["content-length"].to_i)
+             else
+                ""
+             end
+
+      # Determine if we should keep the connection alive
+      keep_alive = false
+      if http_version == "HTTP/1.1"
+        # HTTP/1.1 defaults to keep-alive unless Connection: close is specified
+        keep_alive = headers["connection"]&.downcase != "close"
+      elsif http_version == "HTTP/1.0"
+        # HTTP/1.0 requires explicit Connection: keep-alive
+        keep_alive = headers["connection"]&.downcase == "keep-alive"
+      end
+
+      # Handle the request
+      request = Request.new(method, path.chomp("/"), query, headers, body)
+      response = Response.new
+      first_part = path[0, path.index("/", 1) || path.length]
+      if (controller = @controllers[first_part])
+        begin
+          case method
+          when "GET"
+            controller.do_GET(request, response)
+          when "POST"
+            controller.do_POST(request, response)
+          else
+          end
+        rescue => e
+          response.status = 500
+          response.headers = {}
+          response.content_type = "text/plain"
+          response.body = "Internal Server Error\n#{e.message}\n"
+          keep_alive = false # Don't keep alive on errors
+        end
+      else
+        response.status = 404
+        response.body = "Not Found\n"
+      end
+
+      # Send the response
+      socket.print "#{http_version || "HTTP/1.0"} #{response.status_header}\r\n"
+      (response.headers || {}).each do |key, value|
+        socket.print "#{key}: #{value}\r\n"
+      end
+      socket.print "Content-Length: #{response.body.bytesize}\r\n"
+      socket.print "Connection: #{keep_alive ? "keep-alive" : "close"}\r\n"
+      socket.print "\r\n"
+      socket.print response.body
+
+      break unless keep_alive
     end
-    socket.print "Content-Length: #{response.body.bytesize}\r\n"
-    socket.print "\r\n"
-    socket.print response.body
   ensure
     socket.close
   end
