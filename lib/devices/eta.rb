@@ -224,7 +224,7 @@ class Devices
           val.text.to_f / val["scaleFactor"].to_i
         when Net::HTTPBadRequest
           puts "#{res.inspect} #{path}"
-          "NaN"
+          nil
         else
           raise "HTTP response not 200 OK: #{res.inspect}"
         end

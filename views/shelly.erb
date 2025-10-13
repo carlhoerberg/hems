@@ -1,7 +1,7 @@
 <%devices.each do |device_id, metrics|%>
-<%metrics.select { |_, m| m[:ts] / 1000 > Time.now.to_i - 3600 }.each do |name, m|%>
+<%metrics.select { |_, m| m[:v] && m[:ts] / 1000 > Time.now.to_i - 3600 }.each do |name, m|%>
 # TYPE <%=name%> <%=m[:counter] ? "counter" : "gauge"%>
-<%=name%>{device_id="<%=device_id%>"} <%=m[:v] || "NaN"%> <%=m[:ts]%>
+<%=name%>{device_id="<%=device_id%>"} <%=m[:v]%> <%=m[:ts]%>
 <%end%>
 <%end%>
 
