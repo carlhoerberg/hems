@@ -156,7 +156,7 @@ class EnergyManagement
 
       keep_hz
 
-      if weco_module_soc_diff > 5
+      if (soc_diff = weco_module_soc_diff) > 5
         puts "Large SoC difference between battery modules (#{soc_diff}%), keeping genset running"
       elsif high_phase_current?
         puts "High phase current, keeping genset running"
