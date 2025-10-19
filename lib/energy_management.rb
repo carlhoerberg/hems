@@ -318,9 +318,10 @@ class EnergyManagement
     min_soc = nil
     max_soc = nil
     @devices.weco.modules.each do |mod|
-      min_soc = mod.soc_value if min_soc.nil? || mod.soc_value < min_soc
-      max_soc = mod.soc_value if max_soc.nil? || mod.soc_value > max_soc
+      min_soc = mod[:soc_value] if min_soc.nil? || mod[:soc_value] < min_soc
+      max_soc = mod[:soc_value] if max_soc.nil? || mod[:soc_value] > max_soc
     end
+    puts "Battery module SoC min=#{min_soc}%, max=#{max_soc}%, diff=#{max_soc - min_soc}%"
     max_soc - min_soc
   end
 end
