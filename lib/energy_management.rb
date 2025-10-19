@@ -278,7 +278,7 @@ class EnergyManagement
       raise "Genset didn't stop"
     end
     puts "Restoring AC source values"
-    @devices.next3.acsource.rated_current = 19 # safe for start up and >0 degrees
+    @devices.next3.acsource.rated_current = 18 # safe for start up and >0 degrees
     @devices.next3.acsource.enable
   end
 
