@@ -157,7 +157,7 @@ class EnergyManagement
       keep_hz
 
       if (soc_diff = weco_module_soc_diff) > 5
-        puts "Large SoC difference between battery modules (#{soc_diff}%), keeping genset running"
+        puts "Large SoC difference between battery modules (#{soc_diff.round}%), keeping genset running"
       elsif high_phase_current?
         puts "High phase current, keeping genset running"
       elsif @devices.next3.battery.errors != 0
@@ -321,7 +321,6 @@ class EnergyManagement
       min_soc = mod[:soc_value] if min_soc.nil? || mod[:soc_value] < min_soc
       max_soc = mod[:soc_value] if max_soc.nil? || mod[:soc_value] > max_soc
     end
-    puts "Battery module SoC min=#{min_soc}%, max=#{max_soc}%, diff=#{max_soc - min_soc}%"
     max_soc - min_soc
   end
 end
