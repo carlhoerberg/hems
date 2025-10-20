@@ -156,14 +156,14 @@ class EnergyManagement
 
       keep_hz
 
-      if (soc_diff = weco_module_soc_diff) > 5
-        puts "Large SoC difference between battery modules (#{soc_diff.round}%), keeping genset running"
-      elsif high_phase_current?
+      if high_phase_current?
         puts "High phase current, keeping genset running"
-      elsif @devices.next3.battery.errors != 0
-        puts "Battery has errors, keeping genset running"
       elsif !@genset_auto_started # was manually started
         puts "Genset manually started, keep running"
+      elsif @devices.next3.battery.errors != 0
+        puts "Battery has errors, keeping genset running"
+      elsif (soc_diff = weco_module_soc_diff) > 5
+        puts "Large SoC difference between battery modules (#{soc_diff.round}%), keeping genset running"
       elsif @devices.weco.charge_limit <= 200
         puts "SoC #{soc}%, battery current limited, stopping genset"
         stop_genset
