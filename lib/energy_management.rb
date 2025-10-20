@@ -156,20 +156,12 @@ class EnergyManagement
 
       keep_hz
 
-      if high_phase_current?
-        puts "High phase current, keeping genset running"
-      elsif !@genset_auto_started # was manually started
-        puts "Genset manually started, keep running"
-      elsif @devices.next3.battery.errors != 0
-        puts "Battery has errors, keeping genset running"
-      elsif (soc_diff = weco_module_soc_diff) > 5
-        puts "Large SoC difference between battery modules (#{soc_diff.round}%), keeping genset running"
-      elsif @devices.weco.charge_limit <= 200
+      if @devices.weco.charge_limit <= 200
         puts "SoC #{soc}%, battery current limited, stopping genset"
-        stop_genset
+        maybe_stop_genset
       elsif will_reach_full_battery_with_solar?(soc)
         puts "Battery will reach full charge with solar, stopping genset"
-        stop_genset
+        maybe_stop_genset
       end
     else # genset is not running
       battery_current = @devices.weco.currents
@@ -260,6 +252,20 @@ class EnergyManagement
     end
     puts "Enabling ACSource because genset is ready to load"
     @devices.next3.acsource.enable
+  end
+
+  def maybe_stop_genset
+    if high_phase_current?
+      puts "High phase current, keeping genset running"
+    elsif !@genset_auto_started # was manually started
+      puts "Genset manually started, keep running"
+    elsif @devices.next3.battery.errors != 0
+      puts "Battery has errors, keeping genset running"
+    elsif (soc_diff = weco_module_soc_diff) > 5
+      puts "Large SoC difference between battery modules (#{soc_diff.round}%), keeping genset running"
+    else
+      stop_genset
+    end
   end
 
   def stop_genset
