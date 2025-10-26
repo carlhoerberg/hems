@@ -286,7 +286,7 @@ class EnergyManagement
       raise "Genset didn't stop"
     end
     puts "Restoring AC source values"
-    @devices.next3.acsource.rated_current = 18 # safe for start up and >0 degrees
+    @devices.next3.acsource.rated_current = 17 # safe for start up
     @devices.next3.acsource.enable
   end
 
@@ -294,7 +294,7 @@ class EnergyManagement
     hz = @devices.genset.frequency # frequency from genset got 1 decimal
     temp = @devices.genset.coolant_temperature
 
-    if temp >= 98
+    if temp >= 97
       rated_current = @devices.next3.acsource.rated_current
       puts "coolant_temperature=#{temp} adjusting current down to #{rated_current - 1}"
       @devices.next3.acsource.rated_current = rated_current - 1
@@ -302,7 +302,7 @@ class EnergyManagement
       rated_current = @devices.next3.acsource.rated_current
       puts "hz=#{hz} adjusting current down to #{rated_current - 1}"
       @devices.next3.acsource.rated_current = rated_current - 1
-    elsif hz >= 50.5
+    elsif hz >= 50.4
       rated_current = @devices.next3.acsource.rated_current
       # never try to draw more than 25A
       if rated_current < 24
