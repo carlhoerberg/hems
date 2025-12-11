@@ -15,7 +15,7 @@ class Devices
     end
 
     def temperatures
-      v = @modbus.read_input_registers(6200, 6).map!(&:to_i16)
+      v = @modbus.read_input_registers(6200, 6).map! { |v| [v].to_i16 }
       {
         fresh: v[0] / 10.0,
         supply_before_reheater: v[1] / 10.0,
@@ -98,7 +98,7 @@ class Devices
     end
 
     def measurements
-      v = @modbus.read_input_registers(6200, 21).map!(&:to_i16)
+      v = @modbus.read_input_registers(6200, 21).map! { |v| [v].to_i16 }
       {
         fresh_air_temperature: v[0] / 10.0,
         supply_air_before_heater_temperature: v[1] / 10.0,
