@@ -6,12 +6,11 @@ class Devices
     def initialize(host = "192.168.0.1", port = 443)
       @http = Net::HTTP.new(host, port).tap do |h|
         h.use_ssl = true
-        h.open_timeout = 3
-        h.read_timeout = 2
+        h.open_timeout = 4
+        h.read_timeout = 1
         h.verify_mode = OpenSSL::SSL::VERIFY_NONE
       end
       @lock = Mutex.new
-      @cookie = get_cookie
     end
 
     def health
@@ -20,11 +19,15 @@ class Devices
 
     private
 
+    def cookie
+      @cookie ||= get_cookie
+    end
+
     def get(path)
       @lock.synchronize do
         loop do
           @http.start unless @http.started?
-          headers = { "Cookie" => @cookie }
+          headers = { "Cookie" => cookie }
           res = @http.get(path, headers)
           case res
           when Net::HTTPOK
