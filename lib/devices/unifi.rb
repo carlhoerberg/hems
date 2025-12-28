@@ -6,8 +6,8 @@ class Devices
     def initialize(host = "192.168.0.1", port = 443)
       @http = Net::HTTP.new(host, port).tap do |h|
         h.use_ssl = true
-        h.open_timeout = 1
-        h.read_timeout = 1
+        h.open_timeout = 3
+        h.read_timeout = 2
         h.verify_mode = OpenSSL::SSL::VERIFY_NONE
       end
       @lock = Mutex.new
