@@ -4,7 +4,7 @@ class Devices
   class Next3
     using Modbus::TypeExtensions
 
-    attr_reader :acload, :battery, :acsource, :solar
+    attr_reader :acload, :battery, :acsource, :solar, :aux1
 
     def initialize
       host = ENV.fetch("NEXT3_HOST", "studer-next")
@@ -14,6 +14,7 @@ class Devices
       @battery = Battery.new next3
       @acsource = AcSource.new next3
       @solar = Solar.new next3
+      @aux1 = Aux.new next3, 1
     end
 
     class Battery
@@ -290,6 +291,18 @@ class Devices
       # 0 not limited, 1 temperature limited, 2 max power reached, 3 max current reached, 4 solar excess
       def limitation(array)
         @unit.read_holding_registers(6918 + (array - 1) * 300, 2).to_u32
+      end
+    end
+
+    class Aux
+      def initialize(next3, id)
+        raise ArgumentError.new("Aux ID must be 1-2") unless (1..2).include? id
+        @unit = next3.unit(14)
+        @base = 8100 + 300 * (id - 1)
+      end
+
+      def is_connected
+        @unit.read_holding_register(@base)
       end
     end
   end
