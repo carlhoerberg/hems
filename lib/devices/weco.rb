@@ -69,7 +69,7 @@ class Devices
 
     def lock(&)
       @lock.synchronize do
-        @serial ||= UART.open("/dev/ttyUSB1", 115200)
+        @serial ||= UART.open("/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_B003C43Z-if00-port0", 115200)
         @serial.flock(File::LOCK_EX)
         begin
           yield @serial
