@@ -1,0 +1,67 @@
+<html>
+  <head>
+    <title>Grundfos</title>
+  </head>
+  <body>
+    <h1>Grundfos control</h1>
+    <form method="post">
+      <label>Control mode:
+        <select name="controlmode">
+          <option value="0" <%="selected" if controlmode == 0%>>Constant speed</option>
+          <option value="1" <%="selected" if controlmode == 1%>>Constant frequency</option>
+          <option value="3" <%="selected" if controlmode == 3%>>Constant head</option>
+          <option value="4" <%="selected" if controlmode == 4%>>Constant pressure</option>
+          <option value="5" <%="selected" if controlmode == 5%>>Constant differential pressure</option>
+          <option value="6" <%="selected" if controlmode == 6%>>Proportional pressure</option>
+          <option value="7" <%="selected" if controlmode == 7%>>Constant flow</option>
+          <option value="8" <%="selected" if controlmode == 8%>>Constant temperature</option>
+          <option value="9" <%="selected" if controlmode == 9%>>Constant differential temperature</option>
+          <option value="10" <%="selected" if controlmode == 10%>>Constant level</option>
+          <option value="128" <%="selected" if controlmode == 128%>>AUTOADAPT</option>
+          <option value="129" <%="selected" if controlmode == 129%>>FLOWADAPT</option>
+          <option value="130" <%="selected" if controlmode == 130%>>Closed-loop sensor</option>
+          <option value="131" <%="selected" if controlmode == 131%>>AUTOADAPT(CP)</option>
+        </select>
+      </label>
+      <input type="submit" name="action" value="Set control mode">
+    </form>
+    <form method="post">
+      <label>Setpoint (%):
+        <input type="number" name="setpoint" min="0" max="100" value="<%=setpoint%>">
+      </label>
+      <input type="submit" name="action" value="Set setpoint">
+    </form>
+    <h2>Status</h2>
+    <table>
+      <%status.each do |key, value|%>
+        <tr>
+          <td><%=key%></td>
+          <td><%=value%></td>
+        </tr>
+      <%end%>
+    </table>
+    <h2>Measurements</h2>
+    <table>
+      <%measurements.each do |key, value|%>
+        <tr>
+          <td><%=key%></td>
+          <td><%=value%></td>
+        </tr>
+      <%end%>
+    </table>
+    <h2>Counters</h2>
+    <table>
+      <%counters.each do |key, value|%>
+        <tr>
+          <td><%=key%></td>
+          <td><%=value%></td>
+        </tr>
+      <%end%>
+    </table>
+    <h2>Alarms</h2>
+    <table>
+      <tr><td>Alarm code</td><td><%=alarm%></td></tr>
+      <tr><td>Warning code</td><td><%=warning%></td></tr>
+    </table>
+  </body>
+</html>

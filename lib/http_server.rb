@@ -9,6 +9,7 @@ require_relative "./http_server/casa"
 require_relative "./http_server/envistar"
 require_relative "./http_server/em"
 require_relative "./http_server/eta"
+require_relative "./http_server/grundfos"
 
 # Simple multithreaded HTTP server
 class HTTPServer
@@ -25,6 +26,7 @@ class HTTPServer
       "/envistar" => EnvistarControl.new(devices.envistar),
       "/eta" => ETAControl.new(devices.eta),
       "/em" => EMControl.new(em),
+      "/grundfos" => GrundfosControl.new(devices.grundfos),
     }
   end
 
