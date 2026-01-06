@@ -17,6 +17,7 @@ class HTTPServer
         feedback_unit: @grundfos.feedback_unit,
         feedback_sensor: @grundfos.feedback_sensor,
         process_feedback: @grundfos.process_feedback,
+        max_flow_limit: @grundfos.max_flow_limit,
         status: @grundfos.status,
         measurements: @grundfos.measurements,
         counters: @grundfos.counters,
@@ -50,6 +51,12 @@ class HTTPServer
         @grundfos.remote_control = false
       when "Reset Alarm"
         @grundfos.reset_alarm
+      when "Enable Flow Limit"
+        @grundfos.max_flow_limit_enabled = true
+      when "Disable Flow Limit"
+        @grundfos.max_flow_limit_enabled = false
+      when "Set flow limit"
+        @grundfos.max_flow_limit = form["max_flow_limit"].to_f
       end
       res.status = 303
       res["location"] = req.path

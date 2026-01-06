@@ -47,6 +47,17 @@
       <input type="submit" name="action" value="Set operation mode">
     </form>
 
+    <h3>Max Flow Limit</h3>
+    <form method="post" style="display:inline">
+      <input type="submit" name="action" value="<%=status[:max_flow_limit_enabled] ? 'Disable Flow Limit' : 'Enable Flow Limit'%>">
+    </form>
+    <form method="post" style="display:inline">
+      <label>Limit (m³/h):
+        <input type="number" name="max_flow_limit" min="0" step="0.01" value="<%=max_flow_limit%>" style="width:80px">
+      </label>
+      <input type="submit" name="action" value="Set flow limit">
+    </form>
+
     <h3>Setpoint</h3>
     <form method="post">
       <label>Setpoint (%):
