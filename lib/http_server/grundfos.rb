@@ -11,6 +11,8 @@ class HTTPServer
       res.body = @@view.result_with_hash({
         controlmode: @grundfos.controlmode,
         setpoint: @grundfos.setpoint,
+        head_setpoint: @grundfos.head_setpoint,
+        max_pressure_range: @grundfos.max_pressure_range,
         status: @grundfos.status,
         measurements: @grundfos.measurements,
         counters: @grundfos.counters,
@@ -26,6 +28,8 @@ class HTTPServer
         @grundfos.controlmode = form["controlmode"].to_i
       when "Set setpoint"
         @grundfos.setpoint = form["setpoint"].to_i
+      when "Set head setpoint"
+        @grundfos.head_setpoint = form["head_setpoint"].to_f
       end
       res.status = 303
       res["location"] = req.path

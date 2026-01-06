@@ -31,6 +31,12 @@
       </label>
       <input type="submit" name="action" value="Set setpoint">
     </form>
+    <form method="post">
+      <label>Head setpoint (bar):
+        <input type="number" name="head_setpoint" min="0" max="<%=max_pressure_range%>" step="0.01" value="<%=head_setpoint%>">
+      </label>
+      <input type="submit" name="action" value="Set head setpoint">
+    </form>
     <h2>Status</h2>
     <table>
       <%status.each do |key, value|%>

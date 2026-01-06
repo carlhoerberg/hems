@@ -40,6 +40,23 @@ class Devices
       @modbus.write_holding_register(103, v * 100)
     end
 
+    # Maximum head/pressure range in bar
+    def max_pressure_range
+      @modbus.read_input_register(216) / 100.0
+    end
+
+    # Head setpoint in bar
+    def head_setpoint
+      max_pressure_range * setpoint / 100.0
+    end
+
+    # Set head setpoint in bar
+    def head_setpoint=(v)
+      max = max_pressure_range
+      raise ArgumentError, "Head setpoint must be between 0 and #{max} bar" unless (0..max).include?(v)
+      self.setpoint = (v / max) * 100
+    end
+
     def setpoint_unit
       v = @modbus.read_holding_register(208)
       case v
