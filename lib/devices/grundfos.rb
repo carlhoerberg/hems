@@ -269,9 +269,9 @@ class Devices
     end
 
     def counters
-      # Operation time (reg 327-328), Powered time (reg 329-330)
-      v1 = @modbus.read_input_registers(326, 8)
+      # Operation time (reg 327-328), Powered time (reg 329-330), Torque (331),
       # Energy (reg 332-333), Starts (reg 334-335)
+      v1 = @modbus.read_input_registers(326, 9)
       # Volume1 (reg 357-358), Volume2 (reg 361-362)
       v2 = @modbus.read_input_registers(356, 6)
       {
