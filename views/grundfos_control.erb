@@ -4,70 +4,132 @@
   </head>
   <body>
     <h1>Grundfos control</h1>
+
+    <h2>Controls</h2>
+    <form method="post" style="display:inline">
+      <input type="submit" name="action" value="<%=status[:on] ? 'Turn Off' : 'Turn On'%>">
+    </form>
+    <form method="post" style="display:inline">
+      <input type="submit" name="action" value="<%=status[:remote_control] ? 'Set Local' : 'Set Remote'%>">
+    </form>
+    <form method="post" style="display:inline">
+      <input type="submit" name="action" value="Reset Alarm">
+    </form>
+
+    <h3>Control mode</h3>
     <form method="post">
-      <label>Control mode:
-        <select name="controlmode">
-          <option value="0" <%="selected" if controlmode == 0%>>Constant speed</option>
-          <option value="1" <%="selected" if controlmode == 1%>>Constant frequency</option>
-          <option value="3" <%="selected" if controlmode == 3%>>Constant head</option>
-          <option value="4" <%="selected" if controlmode == 4%>>Constant pressure</option>
-          <option value="5" <%="selected" if controlmode == 5%>>Constant differential pressure</option>
-          <option value="6" <%="selected" if controlmode == 6%>>Proportional pressure</option>
-          <option value="7" <%="selected" if controlmode == 7%>>Constant flow</option>
-          <option value="8" <%="selected" if controlmode == 8%>>Constant temperature</option>
-          <option value="9" <%="selected" if controlmode == 9%>>Constant differential temperature</option>
-          <option value="10" <%="selected" if controlmode == 10%>>Constant level</option>
-          <option value="128" <%="selected" if controlmode == 128%>>AUTOADAPT</option>
-          <option value="129" <%="selected" if controlmode == 129%>>FLOWADAPT</option>
-          <option value="130" <%="selected" if controlmode == 130%>>Closed-loop sensor</option>
-          <option value="131" <%="selected" if controlmode == 131%>>AUTOADAPT(CP)</option>
-        </select>
-      </label>
+      <select name="controlmode">
+        <option value="0" <%="selected" if controlmode == 0%>>Constant speed</option>
+        <option value="1" <%="selected" if controlmode == 1%>>Constant frequency</option>
+        <option value="3" <%="selected" if controlmode == 3%>>Constant head</option>
+        <option value="4" <%="selected" if controlmode == 4%>>Constant pressure</option>
+        <option value="5" <%="selected" if controlmode == 5%>>Constant differential pressure</option>
+        <option value="6" <%="selected" if controlmode == 6%>>Proportional pressure</option>
+        <option value="7" <%="selected" if controlmode == 7%>>Constant flow</option>
+        <option value="8" <%="selected" if controlmode == 8%>>Constant temperature</option>
+        <option value="9" <%="selected" if controlmode == 9%>>Constant differential temperature</option>
+        <option value="10" <%="selected" if controlmode == 10%>>Constant level</option>
+        <option value="128" <%="selected" if controlmode == 128%>>AUTOADAPT (PP)</option>
+        <option value="129" <%="selected" if controlmode == 129%>>FLOWADAPT</option>
+        <option value="130" <%="selected" if controlmode == 130%>>Closed-loop sensor</option>
+        <option value="131" <%="selected" if controlmode == 131%>>AUTOADAPT (CP)</option>
+      </select>
       <input type="submit" name="action" value="Set control mode">
     </form>
+
+    <h3>Operation mode</h3>
+    <form method="post">
+      <select name="operationmode">
+        <option value="0" <%="selected" if operationmode == 0%>>AutoControl (Normal)</option>
+        <option value="4" <%="selected" if operationmode == 4%>>Min speed</option>
+        <option value="6" <%="selected" if operationmode == 6%>>Max speed</option>
+      </select>
+      <input type="submit" name="action" value="Set operation mode">
+    </form>
+
+    <h3>Setpoint</h3>
     <form method="post">
       <label>Setpoint (%):
-        <input type="number" name="setpoint" min="0" max="100" value="<%=setpoint%>">
+        <input type="number" name="setpoint" min="0" max="100" step="0.1" value="<%=setpoint%>">
       </label>
       <input type="submit" name="action" value="Set setpoint">
     </form>
     <form method="post">
-      <label>Head setpoint (bar):
-        <input type="number" name="head_setpoint" min="0" max="<%=max_pressure_range%>" step="0.01" value="<%=head_setpoint%>">
+      <label>Head setpoint (<%=feedback_unit%>, max <%=feedback_max%>):
+        <input type="number" name="head_setpoint" min="0" max="<%=feedback_max%>" step="0.01" value="<%=head_setpoint.round(2)%>">
       </label>
       <input type="submit" name="action" value="Set head setpoint">
     </form>
+
+    <h2>Device Info</h2>
+    <table>
+      <tr><td>Family</td><td><%=device_info[:family]%></td></tr>
+      <tr><td>Type</td><td><%=device_info[:type]%></td></tr>
+      <tr><td>Version</td><td><%=device_info[:version]%></td></tr>
+      <tr><td>Software</td><td><%=device_info[:software_version]%></td></tr>
+    </table>
+
     <h2>Status</h2>
     <table>
-      <%status.each do |key, value|%>
-        <tr>
-          <td><%=key%></td>
-          <td><%=value%></td>
-        </tr>
-      <%end%>
+      <tr><td>On</td><td><%=status[:on]%></td></tr>
+      <tr><td>Remote control</td><td><%=status[:remote_control]%></td></tr>
+      <tr><td>Rotation</td><td><%=status[:rotation]%></td></tr>
+      <tr><td>At min speed</td><td><%=status[:at_min_speed]%></td></tr>
+      <tr><td>At max speed</td><td><%=status[:at_max_speed]%></td></tr>
+      <tr><td>At max power</td><td><%=status[:at_max_power]%></td></tr>
+      <tr><td>Low flow stop</td><td><%=status[:low_flow_stop]%></td></tr>
+      <tr><td>Setpoint influence</td><td><%=status[:setpoint_influence]%></td></tr>
+      <tr><td>Forced to local</td><td><%=status[:forced_to_local]%></td></tr>
+      <tr><td>Alarm</td><td style="<%='color:red;font-weight:bold' if status[:alarm]%>"><%=status[:alarm]%></td></tr>
+      <tr><td>Warning</td><td style="<%='color:orange;font-weight:bold' if status[:warning]%>"><%=status[:warning]%></td></tr>
     </table>
+
+    <h2>Feedback Sensor</h2>
+    <table>
+      <tr><td>Unit</td><td><%=feedback_sensor[:unit]%></td></tr>
+      <tr><td>Min</td><td><%=feedback_sensor[:min]%></td></tr>
+      <tr><td>Max</td><td><%=feedback_sensor[:max]%></td></tr>
+      <tr><td>Process feedback</td><td><%=process_feedback.round(2)%>%</td></tr>
+    </table>
+
     <h2>Measurements</h2>
     <table>
-      <%measurements.each do |key, value|%>
-        <tr>
-          <td><%=key%></td>
-          <td><%=value%></td>
-        </tr>
-      <%end%>
+      <tr><td>Head</td><td><%=measurements[:head].round(3)%> bar</td></tr>
+      <tr><td>Flow</td><td><%=measurements[:flow].round(1)%> m³/h</td></tr>
+      <tr><td>Speed</td><td><%=measurements[:speed]%> rpm</td></tr>
+      <tr><td>Frequency</td><td><%=measurements[:frequency].round(1)%> Hz</td></tr>
+      <tr><td>Power</td><td><%=measurements[:power]%> W</td></tr>
+      <tr><td>Motor current</td><td><%=measurements[:motor_current].round(1)%> A</td></tr>
+      <tr><td>DC link voltage</td><td><%=measurements[:dc_link_voltage].round(1)%> V</td></tr>
+      <tr><td>Actual setpoint</td><td><%=measurements[:actual_setpoint].round(1)%>%</td></tr>
+      <tr><td>User setpoint</td><td><%=measurements[:user_setpoint].round(1)%>%</td></tr>
+      <tr><td>Relative performance</td><td><%=measurements[:relative_performance].round(1)%>%</td></tr>
+      <tr><td>Diff pressure</td><td><%=measurements[:diff_pressure].round(3)%> bar</td></tr>
+      <tr><td>Electronics temp</td><td><%=measurements[:electronics_temp].round(1)%> °C</td></tr>
+      <tr><td>Pump liquid temp</td><td><%=measurements[:pump_liquid_temp].round(1)%> °C</td></tr>
+      <tr><td>Specific energy</td><td><%=measurements[:specific_energy]%> Wh/m³</td></tr>
     </table>
+
     <h2>Counters</h2>
     <table>
-      <%counters.each do |key, value|%>
-        <tr>
-          <td><%=key%></td>
-          <td><%=value%></td>
-        </tr>
-      <%end%>
+      <tr><td>Operation time</td><td><%=counters[:operation_time]%> h</td></tr>
+      <tr><td>Powered time</td><td><%=counters[:powered_time]%> h</td></tr>
+      <tr><td>Energy</td><td><%=counters[:energy]%> kWh</td></tr>
+      <tr><td>Number of starts</td><td><%=counters[:number_of_starts]%></td></tr>
+      <tr><td>Pumped volume</td><td><%=counters[:volume1].round(2)%> m³</td></tr>
     </table>
+
     <h2>Alarms</h2>
     <table>
-      <tr><td>Alarm code</td><td><%=alarm%></td></tr>
-      <tr><td>Warning code</td><td><%=warning%></td></tr>
+      <tr><td>Alarm</td><td style="<%='color:red;font-weight:bold' if alarm != 0%>"><%=alarm_name%></td></tr>
+      <tr><td>Warning</td><td style="<%='color:orange;font-weight:bold' if warning != 0%>"><%=warning_name%></td></tr>
+    </table>
+
+    <h2>PI Controller</h2>
+    <table>
+      <tr><td>Kp</td><td><%=pi_controller[:kp]%></td></tr>
+      <tr><td>Ti</td><td><%=pi_controller[:ti]%> s</td></tr>
+      <tr><td>Direct control</td><td><%=pi_controller[:direct_control]%></td></tr>
     </table>
   </body>
 </html>
