@@ -197,6 +197,10 @@ module Modbus
       def to_f32_to_i16s
         [self].pack("g").unpack("nn")
       end
+
+      def to_u32_to_i16s
+        [self].pack("L>").unpack("nn")
+      end
     end
   end
 end
