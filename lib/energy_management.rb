@@ -16,17 +16,21 @@ end
 
 # Hållfjället energy management system
 class EnergyManagement
+  DEFAULT_GENSET_ACTIVATION_SOC = 20
+  DEFAULT_GENSET_DEACTIVATION_SOC = 95
+
   def initialize(devices)
     @devices = devices
     @stopped = false
     @solar_forecast = SolarForecast.new
     @phase_current_history = []
-    @last_solar_check = 0
-    @last_current_raise = 0 # last time the acsource.rated_current was increased
-    @genset_auto_started = @devices.genset.ready_to_load? rescue true # assume it was auto started if it's already running
+    @last_threshold_check = 0
+    # Configure aux1 for genset control on first run
+    @devices.next3.aux1.configure_for_genset(
+      activation_soc: DEFAULT_GENSET_ACTIVATION_SOC,
+      deactivation_soc: DEFAULT_GENSET_DEACTIVATION_SOC
+    )
   end
-
-  attr_accessor :genset_auto_started
 
   def start
     duration = 0
@@ -36,7 +40,7 @@ class EnergyManagement
           @phase_current_history.shift if @phase_current_history.size >= 60
           @phase_current_history.push phase_current
           soc = @devices.next3.battery.soc
-          genset_support(soc)
+          genset_threshold_management(soc)
           load_shedding(soc)
         end
         puts "Energy management loop duration: #{duration.round(2)}s" if duration > 1
@@ -53,59 +57,135 @@ class EnergyManagement
     @stopped = true
   end
 
-  # Start water heaters when close to excess solar/battery capacity
+  # Add heater load when:
+  # 1. Genset running: keep it at high load (DFS requires it)
+  # 2. Solar excess: use excess solar to heat water
+  # Only when battery is charge-limited by BMS, stop if discharging
   def load_shedding(soc = @devices.next3.battery.soc)
-    voltage_drop = nil
-    solar_total_power = nil
-    if @devices.relays.heater_6kw?
-      voltage_drop = voltage_drop? if voltage_drop.nil?
-      if voltage_drop
-        puts "Voltage drop, turning off 6kW heater"
-        @devices.relays.heater_6kw = false
-      #elsif (solar_total_power ||= @devices.next3.solar.total_power) < 6000
-      #  puts "Solar power #{solar_total_power}W, turning off 6kW heater"
-      #  @devices.relays.heater_6kw = false
-      elsif soc <= 95
-        puts "SOC #{soc}%, turning off 6kW heater"
-        @devices.relays.heater_6kw = false
-      #elsif @devices.next3.solar.total_power < 1000
-      #  puts "Weak solar power, turning off 6kw heater"
-      #  @devices.relays.heater_6kw = false
+    heaters_on = @devices.relays.any_heater_on?
+
+    # Stop heaters if battery is discharging
+    if battery_discharging?
+      if heaters_on
+        puts "Battery discharging, turning off heaters"
+        turn_off_heaters
       end
-    else # 6kw heater is off
-      if @devices.next3.solar.excess? && phase_current_capacity?(6000.0 / 3 / 230)
+      return
+    end
+
+    # Only add load when battery is charge-limited by BMS
+    unless battery_charge_limited?
+      turn_off_heaters if heaters_on
+      return
+    end
+
+    if genset_running?
+      genset_load_shedding
+    else
+      solar_load_shedding
+    end
+  end
+
+  def battery_discharging?
+    @devices.next3.battery.charging_current < 0
+  end
+
+  def battery_charge_limited?
+    recommended = @devices.next3.battery.bms_recommended_charging_current
+    actual = @devices.next3.battery.charging_current
+    # Limited when actual is within 5A of recommended
+    recommended - actual < 5
+  end
+
+  # Add heaters to match rated_current when genset is running
+  def genset_load_shedding
+    rated = @devices.next3.acsource.rated_current
+    max_current = (1..3).map { |p| @devices.next3.acsource.current(p) }.max
+    headroom = rated - max_current
+
+    # Heater current per phase (3-phase balanced load)
+    current_6kw = 6000.0 / 3 / 230  # ~8.7A
+    current_9kw = 9000.0 / 3 / 230  # ~13A
+
+    heater_6kw_on = @devices.relays.heater_6kw?
+    heater_9kw_on = @devices.relays.heater_9kw?
+
+    if headroom >= current_6kw + current_9kw + 2
+      unless heater_6kw_on && heater_9kw_on
+        puts "Genset headroom #{headroom.round(1)}A, turning on both heaters"
+        @devices.relays.heater_6kw = true
+        @devices.relays.heater_9kw = true
+      end
+    elsif headroom >= current_9kw + 2
+      unless heater_9kw_on && !heater_6kw_on
+        puts "Genset headroom #{headroom.round(1)}A, using 9kW heater"
+        @devices.relays.heater_6kw = false
+        @devices.relays.heater_9kw = true
+      end
+    elsif headroom >= current_6kw + 2
+      unless heater_6kw_on && !heater_9kw_on
+        puts "Genset headroom #{headroom.round(1)}A, using 6kW heater"
+        @devices.relays.heater_6kw = true
+        @devices.relays.heater_9kw = false
+      end
+    else
+      turn_off_heaters if heater_6kw_on || heater_9kw_on
+    end
+  end
+
+  # Add heaters when solar production exceeds consumption
+  def solar_load_shedding
+    current_6kw = 6000.0 / 3 / 230  # ~8.7A
+    current_9kw = 9000.0 / 3 / 230  # ~13A
+
+    heater_6kw_on = @devices.relays.heater_6kw?
+    heater_9kw_on = @devices.relays.heater_9kw?
+    excess = @devices.next3.solar.excess?
+
+    if excess
+      if !heater_6kw_on && phase_current_capacity?(current_6kw)
         puts "Solar excess, turning on 6kW heater"
         @devices.relays.heater_6kw = true
-        return # so that we don't enable the 9kW too
-      end
-    end
-    if @devices.relays.heater_9kw?
-      voltage_drop = voltage_drop? if voltage_drop.nil?
-      if voltage_drop
-        puts "Voltage drop, turning off 9kW heater"
-        @devices.relays.heater_9kw = false
-        #@devices.eta.vvb_heat_now(false)
-      elsif @devices.next3.solar.excess?
-        # if there's excess solar power when the 9kW heater is on it means
-        # that the tank is full, then heat the VVB as well
-        #@devices.eta.vvb_heat_now(true)
-      #elsif (solar_total_power ||= @devices.next3.solar.total_power) < 9000
-      #  puts "Solar power #{solar_total_power}W, turning off 9kW heater"
-      #  @devices.relays.heater_9kw = false
-      elsif soc <= 95
-        puts "SOC #{soc}%, turning off 9kW heater"
-        @devices.relays.heater_9kw = false
-        #@devices.eta.vvb_heat_now(false)
-      #elsif @devices.next3.solar.total_power < 1000
-      #  puts "Weak solar power, turning off 9kw heater"
-      #  @devices.relays.heater_9kw = false
-      end
-    else # 9kw heater is off
-      if @devices.next3.solar.excess? && phase_current_capacity?(9000.0 / 3 / 230)
+      elsif heater_6kw_on && !heater_9kw_on && phase_current_capacity?(current_9kw)
         puts "Solar excess, turning on 9kW heater"
         @devices.relays.heater_9kw = true
       end
+    elsif heater_6kw_on || heater_9kw_on
+      # Keep heaters on if solar is contributing (discharge power < heater power)
+      # Turn off one heater at a time, matching size to the deficit
+      heater_power = (heater_6kw_on ? 6000 : 0) + (heater_9kw_on ? 9000 : 0)
+      discharge_power = -@devices.next3.battery.power  # positive when discharging
+
+      if discharge_power > heater_power
+        # Turn off heater that best matches the discharge
+        if heater_6kw_on && heater_9kw_on
+          # Both on: turn off the one closest to discharge power
+          if discharge_power < 9000
+            puts "Discharge #{discharge_power.round}W, turning off 6kW heater"
+            @devices.relays.heater_6kw = false
+          else
+            puts "Discharge #{discharge_power.round}W, turning off 9kW heater"
+            @devices.relays.heater_9kw = false
+          end
+        elsif heater_9kw_on
+          puts "Discharge #{discharge_power.round}W > 9kW, turning off 9kW heater"
+          @devices.relays.heater_9kw = false
+        else
+          puts "Discharge #{discharge_power.round}W > 6kW, turning off 6kW heater"
+          @devices.relays.heater_6kw = false
+        end
+      end
     end
+  end
+
+  def genset_running?
+    @devices.next3.acsource.frequency > 0
+  end
+
+  def turn_off_heaters
+    puts "Turning off heaters"
+    @devices.relays.heater_6kw = false
+    @devices.relays.heater_9kw = false
   end
 
   def phase_current
@@ -150,174 +230,59 @@ class EnergyManagement
 
   BATTERY_KWH = 31.2
 
-  def genset_support(soc = @devices.next3.battery.soc)
-    if @devices.genset.ready_to_load? || @devices.genset.is_running?
-      @devices.relays.open_air_vents # should already be open, but make sure
+  # Manage genset start/stop thresholds via Next3 aux1 relay
+  def genset_threshold_management(soc = @devices.next3.battery.soc)
+    return if Time.monotonic - @last_threshold_check < 60
+    @last_threshold_check = Time.monotonic
 
-      keep_hz
+    current_deactivation = @devices.next3.aux1.soc_deactivation_threshold
+    target_deactivation = DEFAULT_GENSET_DEACTIVATION_SOC
 
-      if @devices.weco.charge_limit <= 200
-        puts "SoC #{soc}%, battery current limited, stopping genset"
-        maybe_stop_genset
-      elsif will_reach_full_battery_with_solar?(soc)
-        puts "Battery will reach full charge with solar, stopping genset"
-        maybe_stop_genset
-      end
-    else # genset is not running
-      battery_current = @devices.weco.currents
-      discharge_limit = battery_current[:discharge_limit]
-      if discharge_limit <= 460 # open air vents well before any battery problems
-        @devices.relays.open_air_vents
-      elsif @devices.genset.coolant_temperature < 15 # close vents when cold outside
-        @devices.relays.close_air_vents
-      end
-
-      discharge_current = battery_current[:current]
-      #if high_phase_current?
-      #  puts "Starting genset. High phase current, avoid voltage drop"
-      #  start_genset
-      #  return
-      #end
-      battery_voltage = @devices.weco.system_voltage
-      if battery_voltage <= 50.5 || discharge_limit - discharge_current < 150 || soc <= 7
-        puts "Starting genset. SoC=#{soc}% discharge_limit=#{discharge_limit}A battery_voltage=#{battery_voltage}V"
-        start_genset
-        @last_solar_check = Time.monotonic + 600 # don't check solar estimate for a while
-      end
+    # If weco module SoC drift > 5%, increase deactivation threshold to 99%
+    # to allow batteries to balance
+    soc_diff = weco_module_soc_diff
+    if soc_diff > 5
+      target_deactivation = 99
+      puts "Battery module SoC drift #{soc_diff.round(1)}% > 5%, setting genset deactivation to 99%"
+    # If solar forecast shows we'll survive, decrease threshold to stop genset earlier
+    elsif genset_running? && will_survive_on_solar?(soc)
+      target_deactivation = [soc.ceil + 5, DEFAULT_GENSET_DEACTIVATION_SOC].min
+      puts "Solar forecast positive, lowering genset deactivation to #{target_deactivation}%"
     end
-  rescue EOFError
-    puts "[ERROR] Genset offline"
-    unless @devices.next3.acsource.enabled?
-      puts "Enabling ACSource"
-      @devices.next3.acsource.enable
+
+    if current_deactivation != target_deactivation
+      puts "Adjusting genset deactivation threshold: #{current_deactivation}% -> #{target_deactivation}%"
+      @devices.next3.aux1.soc_deactivation_threshold = target_deactivation
     end
   end
 
-  def will_reach_full_battery_with_solar?(soc)
-    return if Time.monotonic - @last_solar_check < 60 # only check every minute
-    @last_solar_check = Time.monotonic
+  # Check if solar will sustain us for the rest of the day
+  def will_survive_on_solar?(soc)
+    return false if @phase_current_history.size < 5
 
     avg_power_kw = @phase_current_history.sum { |phases| phases.sum } * 230 / @phase_current_history.size / 1000.0
-    puts "Avg power usage: #{avg_power_kw.round(1)} kW"
-
     battery_kwh = BATTERY_KWH * soc / 100.0
-    puts "Battery charge: #{soc}% #{battery_kwh.round(1)} kWh"
 
-    # improve accuracy of forecast by telling how much is produced so far today
     produced_solar_today = @devices.next3.solar.total_day_energy / 1000.0
-    puts "Solar produced today: #{produced_solar_today.round(1)} kWh"
-    @solar_forecast.actual = produced_solar_today if produced_solar_today > 1 # don't report too early in the day
+    @solar_forecast.actual = produced_solar_today if produced_solar_today > 1
 
     last_time = start = Time.now
     @solar_forecast.estimate_watt_hours.each do |t, watthours|
       time = Time.parse(t)
-      next if time <= last_time # skip period before Time.now
+      next if time <= last_time
 
       period = (time - last_time) / 3600
       battery_kwh += ((watthours / 1000.0) - (avg_power_kw * period))
       estimated_soc = (battery_kwh / BATTERY_KWH * 100).round
-      puts "Estimated battery SoC at #{time}: #{estimated_soc}% #{battery_kwh.round(1)}kWh (adds=#{watthours}W, draws=#{(avg_power_kw * period).round(1)}kW)"
-      return true if estimated_soc >= 95
-      return false if estimated_soc <= 12 # % SoC required otherwise genset starts again
+      return false if estimated_soc <= DEFAULT_GENSET_ACTIVATION_SOC
 
       last_time = time
     end
-    return false if last_time == start # this means that all estimates were before now
-    true # we will be solar powered the rest of the day, so stop genset now
+    return false if last_time == start
+    true
   rescue => e
-    puts "[ERROR] #{e.inspect}"
-    e.backtrace.each { |l| print "\t", l, "\n" }
+    puts "[ERROR] Solar forecast: #{e.inspect}"
     false
-  end
-
-  def start_genset
-    @genset_auto_started = true
-    @devices.relays.open_air_vents
-
-    puts "Disable AC source until genset is ready"
-    @devices.next3.acsource.disable
-
-    puts "Starting genset"
-    @devices.genset.start
-    15.times do |i|
-      sleep 1
-      break if @devices.genset.ready_to_load?
-      status = @devices.genset.status.select { |_, v| v }.keys
-      puts "Genset not ready to load, status:", status
-      if status == [:general_alarm, :common_shutdown, :min_generator_frequency]
-        puts "Min generator frequency alarm, resetting"
-        @devices.genset.stop
-        @devices.genset.start
-      end
-    end
-    puts "Enabling ACSource because genset is ready to load"
-    @devices.next3.acsource.enable
-  end
-
-  def maybe_stop_genset
-    if high_phase_current?
-      puts "High phase current, keeping genset running"
-    elsif !@genset_auto_started # was manually started
-      puts "Genset manually started, keep running"
-    elsif @devices.next3.battery.errors != 0
-      puts "Battery has errors, keeping genset running"
-    elsif (soc_diff = weco_module_soc_diff) > 5
-      puts "Large SoC difference between battery modules (#{soc_diff.round}%), keeping genset running"
-    else
-      stop_genset
-    end
-  end
-
-  def stop_genset
-    @genset_auto_started = false
-    puts "Turning of load to cool down"
-    @devices.next3.acsource.disable
-    loop do
-      temp = @devices.genset.coolant_temperature
-      break if temp < 70
-      puts "Idling genset, temperature=#{temp}"
-      sleep 10
-    end
-    puts "Stopping genset"
-    @devices.genset.stop
-    sleep 3
-    if @devices.genset.is_running?
-      puts "Genset did not stop", "Status: #{genset.status}"
-      raise "Genset didn't stop"
-    end
-    puts "Restoring AC source values"
-    @devices.next3.acsource.rated_current = 17 # safe for start up
-    @devices.next3.acsource.enable
-  end
-
-  def keep_hz
-    hz = @devices.genset.frequency # frequency from genset got 1 decimal
-    temp = @devices.genset.coolant_temperature
-
-    if temp >= 97
-      rated_current = @devices.next3.acsource.rated_current
-      puts "coolant_temperature=#{temp} adjusting current down to #{rated_current - 1}"
-      @devices.next3.acsource.rated_current = rated_current - 1
-    elsif hz <= 49.7
-      rated_current = @devices.next3.acsource.rated_current
-      puts "hz=#{hz} adjusting current down to #{rated_current - 1}"
-      @devices.next3.acsource.rated_current = rated_current - 1
-    elsif hz >= 50.4
-      rated_current = @devices.next3.acsource.rated_current
-      # never try to draw more than 25A
-      if rated_current < 24
-        # increase max once per minute
-        if Time.monotonic - @last_current_raise > 60
-          # Only adjust if inverter is drawing full power
-          # eg. not when ramping up, or battery is almost full
-          if @devices.next3.acsource.current(1) > rated_current - 2
-            puts "hz=#{hz} adjusting current up to #{rated_current + 1}"
-            @devices.next3.acsource.rated_current = rated_current + 1
-            @last_current_raise = Time.monotonic
-          end
-        end
-      end
-    end
   end
 
   def weco_module_soc_diff

@@ -11,8 +11,8 @@ srv = HTTPServer.new(devices, em)
 
 trap('INT') { em.stop; srv.stop }
 trap('TERM') { em.stop; srv.stop }
-#em_thread = Thread.new { em.start }
-#em_thread.abort_on_exception = true
+em_thread = Thread.new { em.start }
+em_thread.abort_on_exception = true
 srv.start
-#em_thread.wakeup if em_thread.alive?
-#em_thread.join
+em_thread.wakeup if em_thread.alive?
+em_thread.join
