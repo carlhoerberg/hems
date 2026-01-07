@@ -311,7 +311,7 @@ class Devices
       end
 
       def operating_mode=(value)
-        @unit.write_holding_registers(@base + 7, [value].to_u32_to_i16s)
+        @unit.write_holding_registers(@base + 7, value.to_u32_to_i16s)
       end
 
       # Auto mode: 0 = Battery voltage, 1 = Battery SOC, etc.
@@ -320,7 +320,7 @@ class Devices
       end
 
       def auto_mode=(value)
-        @unit.write_holding_registers(@base + 9, [value].to_u32_to_i16s)
+        @unit.write_holding_registers(@base + 9, value.to_u32_to_i16s)
       end
 
       # SoC threshold at which relay activates (closes)
@@ -329,7 +329,7 @@ class Devices
       end
 
       def soc_activation_threshold=(value)
-        @unit.write_holding_registers(@base + 17, [value].to_u32_to_i16s)
+        @unit.write_holding_registers(@base + 17, value.to_u32_to_i16s)
       end
 
       # SoC threshold at which relay deactivates (opens)
@@ -338,7 +338,7 @@ class Devices
       end
 
       def soc_deactivation_threshold=(value)
-        @unit.write_holding_registers(@base + 19, [value].to_u32_to_i16s)
+        @unit.write_holding_registers(@base + 19, value.to_u32_to_i16s)
       end
 
       # Configure for genset control: auto mode with SoC thresholds
