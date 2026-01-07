@@ -8,11 +8,12 @@ class HTTPServer
 
     def do_GET(req, res)
       res.content_type = "text/html"
+      user_setpoint = @grundfos.measurements[:user_setpoint]
       res.body = @@view.result_with_hash({
         controlmode: @grundfos.controlmode,
         operationmode: @grundfos.operationmode,
-        setpoint: @grundfos.setpoint,
-        head_setpoint: @grundfos.head_setpoint,
+        setpoint: user_setpoint,
+        head_setpoint: @grundfos.feedback_max * user_setpoint / 100.0,
         feedback_max: @grundfos.feedback_max,
         feedback_unit: @grundfos.feedback_unit,
         feedback_sensor: @grundfos.feedback_sensor,
