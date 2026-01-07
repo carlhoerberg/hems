@@ -1,3 +1,9 @@
+# TYPE grundfos_controlmode gauge
+grundfos_controlmode <%=grundfos.controlmode%>
+
+# TYPE grundfos_operationmode gauge
+grundfos_operationmode <%=grundfos.operationmode%>
+
 <%grundfos.measurements.each do |k, v|%>
 # TYPE grundfos_<%=k%> gauge
 grundfos_<%=k%> <%=v%>
