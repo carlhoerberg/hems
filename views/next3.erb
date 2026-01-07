@@ -77,7 +77,7 @@ solar_limitation{array="<%=array%>"} <%=next3.solar.limitation(array)%>
 <%end%>
 
 # TYPE aux1_is_connected gauge
-aux1_is_connected <%=next3.aux1.is_connected%>
+aux1_is_connected <%=next3.aux1.is_connected ? 1 : 0%>
 
 # TYPE metrics_gather_time gauge
 metrics_gather_time{device="next3"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>
