@@ -104,6 +104,11 @@ class Devices
         @unit = next3.unit(7)
       end
 
+      def warnings(phase)
+        raise ArgumentError.new("Phase 1, 2 or 3") unless [1,2,3].include? phase
+        @unit.read_holding_registers(1504 + 300 * phase, 2).to_u32
+      end
+
       def enabled?
         @unit.read_holding_register(1207) != 0
       end

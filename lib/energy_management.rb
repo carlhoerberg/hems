@@ -184,7 +184,8 @@ class EnergyManagement
   end
 
   def genset_running?
-    @devices.next3.acsource.frequency > 0
+    @devices.next3.acsource.frequency > 0 &&
+      (1..3).all? { |phase| @devices.next3.acsource.warnings(phase) == 0 }
   end
 
   def turn_off_heaters
