@@ -1,0 +1,42 @@
+<%lk_devices.each do |name, lk|%>
+<%zones = lk.zones%>
+<%actuators = lk.actuator_statuses%>
+# TYPE lk_zone_actual_temperature gauge
+# HELP lk_zone_actual_temperature Current temperature in degrees Celsius
+<%zones.each do |z|%>
+lk_zone_actual_temperature{device="<%=name%>",zone="<%=z[:zone]%>"} <%=z[:actual_temperature]%>
+<%end%>
+
+# TYPE lk_zone_actual_humidity gauge
+# HELP lk_zone_actual_humidity Current humidity in percent
+<%zones.each do |z|%>
+lk_zone_actual_humidity{device="<%=name%>",zone="<%=z[:zone]%>"} <%=z[:actual_humidity]%>
+<%end%>
+
+# TYPE lk_zone_target_temperature gauge
+# HELP lk_zone_target_temperature Target temperature in degrees Celsius
+<%zones.each do |z|%>
+lk_zone_target_temperature{device="<%=name%>",zone="<%=z[:zone]%>"} <%=z[:target_temperature]%>
+<%end%>
+
+# TYPE lk_zone_battery gauge
+# HELP lk_zone_battery Thermostat battery level in percent
+<%zones.each do |z|%>
+lk_zone_battery{device="<%=name%>",zone="<%=z[:zone]%>"} <%=z[:battery]%>
+<%end%>
+
+# TYPE lk_zone_signal_strength gauge
+# HELP lk_zone_signal_strength Thermostat signal strength in dBm
+<%zones.each do |z|%>
+lk_zone_signal_strength{device="<%=name%>",zone="<%=z[:zone]%>"} <%=z[:signal_strength]%>
+<%end%>
+
+# TYPE lk_actuator_status gauge
+# HELP lk_actuator_status Actuator status (0=off, 1=on, 2=unknown)
+<%actuators.each_with_index do |status, i|%>
+lk_actuator_status{device="<%=name%>",actuator="<%=i+1%>"} <%=status%>
+<%end%>
+
+<%end%>
+# TYPE metrics_gather_time gauge
+metrics_gather_time{device="lk"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>

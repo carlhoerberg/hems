@@ -20,6 +20,7 @@ class HTTPServer
     @@envistar = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "envistar.erb")))
     @@casa = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "casa.erb")))
     @@grundfos = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "grundfos.erb")))
+    @@lk = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "lk.erb")))
 
     def do_GET(req, res)
       res.content_type = "text/plain"
@@ -39,6 +40,7 @@ class HTTPServer
             Thread.new { @@envistar.result_with_hash({ t:, m: @devices.envistar }) },
             Thread.new { @@casa.result_with_hash({ t:, casa: @devices.casa }) },
             Thread.new { @@grundfos.result_with_hash({ t:, grundfos: @devices.grundfos }) },
+            Thread.new { @@lk.result_with_hash({ t:, lk_devices: @devices.lk }) },
             Thread.new { @@ecowitt.result_with_hash({ t:, measurements: @devices.ecowitt.measurements }) },
             Thread.new do
               @@genset.result_with_hash({ t:, measurements: @devices.genset.measurements, status: @devices.genset.status_integer })
@@ -78,6 +80,8 @@ class HTTPServer
           @@casa.result_with_hash({ t:, casa: @devices.casa })
         when "/metrics/grundfos"
           @@grundfos.result_with_hash({ t:, grundfos: @devices.grundfos })
+        when "/metrics/lk"
+          @@lk.result_with_hash({ t:, lk_devices: @devices.lk })
         else
           res.status = 404
           "Not Found"

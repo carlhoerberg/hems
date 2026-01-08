@@ -12,9 +12,10 @@ require_relative "./devices/ecowitt"
 require_relative "./devices/envistar"
 require_relative "./devices/casa"
 require_relative "./devices/grundfos"
+require_relative "./devices/lk"
 
 class Devices
-  attr_reader :next3, :genset, :eta, :starlink, :shelly, :relays, :ups, :unifi, :topas, :weco, :ecowitt, :envistar, :casa, :grundfos
+  attr_reader :next3, :genset, :eta, :starlink, :shelly, :relays, :ups, :unifi, :topas, :weco, :ecowitt, :envistar, :casa, :grundfos, :lk
 
   def initialize
     @next3 = Next3.new
@@ -31,5 +32,9 @@ class Devices
     @envistar = Envistar.new
     @casa = Casa.new
     @grundfos = Grundfos.new
+    @lk = {
+      "hallen" => LK.new("lksystemsgw-2E3511D75D54D1D4"),
+      "kontoret" => LK.new("lksystemsgw-2218C1D75D54CC7E"),
+    }
   end
 end
