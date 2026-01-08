@@ -10,6 +10,7 @@ require_relative "./http_server/envistar"
 require_relative "./http_server/em"
 require_relative "./http_server/eta"
 require_relative "./http_server/grundfos"
+require_relative "./http_server/shelly"
 
 # Simple multithreaded HTTP server
 class HTTPServer
@@ -27,6 +28,7 @@ class HTTPServer
       "/eta" => ETAControl.new(devices.eta),
       "/em" => EMControl.new(em),
       "/grundfos" => GrundfosControl.new(devices.grundfos),
+      "/shelly" => ShellyControl.new(em),
     }
   end
 
@@ -88,7 +90,8 @@ class HTTPServer
            end
 
     # Handle the request
-    request = Request.new(method, path.chomp("/"), query, headers, body)
+    remote_ip = socket.peeraddr[3]
+    request = Request.new(method, path.chomp("/"), query, headers, body, remote_ip)
     response = Response.new
     first_part = path[0, path.index("/", 1) || path.length]
     if (controller = @controllers[first_part])
@@ -124,14 +127,15 @@ class HTTPServer
   end
 
   class Request
-    attr_reader :method, :path, :query, :headers, :body
+    attr_reader :method, :path, :query, :headers, :body, :remote_ip
 
-    def initialize(method, path, query, headers, body)
+    def initialize(method, path, query, headers, body, remote_ip = nil)
       @method = method
       @path = path
       @query = query
       @headers = headers
       @body = body
+      @remote_ip = remote_ip
     end
   end
 

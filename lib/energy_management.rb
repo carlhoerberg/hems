@@ -1,5 +1,7 @@
 require_relative "./devices"
 require_relative "./solar_forecast"
+require "net/http"
+require "json"
 
 class Time
   # Monotonic seconds since boot
@@ -25,6 +27,8 @@ class EnergyManagement
     @solar_forecast = SolarForecast.new
     @phase_current_history = []
     @last_threshold_check = 0
+    @shelly_demands = {}  # { device_id => { host:, amps:, active: false } }
+    @shelly_demands_mutex = Mutex.new
     # Configure aux1 for genset control on first run
     @devices.next3.aux1.configure_for_genset(
       activation_soc: DEFAULT_GENSET_ACTIVATION_SOC,
@@ -42,6 +46,7 @@ class EnergyManagement
           soc = @devices.next3.battery.soc
           genset_threshold_management(soc)
           load_shedding(soc)
+          manage_shelly_demands
         end
         puts "Energy management loop duration: #{duration.round(2)}s" if duration > 1
         break if @stopped
@@ -226,6 +231,108 @@ class EnergyManagement
     (1..3).any? do |phase|
       @devices.next3.acload.voltage(phase) < 210
     end
+  end
+
+  # Shelly demand management
+  def register_shelly_demand(host, amps)
+    @shelly_demands_mutex.synchronize do
+      @shelly_demands[host] = { amps:, active: false }
+
+      # Immediately check if we can activate
+      if voltage_drop?
+        return { activated: false, reason: "voltage_drop" }
+      end
+
+      if genset_running? || phase_current_capacity?(amps)
+        puts "Activating Shelly #{host} (#{amps}A) on registration"
+        turn_on_shelly(host)
+        @shelly_demands[host][:active] = true
+        { activated: true }
+      else
+        { activated: false, reason: "no_capacity" }
+      end
+    end
+  end
+
+  def deregister_shelly_demand(host)
+    @shelly_demands_mutex.synchronize do
+      demand = @shelly_demands.delete(host)
+      turn_off_shelly(host) if demand&.dig(:active)
+    end
+  end
+
+  def shelly_demands_status
+    @shelly_demands_mutex.synchronize { @shelly_demands.dup }
+  end
+
+  def manage_shelly_demands
+    @shelly_demands_mutex.synchronize do
+      return if @shelly_demands.empty?
+
+      # If voltage drop on any phase, turn off all active demands
+      if voltage_drop?
+        @shelly_demands.each do |host, demand|
+          if demand[:active]
+            puts "Voltage drop, turning off Shelly #{host}"
+            turn_off_shelly(host)
+            demand[:active] = false
+          end
+        end
+        return
+      end
+
+      # If AC source running and voltage OK, turn on inactive demands
+      if genset_running?
+        @shelly_demands.each do |host, demand|
+          unless demand[:active]
+            puts "AC source running, turning on Shelly #{host}"
+            turn_on_shelly(host)
+            demand[:active] = true
+          end
+        end
+      else
+        # AC source not running, check phase current capacity
+        @shelly_demands.each do |host, demand|
+          if demand[:active]
+            # Already active, check if we still have capacity
+            unless phase_current_capacity?(0)
+              puts "No capacity, turning off Shelly #{host}"
+              turn_off_shelly(host)
+              demand[:active] = false
+            end
+          else
+            # Not active, check if we have capacity for this demand
+            if phase_current_capacity?(demand[:amps])
+              puts "Capacity available, turning on Shelly #{host} (#{demand[:amps]}A)"
+              turn_on_shelly(host)
+              demand[:active] = true
+            end
+          end
+        end
+      end
+    end
+  end
+
+  def turn_on_shelly(host)
+    shelly_rpc(host, "Switch.Set", { id: 0, on: true })
+  rescue => e
+    puts "[ERROR] Failed to turn on Shelly #{host}: #{e.message}"
+  end
+
+  def turn_off_shelly(host)
+    shelly_rpc(host, "Switch.Set", { id: 0, on: false })
+  rescue => e
+    puts "[ERROR] Failed to turn off Shelly #{host}: #{e.message}"
+  end
+
+  def shelly_rpc(host, method, params = {})
+    uri = URI("http://#{host}/rpc")
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.open_timeout = 2
+    http.read_timeout = 3
+    request = Net::HTTP::Post.new(uri.path, { "Content-Type" => "application/json" })
+    request.body = { id: 0, method:, params: }.to_json
+    http.request(request)
   end
 
   BATTERY_KWH = 31.2
