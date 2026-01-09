@@ -33,8 +33,20 @@ class Devices
     @casa = Casa.new
     @grundfos = Grundfos.new
     @lk = {
-      "hallen" => LK.new("lksystemsgw-2E3511D75D54D1D4"),
-      "kontoret" => LK.new("lksystemsgw-2218C1D75D54CC7E"),
+      "hallen" => LK.new("lksystemsgw-2E3511D75D54D1D4", zone_names: {
+        1 => "WC",
+        2 => "Kök",
+        3 => "Entré hall",
+        4 => "Altan ingång",
+      }),
+      "kontoret" => LK.new("lksystemsgw-2218C1D75D54CC7E", zone_names: {
+        1 => "Kontoret",
+        2 => "Personalentré",
+        3 => "Personalrum",
+        4 => "Personalbadrum",
+        5 => "Bastu",
+        6 => "Disken",
+      }),
     }
   end
 end

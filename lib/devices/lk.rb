@@ -10,8 +10,13 @@ class Devices
       2 => "unknown",
     }.freeze
 
-    def initialize(host, port = 502)
+    def initialize(host, port = 502, zone_names: {})
       @modbus = Modbus::TCP.new(host, port, timeout: 15).unit(1)
+      @zone_names = zone_names
+    end
+
+    def zone_name(zone_number)
+      @zone_names[zone_number] || "Zone #{zone_number}"
     end
 
     def number_of_zones
@@ -47,7 +52,7 @@ class Devices
     def zones
       num_zones = number_of_zones
       (1..num_zones).map do |i|
-        zone(i).merge(zone: i)
+        zone(i).merge(zone: i, name: zone_name(i))
       rescue Modbus::Base::ResponseError
         nil
       end.compact

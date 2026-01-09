@@ -4,31 +4,31 @@
 # TYPE lk_zone_actual_temperature gauge
 # HELP lk_zone_actual_temperature Current temperature in degrees Celsius
 <%zones.each do |z|%>
-lk_zone_actual_temperature{device="<%=name%>",zone="<%=z[:zone]%>"} <%=z[:actual_temperature]%>
+lk_zone_actual_temperature{device="<%=name%>",zone="<%=z[:zone]%>",name="<%=z[:name]%>"} <%=z[:actual_temperature]%>
 <%end%>
 
 # TYPE lk_zone_actual_humidity gauge
 # HELP lk_zone_actual_humidity Current humidity in percent
 <%zones.each do |z|%>
-lk_zone_actual_humidity{device="<%=name%>",zone="<%=z[:zone]%>"} <%=z[:actual_humidity]%>
+lk_zone_actual_humidity{device="<%=name%>",zone="<%=z[:zone]%>",name="<%=z[:name]%>"} <%=z[:actual_humidity]%>
 <%end%>
 
 # TYPE lk_zone_target_temperature gauge
 # HELP lk_zone_target_temperature Target temperature in degrees Celsius
 <%zones.each do |z|%>
-lk_zone_target_temperature{device="<%=name%>",zone="<%=z[:zone]%>"} <%=z[:target_temperature]%>
+lk_zone_target_temperature{device="<%=name%>",zone="<%=z[:zone]%>",name="<%=z[:name]%>"} <%=z[:target_temperature]%>
 <%end%>
 
 # TYPE lk_zone_battery gauge
 # HELP lk_zone_battery Thermostat battery level in percent
 <%zones.each do |z|%>
-lk_zone_battery{device="<%=name%>",zone="<%=z[:zone]%>"} <%=z[:battery]%>
+lk_zone_battery{device="<%=name%>",zone="<%=z[:zone]%>",name="<%=z[:name]%>"} <%=z[:battery]%>
 <%end%>
 
 # TYPE lk_zone_signal_strength gauge
 # HELP lk_zone_signal_strength Thermostat signal strength in dBm
 <%zones.each do |z|%>
-lk_zone_signal_strength{device="<%=name%>",zone="<%=z[:zone]%>"} <%=z[:signal_strength]%>
+lk_zone_signal_strength{device="<%=name%>",zone="<%=z[:zone]%>",name="<%=z[:name]%>"} <%=z[:signal_strength]%>
 <%end%>
 
 # TYPE lk_actuator_status gauge
