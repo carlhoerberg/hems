@@ -19,6 +19,10 @@ class Devices
       @zone_names[zone_number] || "Zone #{zone_number}"
     end
 
+    def configured_zones
+      @zone_names.keys
+    end
+
     def number_of_zones
       @modbus.read_input_register(50)
     end
@@ -50,8 +54,7 @@ class Devices
     end
 
     def zones
-      num_zones = number_of_zones
-      (1..num_zones).map do |i|
+      configured_zones.map do |i|
         zone(i).merge(zone: i, name: zone_name(i))
       rescue Modbus::Base::ResponseError
         nil

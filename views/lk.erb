@@ -1,6 +1,10 @@
-<%lk_devices.each do |name, lk|%>
-<%zones = lk.zones%>
-<%actuators = lk.actuator_statuses%>
+<%
+# Fetch all devices in parallel
+lk_data = lk_devices.map do |name, lk|
+  Thread.new { [name, lk.zones, lk.actuator_statuses] }
+end.map(&:value)
+%>
+<%lk_data.each do |name, zones, actuators|%>
 # TYPE lk_zone_actual_temperature gauge
 # HELP lk_zone_actual_temperature Current temperature in degrees Celsius
 <%zones.each do |z|%>
