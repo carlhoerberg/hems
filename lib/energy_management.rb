@@ -106,7 +106,6 @@ class EnergyManagement
   def genset_load_shedding
     rated = @devices.next3.acsource.rated_current
     max_current = (1..3).map { |p| @devices.next3.acsource.current(p) }.max
-    headroom = rated - max_current
 
     # Heater current per phase (3-phase balanced load)
     current_6kw = 6000.0 / 3 / 230  # ~8.7A
@@ -115,21 +114,27 @@ class EnergyManagement
     heater_6kw_on = @devices.relays.heater_6kw?
     heater_9kw_on = @devices.relays.heater_9kw?
 
-    if headroom >= current_6kw + current_9kw + 2
+    # Add back current from active heaters to get total available capacity
+    # (their draw is already included in max_current)
+    available = rated - max_current
+    available += current_6kw if heater_6kw_on
+    available += current_9kw if heater_9kw_on
+
+    if available >= current_6kw + current_9kw + 2
       unless heater_6kw_on && heater_9kw_on
-        puts "Genset headroom #{headroom.round(1)}A, turning on both heaters"
+        puts "Genset available #{available.round(1)}A, turning on both heaters"
         @devices.relays.heater_6kw = true
         @devices.relays.heater_9kw = true
       end
-    elsif headroom >= current_9kw + 2
+    elsif available >= current_9kw + 2
       unless heater_9kw_on && !heater_6kw_on
-        puts "Genset headroom #{headroom.round(1)}A, using 9kW heater"
+        puts "Genset available #{available.round(1)}A, using 9kW heater"
         @devices.relays.heater_6kw = false
         @devices.relays.heater_9kw = true
       end
-    elsif headroom >= current_6kw + 2
+    elsif available >= current_6kw + 2
       unless heater_6kw_on && !heater_9kw_on
-        puts "Genset headroom #{headroom.round(1)}A, using 6kW heater"
+        puts "Genset available #{available.round(1)}A, using 6kW heater"
         @devices.relays.heater_6kw = true
         @devices.relays.heater_9kw = false
       end
