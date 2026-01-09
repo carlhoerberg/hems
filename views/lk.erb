@@ -1,7 +1,7 @@
 <%
 # Fetch all devices in parallel
 lk_data = lk_devices.map do |name, lk|
-  Thread.new { [name, lk.zones, lk.actuator_statuses] }
+  Thread.new { [name, lk.zones, lk.actuators] }
 end.map(&:value)
 %>
 <%lk_data.each do |name, zones, actuators|%>
@@ -37,8 +37,8 @@ lk_zone_signal_strength{device="<%=name%>",zone="<%=z[:zone]%>",name="<%=z[:name
 
 # TYPE lk_actuator_status gauge
 # HELP lk_actuator_status Actuator status (0=off, 1=on, 2=unknown)
-<%actuators.each_with_index do |status, i|%>
-lk_actuator_status{device="<%=name%>",actuator="<%=i+1%>"} <%=status%>
+<%actuators.each do |a|%>
+lk_actuator_status{device="<%=name%>",actuator="<%=a[:actuator]%>",name="<%=a[:name]%>"} <%=a[:status]%>
 <%end%>
 
 <%end%>
