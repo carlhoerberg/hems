@@ -11,7 +11,7 @@ class Devices
     }.freeze
 
     def initialize(host, port = 502, zone_names: {}, actuator_names: {})
-      @modbus = Modbus::TCP.new(host, port, timeout: 15).unit(1)
+      @modbus = Modbus::TCP.new(host, port, timeout: 30).unit(1)
       @zone_names = zone_names
       @actuator_names = actuator_names
     end
