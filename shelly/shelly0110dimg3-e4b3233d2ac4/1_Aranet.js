@@ -136,9 +136,9 @@ const Aranet4Parser = {
 }
 
 function scanCB (ev, res) {
-  if (ev !== BLE.Scanner.SCAN_RESULT) return
+  if (ev !== BLE.Scanner.SCAN_RESULT) return;
   const measurement = Aranet4Parser.getData(res)
-  if (measurement === null) return
+  if (measurement === null) return;
   print('aranet measurement:', JSON.stringify(measurement))
 
   if (measurement.sys.addr === 'c7:07:44:62:63:4c') {
@@ -194,10 +194,10 @@ let battery2 = Virtual.getHandle('number:207')
 
 function ensureVirtualComponents () {
   const components = [
-    { id: 204, name: 'Sovrum 6 Temperature' },
-    { id: 205, name: 'Sovrum 6 CO2' },
-    { id: 206, name: 'Sovrum 6 Humidity' },
-    { id: 207, name: 'Sovrum 6 Battery' }
+    { id: 204, name: 'Temperature' },
+    { id: 205, name: 'CO2' },
+    { id: 206, name: 'Humidity' },
+    { id: 207, name: 'Battery' }
   ]
 
   for (let i = 0; i < components.length; i++) {
@@ -219,7 +219,7 @@ function ensureVirtualComponents () {
     Shelly.call('Group.Add', {
       id: 201,
       config: {
-        name: 'Sovrum 6 Aranet',
+        name: 'Aranet Sovrum 6',
         cids: ['number:204', 'number:205', 'number:206', 'number:207']
       }
     })
@@ -230,16 +230,16 @@ function ensureVirtualComponents () {
 function httpServerHandler (request, response) {
   response.body = [
     '# HELP aranet_temperature gauge',
-    'aranet_temperature{name="Sovrum"} ' + temperature.getValue(),
+    'aranet_temperature{name="Sovrum 1"} ' + temperature.getValue(),
     'aranet_temperature{name="Sovrum 6"} ' + temperature2.getValue(),
     '# HELP aranet_co2 gauge',
-    'aranet_co2{name="Sovrum"} ' + co2.getValue(),
+    'aranet_co2{name="Sovrum 1"} ' + co2.getValue(),
     'aranet_co2{name="Sovrum 6"} ' + co2_2.getValue(),
     '# HELP aranet_humidity gauge',
-    'aranet_humidity{name="Sovrum"} ' + humidity.getValue(),
+    'aranet_humidity{name="Sovrum 1"} ' + humidity.getValue(),
     'aranet_humidity{name="Sovrum 6"} ' + humidity2.getValue(),
     '# HELP aranet_battery gauge',
-    'aranet_battery{name="Sovrum"} ' + battery.getValue(),
+    'aranet_battery{name="Sovrum 1"} ' + battery.getValue(),
     'aranet_battery{name="Sovrum 6"} ' + battery2.getValue()
   ].join('\n')
   response.headers = [['Content-Type', 'text/plain']]
