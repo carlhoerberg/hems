@@ -85,7 +85,7 @@ class EnergyManagement
     end
 
     if genset_running?
-      genset_load_shedding
+      # genset_load_shedding
     else
       solar_load_shedding
     end
