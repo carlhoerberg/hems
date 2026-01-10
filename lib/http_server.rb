@@ -63,6 +63,8 @@ class HTTPServer
   private
 
   def handle_client(socket)
+    remote_ip = socket.peeraddr[3] # get remote IP address first, later socket may be closed
+
     request_line = socket.gets("\r\n", chomp: true) || return # read request line
     method, path_query, _http_version = request_line.split(" ", 3) # ["GET", "/path", "HTTP/1.1"]
 
@@ -90,7 +92,6 @@ class HTTPServer
            end
 
     # Handle the request
-    remote_ip = socket.peeraddr[3]
     request = Request.new(method, path.chomp("/"), query, headers, body, remote_ip)
     response = Response.new
     first_part = path[0, path.index("/", 1) || path.length]
