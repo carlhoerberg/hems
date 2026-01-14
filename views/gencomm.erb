@@ -1,0 +1,34 @@
+# TYPE genset_voltage gauge
+# TYPE genset_current gauge
+# TYPE genset_watts gauge
+<%[1, 2, 3].each do |l|%>
+genset_voltage{name="<%=name%>",L="<%=l%>"} <%=measurements["voltage_l#{l}_n".to_sym]%>
+genset_current{name="<%=name%>",L="<%=l%>"} <%=measurements["current_l#{l}".to_sym]%>
+genset_watts{name="<%=name%>",L="<%=l%>"} <%=measurements["watts_l#{l}".to_sym]%>
+<%end%>
+
+# TYPE genset_frequency gauge
+genset_frequency{name="<%=name%>"} <%=measurements[:frequency]%>
+# TYPE genset_rpm gauge
+genset_rpm{name="<%=name%>"} <%=measurements[:rpm]%>
+# TYPE genset_battery_voltage gauge
+genset_battery_voltage{name="<%=name%>"} <%=measurements[:battery_voltage]%>
+# TYPE genset_fuel_level gauge
+genset_fuel_level{name="<%=name%>"} <%=measurements[:fuel_level]%>
+# TYPE genset_coolant_temperature gauge
+genset_coolant_temperature{name="<%=name%>"} <%=measurements[:coolant_temperature]%>
+# TYPE genset_oil_pressure gauge
+genset_oil_pressure{name="<%=name%>"} <%=measurements[:oil_pressure]%>
+# TYPE genset_oil_temperature gauge
+genset_oil_temperature{name="<%=name%>"} <%=measurements[:oil_temperature]%>
+# TYPE genset_kwh counter
+genset_kwh{name="<%=name%>"} <%=accumulated[:kwh_positive]%>
+# TYPE genset_start_counter counter
+genset_start_counter{name="<%=name%>"} <%=accumulated[:start_counter]%>
+# TYPE genset_engine_run_time counter
+genset_engine_run_time{name="<%=name%>"} <%=accumulated[:engine_run_time]%>
+# TYPE genset_status gauge
+genset_status{name="<%=name%>"} <%=status%>
+
+# TYPE metrics_gather_time gauge
+metrics_gather_time{device="gencomm"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>

@@ -1,63 +1,64 @@
 require_relative "../modbus/rtu"
 
 class Devices
-  class Genset
+  # SDMO genset with Nexys controller via Modbus RTU
+  class SDMO
     using Modbus::TypeExtensions
 
     def initialize
-      @genset = Modbus::RTU.new.unit(5)
+      @modbus = Modbus::RTU.new.unit(5)
     end
 
     def start
-      @genset.write_coil(0, true)
+      @modbus.write_coil(0, true)
     end
 
     def stop
-      @genset.write_coil(1, true)
+      @modbus.write_coil(1, true)
     end
 
     def auto
-      @genset.write_coil(2, true)
+      @modbus.write_coil(2, true)
     end
 
     def battery_voltage
-      @genset.read_input_register(0x0019) / 10.0
+      @modbus.read_input_register(0x0019) / 10.0
     end
 
     def oil_pressure
-      @genset.read_input_register(0x001C)
+      @modbus.read_input_register(0x001C)
     end
 
     def coolant_temperature
-      @genset.read_input_registers(29, 1).to_i16
+      @modbus.read_input_registers(29, 1).to_i16
     end
 
     def fuel_level
-      @genset.read_input_register(0x001E)
+      @modbus.read_input_register(0x001E)
     end
 
     def maintenance_timer
-      @genset.read_input_register(0x0023)
+      @modbus.read_input_register(0x0023)
     end
 
     def start_counter
-      @genset.read_input_register(0x0024)
+      @modbus.read_input_register(0x0024)
     end
 
     def ready_to_load?
-      @genset.read_discrete_input(0x0025)
+      @modbus.read_discrete_input(0x0025)
     end
 
     def is_running?
-      @genset.read_discrete_input(0x0027)
+      @modbus.read_discrete_input(0x0027)
     end
 
     def frequency
-      @genset.read_input_register(23) / 10.0
+      @modbus.read_input_register(23) / 10.0
     end
 
     def binary_io
-      v = @genset.read_discrete_inputs(0x60, 13)
+      v = @modbus.read_discrete_inputs(0x60, 13)
       {
         emergency_stop: v[0],
         remote_start: v[1],
@@ -76,12 +77,12 @@ class Devices
     end
 
     def status_integer
-      v = @genset.read_discrete_inputs(0x0020, 40)
+      v = @modbus.read_discrete_inputs(0x0020, 40)
       v.each_with_index.sum { |bool, index| bool ? (1 << index) : 0 }
     end
 
     def status
-      v = @genset.read_discrete_inputs(0x0020, 40)
+      v = @modbus.read_discrete_inputs(0x0020, 40)
       {
         starter: v[0],
         fuel_solenoid: v[1],
@@ -127,11 +128,11 @@ class Devices
     end
 
     def currents
-      @genset.read_input_registers(6, 3).map { |c| c / 10.0 }
+      @modbus.read_input_registers(6, 3).map { |c| c / 10.0 }
     end
 
     def measurements
-      m = @genset.read_input_registers(0, 45)
+      m = @modbus.read_input_registers(0, 45)
       power_reading_precision = 10.0
       {
         voltage_l1_n: m[0],

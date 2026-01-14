@@ -1,5 +1,5 @@
 require_relative "./devices/next3"
-require_relative "./devices/genset"
+require_relative "./devices/sdmo"
 require_relative "./devices/eta"
 require_relative "./devices/starlink"
 require_relative "./devices/shelly"
@@ -13,13 +13,14 @@ require_relative "./devices/envistar"
 require_relative "./devices/casa"
 require_relative "./devices/grundfos"
 require_relative "./devices/lk"
+require_relative "./devices/gencomm"
 
 class Devices
-  attr_reader :next3, :genset, :eta, :starlink, :shelly, :relays, :ups, :unifi, :topas, :weco, :ecowitt, :envistar, :casa, :grundfos, :lk
+  attr_reader :next3, :sdmo, :eta, :starlink, :shelly, :relays, :ups, :unifi, :topas, :weco, :ecowitt, :envistar, :casa, :grundfos, :lk, :gencomm
 
   def initialize
     @next3 = Next3.new
-    @genset = Genset.new
+    @sdmo = SDMO.new
     @eta = ETA.new
     @starlink = Starlink.new
     @shelly = Shelly.new
@@ -66,5 +67,6 @@ class Devices
           7 => "Disken",
         }),
     }
+    @gencomm = GenComm.new("10.0.4.70")
   end
 end

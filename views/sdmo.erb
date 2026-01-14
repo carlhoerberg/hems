@@ -1,0 +1,36 @@
+# TYPE genset_voltage gauge
+# TYPE genset_current gauge
+# TYPE genset_kva gauge
+# TYPE genset_kw gauge
+# TYPE genset_pf gauge
+<%[1, 2, 3].each do |l|%>
+genset_voltage{name="K20C5",L="<%=l%>"} <%=measurements["voltage_l#{l}_n".to_sym]%>
+genset_current{name="K20C5",L="<%=l%>"} <%=measurements["current_l#{l}".to_sym]%>
+genset_kva{name="K20C5",L="<%=l%>"} <%=measurements["kva_l#{l}".to_sym]%>
+genset_kw{name="K20C5",L="<%=l%>"} <%=measurements["kw_l#{l}".to_sym]%>
+genset_pf{name="K20C5",L="<%=l%>"} <%=measurements["pf_l#{l}".to_sym]%>
+<%end%>
+
+# TYPE genset_frequency gauge
+genset_frequency{name="K20C5"} <%=measurements[:frequency]%>
+# TYPE genset_rpm gauge
+genset_rpm{name="K20C5"} <%=measurements[:rpm]%>
+# TYPE genset_battery_voltage gauge
+genset_battery_voltage{name="K20C5"} <%=measurements[:battery_voltage]%>
+# TYPE genset_fuel_level gauge
+genset_fuel_level{name="K20C5"} <%=measurements[:fuel_level]%>
+# TYPE genset_coolant_temperature gauge
+genset_coolant_temperature{name="K20C5"} <%=measurements[:coolant_temperature]%>
+# TYPE genset_kwh counter
+genset_kwh{name="K20C5"} <%=measurements[:kWh]%>
+# TYPE genset_start_counter counter
+genset_start_counter{name="K20C5"} <%=measurements[:start_counter]%>
+# TYPE genset_hours counter
+genset_hours{name="K20C5"} <%=measurements[:hours]%>
+# TYPE genset_binary_output gauge
+genset_binary_output{name="K20C5"} <%=measurements[:binary_output]%>
+# TYPE genset_status gauge
+genset_status{name="K20C5"} <%=status%>
+
+# TYPE metrics_gather_time gauge
+metrics_gather_time{device="sdmo"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>

@@ -7,7 +7,7 @@ class HTTPServer
     end
 
     @@next3 = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "next3.erb")))
-    @@genset = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "genset.erb")))
+    @@sdmo = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "sdmo.erb")))
     @@eta = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "eta.erb")))
     @@starlink = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "starlink.erb")))
     @@shelly = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "shelly.erb")))
@@ -21,6 +21,7 @@ class HTTPServer
     @@casa = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "casa.erb")))
     @@grundfos = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "grundfos.erb")))
     @@lk = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "lk.erb")))
+    @@gencomm = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "gencomm.erb")))
 
     def do_GET(req, res)
       res.content_type = "text/plain"
@@ -43,9 +44,9 @@ class HTTPServer
             Thread.new { @@lk.result_with_hash({ t:, lk_devices: @devices.lk }) },
             Thread.new { @@ecowitt.result_with_hash({ t:, measurements: @devices.ecowitt.measurements }) },
             Thread.new do
-              @@genset.result_with_hash({ t:, measurements: @devices.genset.measurements, status: @devices.genset.status_integer })
+              @@sdmo.result_with_hash({ t:, measurements: @devices.sdmo.measurements, status: @devices.sdmo.status_integer })
             rescue EOFError
-              warn "Genset is offline"
+              warn "SDMO is offline"
             end,
           ].map do |t|
             t.value
@@ -54,8 +55,8 @@ class HTTPServer
           end.join
         when "/metrics/next3"
           @@next3.result_with_hash({ t:, next3: @devices.next3 })
-        when "/metrics/genset"
-          @@genset.result_with_hash({ t:, measurements: @devices.genset.measurements, status: @devices.genset.status_integer })
+        when "/metrics/sdmo"
+          @@sdmo.result_with_hash({ t:, measurements: @devices.sdmo.measurements, status: @devices.sdmo.status_integer })
         when "/metrics/eta"
           @@eta.result_with_hash({ t:, eta: @devices.eta })
         when "/metrics/starlink"
@@ -82,6 +83,8 @@ class HTTPServer
           @@grundfos.result_with_hash({ t:, grundfos: @devices.grundfos })
         when "/metrics/lk"
           @@lk.result_with_hash({ t:, lk_devices: @devices.lk })
+        when "/metrics/gencomm"
+          @@gencomm.result_with_hash({ t:, name: "QAS30", measurements: @devices.gencomm.measurements, accumulated: @devices.gencomm.accumulated, status: @devices.gencomm.status })
         else
           res.status = 404
           "Not Found"

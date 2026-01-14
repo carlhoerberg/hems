@@ -2,7 +2,7 @@ require "socket"
 require "erb"
 require_relative "./http_server/metrics"
 require_relative "./http_server/relays"
-require_relative "./http_server/genset"
+require_relative "./http_server/sdmo"
 require_relative "./http_server/button"
 require_relative "./http_server/topas"
 require_relative "./http_server/casa"
@@ -20,7 +20,7 @@ class HTTPServer
     @controllers = {
       "/metrics" => Metrics.new(devices),
       "/relays" => RelaysControl.new(devices.relays),
-      "/genset" => GensetControl.new(devices.genset),
+      "/sdmo" => SDMOControl.new(devices.sdmo),
       "/button1" => ButtonControl.new(devices),
       "/topas" => TopasControl.new(devices.topas),
       "/casa" => CasaControl.new(devices.casa),
