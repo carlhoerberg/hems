@@ -22,7 +22,7 @@ class EnergyManagement
   DEFAULT_GENSET_DEACTIVATION_SOC = 95
 
   # Genset load management thresholds
-  GENSET_MAX_LOAD_PCT = 90
+  GENSET_MAX_LOAD_PCT = 95
   HEATER_6KW_LOAD_PCT = 25
   HEATER_9KW_LOAD_PCT = 40
   AFTERTREATMENT_MIN_TEMP = 250
@@ -216,12 +216,12 @@ class EnergyManagement
         @devices.relays.heater_9kw = false
       end
     # Turn on heaters if aftertreatment temp too low
-    elsif aftertreatment_temp < AFTERTREATMENT_MIN_TEMP && !has_shelly_demand
+    elsif !has_shelly_demand
       if !heater_9kw_on && max_load + HEATER_9KW_LOAD_PCT <= GENSET_MAX_LOAD_PCT
-        puts "Aftertreatment #{aftertreatment_temp}°C < #{AFTERTREATMENT_MIN_TEMP}°C, turning on 9kW heater"
+        puts "No shelly demand, turning on 9kW heater"
         @devices.relays.heater_9kw = true
-      elsif heater_9kw_on && !heater_6kw_on && max_load + HEATER_6KW_LOAD_PCT <= GENSET_MAX_LOAD_PCT
-        puts "Aftertreatment #{aftertreatment_temp}°C < #{AFTERTREATMENT_MIN_TEMP}°C, turning on 6kW heater"
+      elsif !heater_6kw_on && max_load + HEATER_6KW_LOAD_PCT <= GENSET_MAX_LOAD_PCT
+        puts "No shelly demand, turning on 6kW heater"
         @devices.relays.heater_6kw = true
       end
     end
