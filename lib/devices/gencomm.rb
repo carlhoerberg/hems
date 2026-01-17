@@ -14,6 +14,96 @@ class Devices
     PAGE_ACCUMULATED = 0x0700     # Page 7 - Accumulated Instrumentation
     PAGE_CONTROL = 0x1000         # Page 16 - Control
     PAGE_EXTENDED2 = 0x1300       # Page 19 - Extended Instrumentation 2
+    PAGE_NAMED_ALARMS = 0x9A00    # Page 154 - Named Alarm Conditions
+
+    # Alarm condition codes
+    ALARM_CONDITIONS = {
+      0 => nil,                    # Disabled
+      1 => nil,                    # Not active
+      2 => "Warning",
+      3 => "Shutdown",
+      4 => "Electrical trip",
+      5 => "Controlled shutdown",
+      8 => nil,                    # Inactive indication
+      9 => nil,                    # Inactive indication
+      10 => "Active",
+      15 => nil,                   # Unimplemented
+    }.freeze
+
+    # Named alarms for 72xx/73xx/61xx/74xx MKII family (register, nibble => name)
+    # Nibbles: 3=bits 13-16, 2=bits 9-12, 1=bits 5-8, 0=bits 1-4
+    NAMED_ALARMS_73XX = {
+      [1, 3] => "Emergency stop",
+      [1, 2] => "Low oil pressure",
+      [1, 1] => "High coolant temperature",
+      [1, 0] => "Low coolant temperature",
+      [2, 3] => "Under speed",
+      [2, 2] => "Over speed",
+      [2, 1] => "Generator under frequency",
+      [2, 0] => "Generator over frequency",
+      [3, 3] => "Generator low voltage",
+      [3, 2] => "Generator high voltage",
+      [3, 1] => "Battery low voltage",
+      [3, 0] => "Battery high voltage",
+      [4, 3] => "Charge alternator failure",
+      [4, 2] => "Fail to start",
+      [4, 1] => "Fail to stop",
+      [4, 0] => "Generator fail to close",
+      [5, 3] => "Mains fail to close",
+      [5, 2] => "Oil pressure sender fault",
+      [5, 1] => "Loss of magnetic pick up",
+      [5, 0] => "Magnetic pick up open circuit",
+      [6, 3] => "Generator high current",
+      [6, 2] => "Calibration lost",
+      [6, 1] => "Low fuel level",
+      [6, 0] => "CAN ECU Warning",
+      [7, 3] => "CAN ECU Shutdown",
+      [7, 2] => "CAN ECU Data fail",
+      [7, 1] => "Low oil level switch",
+      [7, 0] => "High temperature switch",
+      [8, 3] => "Low fuel level switch",
+      [8, 2] => "Expansion unit watchdog alarm",
+      [8, 1] => "kW overload alarm",
+      [8, 0] => "Negative phase sequence current alarm",
+      [9, 3] => "Earth fault trip alarm",
+      [9, 2] => "Generator phase rotation alarm",
+      [9, 1] => "Auto Voltage Sense Fail",
+      [9, 0] => "Maintenance alarm",
+      [10, 3] => "Loading frequency alarm",
+      [10, 2] => "Loading voltage alarm",
+      [10, 1] => "Fuel usage running",
+      [10, 0] => "Fuel usage stopped",
+      [11, 3] => "Protections disabled",
+      [11, 2] => "Protections blocked",
+      [11, 1] => "Generator Short Circuit",
+      [11, 0] => "Mains High Current",
+      [12, 3] => "Mains Earth Fault",
+      [12, 2] => "Mains Short Circuit",
+      [12, 1] => "ECU protect",
+      [12, 0] => "ECU Malfunction",
+      [13, 3] => "ECU Information",
+      [13, 2] => "ECU Shutdown",
+      [13, 1] => "ECU Warning",
+      [13, 0] => "ECU Electrical Trip",
+      [14, 3] => "ECU After treatment",
+      [14, 2] => "ECU Water In Fuel",
+      [14, 1] => "Generator Reverse Power",
+      [14, 0] => "Generator Positive VAr",
+      [15, 3] => "Generator Negative VAr",
+      [15, 2] => "LCD Heater Low Voltage",
+      [15, 1] => "LCD Heater High Voltage",
+      [15, 0] => "DEF Level Low",
+      [16, 3] => "SCR Inducement",
+      [16, 2] => "MSC Old version",
+      [16, 1] => "MSC ID alarm",
+      [16, 0] => "MSC failure",
+      [17, 3] => "MSC priority Error",
+      [17, 2] => "Fuel Sender open circuit",
+      [17, 1] => "Over speed runaway",
+      [17, 0] => "Over frequency run away",
+      [18, 3] => "Coolant sensor open circuit",
+      [18, 2] => "Remote display link lost",
+    }.freeze
 
     # Control keys (write to PAGE_CONTROL+8 and ones-complement to PAGE_CONTROL+9)
     CONTROL_STOP = 35700
@@ -116,6 +206,27 @@ class Devices
         inhibit_permanent_lockout: d[17],
         inhibit_system_fault: d[18],
       }
+    end
+
+    # Named Alarm Conditions (Page 154) - returns hash of active alarms
+    def named_alarms
+      regs = @modbus.read_holding_registers(PAGE_NAMED_ALARMS + 1, 18)
+      alarms = {}
+      regs.each_with_index do |reg, idx|
+        register = idx + 1
+        4.times do |nibble|
+          shift = nibble * 4
+          code = (reg >> shift) & 0x0F
+          condition = ALARM_CONDITIONS[code]
+          next unless condition
+
+          name = NAMED_ALARMS_73XX[[register, nibble]]
+          next unless name
+
+          alarms[name] = condition
+        end
+      end
+      alarms.freeze
     end
 
     def is_running?

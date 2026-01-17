@@ -11,7 +11,8 @@ class HTTPServer
       res.body = @@view.result_with_hash({ control_mode: @gencomm.control_mode_name,
                                            status_flags: @gencomm.status_flags,
                                            dpf_status: @gencomm.dpf_status,
-                                           measurements: @gencomm.measurements })
+                                           measurements: @gencomm.measurements,
+                                           named_alarms: @gencomm.named_alarms })
     end
 
     def do_POST(req, res)

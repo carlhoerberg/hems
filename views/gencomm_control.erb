@@ -38,6 +38,19 @@
       <tr><td>inhibit_permanent_lockout</td><td><%=dpf_inhibit_status[dpf_status[:inhibit_permanent_lockout]] || dpf_status[:inhibit_permanent_lockout]%></td></tr>
       <tr><td>inhibit_system_fault</td><td><%=dpf_inhibit_status[dpf_status[:inhibit_system_fault]] || dpf_status[:inhibit_system_fault]%></td></tr>
     </table>
+    <h2>Named Alarms</h2>
+    <%if named_alarms.empty?%>
+    <p>No active alarms</p>
+    <%else%>
+    <table>
+      <%named_alarms.each do |name, condition|%>
+        <tr>
+          <td><%=name%></td>
+          <td><%=condition%></td>
+        </tr>
+      <%end%>
+    </table>
+    <%end%>
     <h2>Status</h2>
     <table>
       <tr><td>control_mode</td><td><%=control_mode%></td></tr>
