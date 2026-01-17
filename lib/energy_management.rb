@@ -21,19 +21,16 @@ class EnergyManagement
   DEFAULT_GENSET_ACTIVATION_SOC = 20
   DEFAULT_GENSET_DEACTIVATION_SOC = 95
 
+  # Genset load management thresholds
+  GENSET_MAX_LOAD_PCT = 90
+  HEATER_9KW_LOAD_PCT = 40
+  AFTERTREATMENT_MIN_TEMP = 250
+
   def initialize(devices)
     @devices = devices
     @stopped = false
-    @solar_forecast = SolarForecast.new
-    @phase_current_history = []
-    @last_threshold_check = 0
     @shelly_demands = {}  # { device_id => { host:, amps:, active: false } }
     @shelly_demands_mutex = Mutex.new
-    # Configure aux1 for genset control on first run
-    @devices.next3.aux1.configure_for_genset(
-      activation_soc: DEFAULT_GENSET_ACTIVATION_SOC,
-      deactivation_soc: DEFAULT_GENSET_DEACTIVATION_SOC
-    )
   end
 
   def start
@@ -41,11 +38,7 @@ class EnergyManagement
     until @stopped
       begin
         duration = Time.measure do
-          @phase_current_history.shift if @phase_current_history.size >= 60
-          @phase_current_history.push phase_current
-          soc = @devices.next3.battery.soc
-          genset_threshold_management(soc)
-          load_shedding(soc)
+          genset_load_management
           manage_shelly_demands
         end
         puts "Energy management loop duration: #{duration.round(2)}s" if duration > 1
@@ -189,14 +182,37 @@ class EnergyManagement
   end
 
   def genset_running?
-    @devices.next3.acsource.frequency > 0 &&
-      (1..3).all? { |phase| @devices.next3.acsource.warnings(phase) == 0 }
+    true
   end
 
   def turn_off_heaters
     puts "Turning off heaters"
     @devices.relays.heater_6kw = false
     @devices.relays.heater_9kw = false
+  end
+
+  # Manage genset load using 9kW heater
+  # Turn on heater if aftertreatment temp < 250°C, off if any phase > 90%
+  # Shelly demands have priority over the heater
+  def genset_load_management
+    measurements = @devices.gencomm.measurements
+    max_load = [measurements[:load_pct_l1], measurements[:load_pct_l2], measurements[:load_pct_l3]].max
+    aftertreatment_temp = measurements[:aftertreatment_temp]
+    heater_on = @devices.relays.heater_9kw?
+    has_shelly_demand = @shelly_demands_mutex.synchronize { !@shelly_demands.empty? }
+
+    if has_shelly_demand && heater_on
+      puts "Shelly demand registered, turning off 9kW heater"
+      @devices.relays.heater_9kw = false
+    elsif max_load > GENSET_MAX_LOAD_PCT && heater_on
+      puts "Genset load #{max_load.round(1)}% > #{GENSET_MAX_LOAD_PCT}%, turning off 9kW heater"
+      @devices.relays.heater_9kw = false
+    elsif aftertreatment_temp < AFTERTREATMENT_MIN_TEMP && !heater_on && !has_shelly_demand && max_load + HEATER_9KW_LOAD_PCT < 100
+      puts "Aftertreatment #{aftertreatment_temp}°C < #{AFTERTREATMENT_MIN_TEMP}°C, turning on 9kW heater"
+      @devices.relays.heater_9kw = true
+    end
+  rescue => e
+    puts "[ERROR] Genset load management: #{e.message}"
   end
 
   def phase_current
@@ -233,10 +249,18 @@ class EnergyManagement
     true
   end
 
-  def voltage_drop?
-    (1..3).any? do |phase|
-      @devices.next3.acload.voltage(phase) < 210
-    end
+  # Check if any phase is overloaded (>= 100%)
+  def genset_overloaded?
+    derived = @devices.gencomm.derived_measurements
+    [derived[:load_pct_l1], derived[:load_pct_l2], derived[:load_pct_l3]].any? { |l| l >= 100 }
+  end
+
+  # Check if genset load allows additional amps
+  def genset_load_allows?(amps)
+    derived = @devices.gencomm.derived_measurements
+    max_load = [derived[:load_pct_l1], derived[:load_pct_l2], derived[:load_pct_l3]].max
+    estimated_additional_load = amps * 230 / 1000.0 * 3  # rough % estimate
+    max_load + estimated_additional_load < GENSET_MAX_LOAD_PCT
   end
 
   # Shelly demand management
@@ -245,11 +269,11 @@ class EnergyManagement
       @shelly_demands[host] = { amps:, active: false }
 
       # Immediately check if we can activate
-      if voltage_drop?
-        return { activated: false, reason: "voltage_drop" }
+      if genset_overloaded?
+        return { activated: false, reason: "overloaded" }
       end
 
-      if genset_running? || phase_current_capacity?(amps)
+      if genset_running? && genset_load_allows?(amps)
         puts "Activating Shelly #{host} (#{amps}A) on registration"
         turn_on_shelly(host)
         @shelly_demands[host][:active] = true
@@ -275,11 +299,11 @@ class EnergyManagement
     @shelly_demands_mutex.synchronize do
       return if @shelly_demands.empty?
 
-      # If voltage drop on any phase, turn off all active demands
-      if voltage_drop?
+      # If any phase overloaded, turn off all active demands
+      if genset_overloaded?
         @shelly_demands.each do |host, demand|
           if demand[:active]
-            puts "Voltage drop, turning off Shelly #{host}"
+            puts "Genset overloaded, turning off Shelly #{host}"
             turn_off_shelly(host)
             demand[:active] = false
           end
@@ -287,32 +311,21 @@ class EnergyManagement
         return
       end
 
-      # If AC source running and voltage OK, turn on inactive demands
-      if genset_running?
-        @shelly_demands.each do |host, demand|
-          unless demand[:active]
-            puts "AC source running, turning on Shelly #{host}"
+      # Manage demands based on genset load capacity
+      @shelly_demands.each do |host, demand|
+        if demand[:active]
+          # Already active, check if we need to shed load
+          unless genset_load_allows?(0)
+            puts "Genset load high, turning off Shelly #{host}"
+            turn_off_shelly(host)
+            demand[:active] = false
+          end
+        else
+          # Not active, check if we have capacity
+          if genset_load_allows?(demand[:amps])
+            puts "Capacity available, turning on Shelly #{host} (#{demand[:amps]}A)"
             turn_on_shelly(host)
             demand[:active] = true
-          end
-        end
-      else
-        # AC source not running, check phase current capacity
-        @shelly_demands.each do |host, demand|
-          if demand[:active]
-            # Already active, check if we still have capacity
-            unless phase_current_capacity?(0)
-              puts "No capacity, turning off Shelly #{host}"
-              turn_off_shelly(host)
-              demand[:active] = false
-            end
-          else
-            # Not active, check if we have capacity for this demand
-            if phase_current_capacity?(demand[:amps])
-              puts "Capacity available, turning on Shelly #{host} (#{demand[:amps]}A)"
-              turn_on_shelly(host)
-              demand[:active] = true
-            end
           end
         end
       end
