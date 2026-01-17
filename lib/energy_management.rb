@@ -201,23 +201,23 @@ class EnergyManagement
     heater_6kw_on = @devices.relays.heater_6kw?
     heater_9kw_on = @devices.relays.heater_9kw?
 
-    # Calculate pending shelly demand (not yet active), 33A = 100% load
+    # Calculate pending shelly demand (not yet active), 34A = 100% load
     pending_shelly_load = @shelly_demands_mutex.synchronize do
-      @shelly_demands.sum { |_, d| d[:active] ? 0 : d[:amps] / 33.0 * 100 }
+      @shelly_demands.sum { |_, d| d[:active] ? 0 : d[:amps] / 34.0 * 100 }
     end
     has_shelly_demand = pending_shelly_load > 0
 
     # Turn off heaters if load too high
     if max_load > 100
       if heater_6kw_on
-        puts "Genset load #{max_load.round(1)}% > #{GENSET_MAX_LOAD_PCT}%, turning off 6kW heater"
+        puts "Genset load #{max_load.round(1)}% > 100%, turning off 6kW heater"
         @devices.relays.heater_6kw = false
       elsif heater_9kw_on
-        puts "Genset load #{max_load.round(1)}% > #{GENSET_MAX_LOAD_PCT}%, turning off 9kW heater"
+        puts "Genset load #{max_load.round(1)}% > 100%, turning off 9kW heater"
         @devices.relays.heater_9kw = false
       end
     # Turn off heaters to make room for pending shelly demand
-    elsif has_shelly_demand && max_load + pending_shelly_load > GENSET_MAX_LOAD_PCT && (heater_6kw_on || heater_9kw_on)
+    elsif has_shelly_demand && max_load + pending_shelly_load > GENSET_MAX_LOAD_PCT
       if heater_6kw_on
         puts "Turning off 6kW heater to make room for Shelly demand"
         @devices.relays.heater_6kw = false
@@ -233,7 +233,7 @@ class EnergyManagement
       elsif !heater_6kw_on && max_load + HEATER_6KW_LOAD_PCT <= GENSET_MAX_LOAD_PCT
         puts "No shelly demand, turning on 6kW heater"
         @devices.relays.heater_6kw = true
-      # Swap 6kW for 9kW if it gets closer to 95% target load
+      # Swap 6kW for 9kW if it gets closer to target load
       elsif heater_6kw_on && !heater_9kw_on
         load_without_heater = max_load - HEATER_6KW_LOAD_PCT
         load_with_9kw = load_without_heater + HEATER_9KW_LOAD_PCT
@@ -292,7 +292,7 @@ class EnergyManagement
   def genset_load_allows?(amps)
     derived = @devices.gencomm.derived_measurements
     max_load = [derived[:load_pct_l1], derived[:load_pct_l2], derived[:load_pct_l3]].max
-    estimated_additional_load = amps / 33.0 * 100  # 33A = 100% load
+    estimated_additional_load = amps / 34.0 * 100  # 34A = 100% load
     max_load + estimated_additional_load < GENSET_MAX_LOAD_PCT
   end
 
