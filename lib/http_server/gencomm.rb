@@ -8,7 +8,8 @@ class HTTPServer
 
     def do_GET(req, res)
       res.content_type = "text/html"
-      res.body = @@view.result_with_hash({ status: @gencomm.status,
+      res.body = @@view.result_with_hash({ control_mode: @gencomm.control_mode_name,
+                                           status_flags: @gencomm.status_flags,
                                            measurements: @gencomm.measurements })
     end
 

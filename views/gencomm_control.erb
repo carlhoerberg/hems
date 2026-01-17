@@ -19,7 +19,8 @@
     </form>
     <h2>Status</h2>
     <table>
-      <%status.each do |key, value|%>
+      <tr><td>control_mode</td><td><%=control_mode%></td></tr>
+      <%status_flags.each do |key, value|%>
         <tr>
           <td><%=key%></td>
           <td><%=value%></td>
