@@ -3,12 +3,14 @@
 # TYPE genset_kw gauge
 # TYPE genset_kva gauge
 # TYPE genset_kvar gauge
+# TYPE genset_load_pct gauge
 <%[1, 2, 3].each do |l|%>
 genset_voltage{name="<%=name%>",L="<%=l%>"} <%=measurements["voltage_l#{l}_n".to_sym]%>
 genset_current{name="<%=name%>",L="<%=l%>"} <%=measurements["current_l#{l}".to_sym]%>
 genset_kw{name="<%=name%>",L="<%=l%>"} <%=measurements["watts_l#{l}".to_sym] / 1000.0%>
 genset_kva{name="<%=name%>",L="<%=l%>"} <%=measurements["kva_l#{l}".to_sym]%>
 genset_kvar{name="<%=name%>",L="<%=l%>"} <%=measurements["kvar_l#{l}".to_sym]%>
+genset_load_pct{name="<%=name%>",L="<%=l%>"} <%=measurements["load_pct_l#{l}".to_sym]%>
 <%end%>
 
 # TYPE genset_frequency gauge

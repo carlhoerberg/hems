@@ -239,9 +239,10 @@ class Devices
       }.freeze
     end
 
-    # Read derived instrumentation (Page 6) for VA and Var values
+    # Read derived instrumentation (Page 6) for VA, Var, and load percentage values
     def derived_measurements
       d = @modbus.read_holding_registers(PAGE_DERIVED, 16)
+      d2 = @modbus.read_holding_registers(PAGE_DERIVED + 82, 3)
       {
         kva_l1: [d[2], d[3]].to_u32 / 1000.0,
         kva_l2: [d[4], d[5]].to_u32 / 1000.0,
@@ -249,6 +250,9 @@ class Devices
         kvar_l1: [d[10], d[11]].to_i32 / 1000.0,
         kvar_l2: [d[12], d[13]].to_i32 / 1000.0,
         kvar_l3: [d[14], d[15]].to_i32 / 1000.0,
+        load_pct_l1: [d2[0]].to_i16 / 10.0,
+        load_pct_l2: [d2[1]].to_i16 / 10.0,
+        load_pct_l3: [d2[2]].to_i16 / 10.0,
       }.freeze
     end
 
