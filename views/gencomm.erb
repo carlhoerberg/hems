@@ -1,11 +1,11 @@
 # TYPE genset_voltage gauge
 # TYPE genset_current gauge
-# TYPE genset_watts gauge
+# TYPE genset_kw gauge
 # TYPE genset_kva gauge
 <%[1, 2, 3].each do |l|%>
 genset_voltage{name="<%=name%>",L="<%=l%>"} <%=measurements["voltage_l#{l}_n".to_sym]%>
 genset_current{name="<%=name%>",L="<%=l%>"} <%=measurements["current_l#{l}".to_sym]%>
-genset_watts{name="<%=name%>",L="<%=l%>"} <%=measurements["watts_l#{l}".to_sym]%>
+genset_kw{name="<%=name%>",L="<%=l%>"} <%=measurements["watts_l#{l}".to_sym] / 1000.0%>
 genset_kva{name="<%=name%>",L="<%=l%>"} <%=measurements["kva_l#{l}".to_sym]%>
 <%end%>
 
