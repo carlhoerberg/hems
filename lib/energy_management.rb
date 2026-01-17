@@ -320,25 +320,11 @@ class EnergyManagement
 
   def manage_shelly_demands
     @shelly_demands_mutex.synchronize do
-      return if @shelly_demands.empty?
-
-      # If any phase overloaded, turn off all active demands
-      if genset_overloaded?
-        @shelly_demands.each do |host, demand|
-          if demand[:active]
-            puts "Genset overloaded, turning off Shelly #{host}"
-            turn_off_shelly(host)
-            demand[:active] = false
-          end
-        end
-        return
-      end
-
       # Manage demands based on genset load capacity
       @shelly_demands.each do |host, demand|
         if demand[:active]
           # Already active, check if we need to shed load
-          unless genset_load_allows?(0)
+          if genset_overloaded?
             puts "Genset load high, turning off Shelly #{host}"
             turn_off_shelly(host)
             demand[:active] = false
