@@ -197,7 +197,9 @@ class EnergyManagement
   # Shelly demands have priority over heaters
   def genset_load_management
     measurements = @devices.gencomm.measurements
-    max_load = [measurements[:load_pct_l1], measurements[:load_pct_l2], measurements[:load_pct_l3]].max
+    phase_loads = [measurements[:load_pct_l1], measurements[:load_pct_l2], measurements[:load_pct_l3]]
+    max_load = phase_loads.max
+    avg_load = phase_loads.sum / 3.0
     heater_6kw_on = @devices.relays.heater_6kw?
     heater_9kw_on = @devices.relays.heater_9kw?
 
@@ -210,10 +212,10 @@ class EnergyManagement
     # Turn off heaters if load too high
     if max_load > 106
       if heater_6kw_on
-        puts "Genset load #{max_load.round(1)}% > 100%, turning off 6kW heater"
+        puts "Genset load #{max_load.round(1)}% > 106%, turning off 6kW heater"
         @devices.relays.heater_6kw = false
       elsif heater_9kw_on
-        puts "Genset load #{max_load.round(1)}% > 100%, turning off 9kW heater"
+        puts "Genset load #{max_load.round(1)}% > 106%, turning off 9kW heater"
         @devices.relays.heater_9kw = false
       end
     # Turn off heaters to make room for pending shelly demand
@@ -225,20 +227,22 @@ class EnergyManagement
         puts "Turning off 9kW heater to make room for Shelly demand"
         @devices.relays.heater_9kw = false
       end
-    # Turn on heaters if no shelly demand
+    # Turn on heaters if no shelly demand and load allows
+    # Enable if: max phase < 105% AND average <= 100%
     elsif !has_shelly_demand
-      if !heater_9kw_on && max_load + HEATER_9KW_LOAD_PCT <= GENSET_MAX_LOAD_PCT
-        puts "No shelly demand, turning on 9kW heater"
+      if !heater_9kw_on && heater_load_allowed?(max_load, avg_load, HEATER_9KW_LOAD_PCT)
+        puts "No shelly demand, turning on 9kW heater (max=#{max_load.round(1)}%, avg=#{avg_load.round(1)}%)"
         @devices.relays.heater_9kw = true
-      elsif !heater_6kw_on && max_load + HEATER_6KW_LOAD_PCT <= GENSET_MAX_LOAD_PCT
-        puts "No shelly demand, turning on 6kW heater"
+      elsif !heater_6kw_on && heater_load_allowed?(max_load, avg_load, HEATER_6KW_LOAD_PCT)
+        puts "No shelly demand, turning on 6kW heater (max=#{max_load.round(1)}%, avg=#{avg_load.round(1)}%)"
         @devices.relays.heater_6kw = true
       # Swap 6kW for 9kW if it gets closer to target load
       elsif heater_6kw_on && !heater_9kw_on
-        load_without_heater = max_load - HEATER_6KW_LOAD_PCT
-        load_with_9kw = load_without_heater + HEATER_9KW_LOAD_PCT
-        if load_with_9kw <= GENSET_MAX_LOAD_PCT
-          puts "Swapping 6kW for 9kW heater (#{max_load.round(1)}% -> #{load_with_9kw.round(1)}%, closer to max load)"
+        max_without_heater = max_load - HEATER_6KW_LOAD_PCT
+        avg_without_heater = avg_load - HEATER_6KW_LOAD_PCT
+        if heater_load_allowed?(max_without_heater, avg_without_heater, HEATER_9KW_LOAD_PCT)
+          new_max = max_without_heater + HEATER_9KW_LOAD_PCT
+          puts "Swapping 6kW for 9kW heater (#{max_load.round(1)}% -> #{new_max.round(1)}%, closer to max load)"
           @devices.relays.heater_6kw = false
           @devices.relays.heater_9kw = true
         end
@@ -246,6 +250,11 @@ class EnergyManagement
     end
   rescue => e
     puts "[ERROR] Genset load management: #{e.message}"
+  end
+
+  # Check if adding heater load is allowed: max phase < 105% AND average <= 100%
+  def heater_load_allowed?(max_load, avg_load, heater_load_pct)
+    max_load + heater_load_pct < 105 && avg_load + heater_load_pct <= GENSET_MAX_LOAD_PCT
   end
 
   def phase_current
