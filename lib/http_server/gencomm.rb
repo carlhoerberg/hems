@@ -10,6 +10,7 @@ class HTTPServer
       res.content_type = "text/html"
       res.body = @@view.result_with_hash({ control_mode: @gencomm.control_mode_name,
                                            status_flags: @gencomm.status_flags,
+                                           dpf_status: @gencomm.dpf_status,
                                            measurements: @gencomm.measurements })
     end
 

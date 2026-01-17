@@ -96,6 +96,31 @@ class Devices
       }
     end
 
+    DPF_REGEN_STATUS = { 0 => "Not regenerating", 1 => "Automatic", 2 => "Forced", 3 => "Unimplemented" }.freeze
+    DPF_REGEN_INHIBIT = { 0 => "Permitted", 1 => "Inhibited", 3 => "Unimplemented" }.freeze
+
+    def dpf_status
+      d = @modbus.read_holding_registers(PAGE_EXTENDED2 + 4, 19)
+      e = @modbus.read_holding_registers(PAGE_EXTENDED + 184, 1)
+      e2 = @modbus.read_holding_registers(PAGE_EXTENDED + 195, 5)
+      {
+        regen_status: DPF_REGEN_STATUS[d[0]] || d[0],
+        auto_regen_inhibit: DPF_REGEN_INHIBIT[e[0]] || e[0],
+        aftertreatment_status_reason: e2[0],
+        aftertreatment_status_severity: e2[1],
+        time_until_action_needed: e2[2],
+        time_until_torque_reduction: e2[3],
+        time_until_speed_reduction: e2[4],
+        inhibit_accelerator_off_idle: d[12],
+        inhibit_out_of_neutral: d[13],
+        inhibit_parking_brake_not_set: d[14],
+        inhibit_low_exhaust_temp: d[15],
+        inhibit_system_timeout: d[16],
+        inhibit_permanent_lockout: d[17],
+        inhibit_system_fault: d[18],
+      }
+    end
+
     def is_running?
       rpm > 0
     end

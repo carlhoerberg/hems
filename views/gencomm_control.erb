@@ -17,6 +17,14 @@
       <button name="action" value="dpf_regen_start">Start Regen</button>
       <button name="action" value="dpf_regen_stop">Stop Regen</button>
     </form>
+    <table>
+      <%dpf_status.each do |key, value|%>
+        <tr>
+          <td><%=key%></td>
+          <td><%=value%></td>
+        </tr>
+      <%end%>
+    </table>
     <h2>Status</h2>
     <table>
       <tr><td>control_mode</td><td><%=control_mode%></td></tr>
