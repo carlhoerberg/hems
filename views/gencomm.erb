@@ -41,6 +41,10 @@ genset_soot_load{name="<%=name%>"} <%=measurements[:soot_load]%>
 genset_ash_load{name="<%=name%>"} <%=measurements[:ash_load]%>
 # TYPE genset_dpf_regen_status gauge
 genset_dpf_regen_status{name="<%=name%>"} <%=measurements[:dpf_regen_status]%>
+# TYPE genset_pct_full_power gauge
+genset_pct_full_power{name="<%=name%>"} <%=measurements[:pct_full_power]%>
+# TYPE genset_pct_full_var gauge
+genset_pct_full_var{name="<%=name%>"} <%=measurements[:pct_full_var]%>
 # TYPE genset_kwh counter
 genset_kwh{name="<%=name%>"} <%=accumulated[:kwh_positive]%>
 # TYPE genset_start_counter counter
