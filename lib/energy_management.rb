@@ -198,21 +198,31 @@ class EnergyManagement
   def genset_load_management
     measurements = @devices.gencomm.measurements
     max_load = [measurements[:load_pct_l1], measurements[:load_pct_l2], measurements[:load_pct_l3]].max
-    aftertreatment_temp = measurements[:aftertreatment_temp]
     heater_6kw_on = @devices.relays.heater_6kw?
     heater_9kw_on = @devices.relays.heater_9kw?
-    has_shelly_demand = @shelly_demands_mutex.synchronize { !@shelly_demands.empty? }
 
-    # Turn off heaters if shelly demand or load too high
-    if has_shelly_demand && (heater_6kw_on || heater_9kw_on)
-      puts "Shelly demand registered, turning off heaters"
-      turn_off_heaters
-    elsif max_load > GENSET_MAX_LOAD_PCT
+    # Calculate pending shelly demand (not yet active)
+    pending_shelly_load = @shelly_demands_mutex.synchronize do
+      @shelly_demands.sum { |_, d| d[:active] ? 0 : d[:amps] * 230 / 1000.0 * 3 }
+    end
+    has_shelly_demand = pending_shelly_load > 0
+
+    # Turn off heaters if load too high
+    if max_load > GENSET_MAX_LOAD_PCT
       if heater_6kw_on
         puts "Genset load #{max_load.round(1)}% > #{GENSET_MAX_LOAD_PCT}%, turning off 6kW heater"
         @devices.relays.heater_6kw = false
       elsif heater_9kw_on
         puts "Genset load #{max_load.round(1)}% > #{GENSET_MAX_LOAD_PCT}%, turning off 9kW heater"
+        @devices.relays.heater_9kw = false
+      end
+    # Turn off heaters to make room for pending shelly demand
+    elsif has_shelly_demand && max_load + pending_shelly_load > GENSET_MAX_LOAD_PCT && (heater_6kw_on || heater_9kw_on)
+      if heater_6kw_on
+        puts "Turning off 6kW heater to make room for Shelly demand"
+        @devices.relays.heater_6kw = false
+      elsif heater_9kw_on
+        puts "Turning off 9kW heater to make room for Shelly demand"
         @devices.relays.heater_9kw = false
       end
     # Turn on heaters if no shelly demand
