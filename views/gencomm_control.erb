@@ -1,3 +1,8 @@
+<%
+  dpf_regen_status = { 0 => "Not regenerating", 1 => "Automatic", 2 => "Forced", 3 => "Unimplemented" }
+  dpf_regen_inhibit = { 0 => "Permitted", 1 => "Inhibited", 3 => "Unimplemented" }
+  dpf_inhibit_status = { 0 => "Not inhibited", 1 => "Inhibited", 2 => "Undefined", 3 => "Unimplemented" }
+%>
 <html>
   <head>
     <title>Genset control</title>
@@ -18,12 +23,20 @@
       <button name="action" value="dpf_regen_stop">Stop Regen</button>
     </form>
     <table>
-      <%dpf_status.each do |key, value|%>
-        <tr>
-          <td><%=key%></td>
-          <td><%=value%></td>
-        </tr>
-      <%end%>
+      <tr><td>regen_status</td><td><%=dpf_regen_status[dpf_status[:regen_status]] || dpf_status[:regen_status]%></td></tr>
+      <tr><td>auto_regen_inhibit</td><td><%=dpf_regen_inhibit[dpf_status[:auto_regen_inhibit]] || dpf_status[:auto_regen_inhibit]%></td></tr>
+      <tr><td>aftertreatment_status_reason</td><td><%=dpf_status[:aftertreatment_status_reason]%></td></tr>
+      <tr><td>aftertreatment_status_severity</td><td><%=dpf_status[:aftertreatment_status_severity]%></td></tr>
+      <tr><td>time_until_action_needed</td><td><%=dpf_status[:time_until_action_needed]%></td></tr>
+      <tr><td>time_until_torque_reduction</td><td><%=dpf_status[:time_until_torque_reduction]%></td></tr>
+      <tr><td>time_until_speed_reduction</td><td><%=dpf_status[:time_until_speed_reduction]%></td></tr>
+      <tr><td>inhibit_accelerator_off_idle</td><td><%=dpf_inhibit_status[dpf_status[:inhibit_accelerator_off_idle]] || dpf_status[:inhibit_accelerator_off_idle]%></td></tr>
+      <tr><td>inhibit_out_of_neutral</td><td><%=dpf_inhibit_status[dpf_status[:inhibit_out_of_neutral]] || dpf_status[:inhibit_out_of_neutral]%></td></tr>
+      <tr><td>inhibit_parking_brake_not_set</td><td><%=dpf_inhibit_status[dpf_status[:inhibit_parking_brake_not_set]] || dpf_status[:inhibit_parking_brake_not_set]%></td></tr>
+      <tr><td>inhibit_low_exhaust_temp</td><td><%=dpf_inhibit_status[dpf_status[:inhibit_low_exhaust_temp]] || dpf_status[:inhibit_low_exhaust_temp]%></td></tr>
+      <tr><td>inhibit_system_timeout</td><td><%=dpf_inhibit_status[dpf_status[:inhibit_system_timeout]] || dpf_status[:inhibit_system_timeout]%></td></tr>
+      <tr><td>inhibit_permanent_lockout</td><td><%=dpf_inhibit_status[dpf_status[:inhibit_permanent_lockout]] || dpf_status[:inhibit_permanent_lockout]%></td></tr>
+      <tr><td>inhibit_system_fault</td><td><%=dpf_inhibit_status[dpf_status[:inhibit_system_fault]] || dpf_status[:inhibit_system_fault]%></td></tr>
     </table>
     <h2>Status</h2>
     <table>
