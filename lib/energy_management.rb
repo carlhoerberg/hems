@@ -23,6 +23,7 @@ class EnergyManagement
 
   # Genset load management thresholds
   GENSET_MAX_LOAD_PCT = 90
+  HEATER_6KW_LOAD_PCT = 25
   HEATER_9KW_LOAD_PCT = 40
   AFTERTREATMENT_MIN_TEMP = 250
 
@@ -191,25 +192,38 @@ class EnergyManagement
     @devices.relays.heater_9kw = false
   end
 
-  # Manage genset load using 9kW heater
-  # Turn on heater if aftertreatment temp < 250°C, off if any phase > 90%
-  # Shelly demands have priority over the heater
+  # Manage genset load using 6kW and 9kW heaters
+  # Turn on heaters if aftertreatment temp < 250°C, off if any phase > 90%
+  # Shelly demands have priority over heaters
   def genset_load_management
     measurements = @devices.gencomm.measurements
     max_load = [measurements[:load_pct_l1], measurements[:load_pct_l2], measurements[:load_pct_l3]].max
     aftertreatment_temp = measurements[:aftertreatment_temp]
-    heater_on = @devices.relays.heater_9kw?
+    heater_6kw_on = @devices.relays.heater_6kw?
+    heater_9kw_on = @devices.relays.heater_9kw?
     has_shelly_demand = @shelly_demands_mutex.synchronize { !@shelly_demands.empty? }
 
-    if has_shelly_demand && heater_on
-      puts "Shelly demand registered, turning off 9kW heater"
-      @devices.relays.heater_9kw = false
-    elsif max_load > GENSET_MAX_LOAD_PCT && heater_on
-      puts "Genset load #{max_load.round(1)}% > #{GENSET_MAX_LOAD_PCT}%, turning off 9kW heater"
-      @devices.relays.heater_9kw = false
-    elsif aftertreatment_temp < AFTERTREATMENT_MIN_TEMP && !heater_on && !has_shelly_demand && max_load + HEATER_9KW_LOAD_PCT < 100
-      puts "Aftertreatment #{aftertreatment_temp}°C < #{AFTERTREATMENT_MIN_TEMP}°C, turning on 9kW heater"
-      @devices.relays.heater_9kw = true
+    # Turn off heaters if shelly demand or load too high
+    if has_shelly_demand && (heater_6kw_on || heater_9kw_on)
+      puts "Shelly demand registered, turning off heaters"
+      turn_off_heaters
+    elsif max_load > GENSET_MAX_LOAD_PCT
+      if heater_9kw_on
+        puts "Genset load #{max_load.round(1)}% > #{GENSET_MAX_LOAD_PCT}%, turning off 9kW heater"
+        @devices.relays.heater_9kw = false
+      elsif heater_6kw_on
+        puts "Genset load #{max_load.round(1)}% > #{GENSET_MAX_LOAD_PCT}%, turning off 6kW heater"
+        @devices.relays.heater_6kw = false
+      end
+    # Turn on heaters if aftertreatment temp too low
+    elsif aftertreatment_temp < AFTERTREATMENT_MIN_TEMP && !has_shelly_demand
+      if !heater_6kw_on && max_load + HEATER_6KW_LOAD_PCT < 100
+        puts "Aftertreatment #{aftertreatment_temp}°C < #{AFTERTREATMENT_MIN_TEMP}°C, turning on 6kW heater"
+        @devices.relays.heater_6kw = true
+      elsif heater_6kw_on && !heater_9kw_on && max_load + HEATER_9KW_LOAD_PCT < 100
+        puts "Aftertreatment #{aftertreatment_temp}°C < #{AFTERTREATMENT_MIN_TEMP}°C, turning on 9kW heater"
+        @devices.relays.heater_9kw = true
+      end
     end
   rescue => e
     puts "[ERROR] Genset load management: #{e.message}"
