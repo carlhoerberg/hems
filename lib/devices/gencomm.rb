@@ -227,9 +227,9 @@ class Devices
     def derived_measurements
       d = @modbus.read_holding_registers(PAGE_DERIVED, 8)
       {
-        kva_l1: [d[2], d[3]].to_u32,
-        kva_l2: [d[4], d[5]].to_u32,
-        kva_l3: [d[6], d[7]].to_u32,
+        kva_l1: [d[2], d[3]].to_u32 / 1000.0,
+        kva_l2: [d[4], d[5]].to_u32 / 1000.0,
+        kva_l3: [d[6], d[7]].to_u32 / 1000.0,
       }.freeze
     end
 
