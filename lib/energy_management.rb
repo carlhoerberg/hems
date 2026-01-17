@@ -208,21 +208,21 @@ class EnergyManagement
       puts "Shelly demand registered, turning off heaters"
       turn_off_heaters
     elsif max_load > GENSET_MAX_LOAD_PCT
-      if heater_9kw_on
-        puts "Genset load #{max_load.round(1)}% > #{GENSET_MAX_LOAD_PCT}%, turning off 9kW heater"
-        @devices.relays.heater_9kw = false
-      elsif heater_6kw_on
+      if heater_6kw_on
         puts "Genset load #{max_load.round(1)}% > #{GENSET_MAX_LOAD_PCT}%, turning off 6kW heater"
         @devices.relays.heater_6kw = false
+      elsif heater_9kw_on
+        puts "Genset load #{max_load.round(1)}% > #{GENSET_MAX_LOAD_PCT}%, turning off 9kW heater"
+        @devices.relays.heater_9kw = false
       end
     # Turn on heaters if aftertreatment temp too low
     elsif aftertreatment_temp < AFTERTREATMENT_MIN_TEMP && !has_shelly_demand
-      if !heater_6kw_on && max_load + HEATER_6KW_LOAD_PCT < 100
-        puts "Aftertreatment #{aftertreatment_temp}°C < #{AFTERTREATMENT_MIN_TEMP}°C, turning on 6kW heater"
-        @devices.relays.heater_6kw = true
-      elsif heater_6kw_on && !heater_9kw_on && max_load + HEATER_9KW_LOAD_PCT < 100
+      if !heater_9kw_on && max_load + HEATER_9KW_LOAD_PCT < 100
         puts "Aftertreatment #{aftertreatment_temp}°C < #{AFTERTREATMENT_MIN_TEMP}°C, turning on 9kW heater"
         @devices.relays.heater_9kw = true
+      elsif heater_9kw_on && !heater_6kw_on && max_load + HEATER_6KW_LOAD_PCT < 100
+        puts "Aftertreatment #{aftertreatment_temp}°C < #{AFTERTREATMENT_MIN_TEMP}°C, turning on 6kW heater"
+        @devices.relays.heater_6kw = true
       end
     end
   rescue => e
