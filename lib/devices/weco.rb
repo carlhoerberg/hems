@@ -6,6 +6,8 @@ class Devices
       @lock = Mutex.new
       @key = 0x85F9 # rand(0xFFFF)
       set_key
+    rescue => e
+      warn "Weco BMS not available: #{e.message}"
     end
 
     def system_voltage
