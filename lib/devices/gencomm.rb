@@ -13,12 +13,17 @@ class Devices
     PAGE_DERIVED = 0x0600         # Page 6 - Derived Instrumentation
     PAGE_ACCUMULATED = 0x0700     # Page 7 - Accumulated Instrumentation
     PAGE_CONTROL = 0x1000         # Page 16 - Control
+    PAGE_EXTENDED2 = 0x1300       # Page 19 - Extended Instrumentation 2
 
     # Control keys (write to PAGE_CONTROL+8 and ones-complement to PAGE_CONTROL+9)
     CONTROL_STOP = 35700
     CONTROL_AUTO = 35701
     CONTROL_MANUAL = 35702
     CONTROL_RESET_ALARMS = 35734
+    CONTROL_DPF_REGEN_INHIBIT_ON = 35769
+    CONTROL_DPF_REGEN_INHIBIT_OFF = 35770
+    CONTROL_DPF_REGEN_START = 35771
+    CONTROL_DPF_REGEN_STOP = 35785
 
     def initialize(host, port = 502, unit: 1)
       @modbus = Modbus::TCP.new(host, port).unit(unit)
@@ -43,6 +48,22 @@ class Devices
 
     def reset_alarms
       send_control(CONTROL_RESET_ALARMS)
+    end
+
+    def dpf_regen_inhibit_on
+      send_control(CONTROL_DPF_REGEN_INHIBIT_ON)
+    end
+
+    def dpf_regen_inhibit_off
+      send_control(CONTROL_DPF_REGEN_INHIBIT_OFF)
+    end
+
+    def dpf_regen_start
+      send_control(CONTROL_DPF_REGEN_START)
+    end
+
+    def dpf_regen_stop
+      send_control(CONTROL_DPF_REGEN_STOP)
     end
 
     # Status (Page 3)
@@ -229,6 +250,7 @@ class Devices
       e1 = @modbus.read_holding_registers(PAGE_EXTENDED, 12)
       e2 = @modbus.read_holding_registers(PAGE_EXTENDED + 66, 6)
       e3 = @modbus.read_holding_registers(PAGE_EXTENDED + 186, 2)
+      e4 = @modbus.read_holding_registers(PAGE_EXTENDED2 + 4, 1)
       {
         turbo_pressure: e1[4],
         fuel_consumption: [e1[10], e1[11]].to_u32 / 100.0,
@@ -236,6 +258,7 @@ class Devices
         engine_torque_pct: [e2[4], e2[5]].to_i32,
         soot_load: e3[0],
         ash_load: e3[1],
+        dpf_regen_status: e4[0],
       }.freeze
     end
 

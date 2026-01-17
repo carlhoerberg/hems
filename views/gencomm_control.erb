@@ -1,0 +1,39 @@
+<html>
+  <head>
+    <title>Genset control</title>
+  </head>
+  <body>
+    <h1>Genset control</h1>
+    <form method="post">
+      <button name="action" value="stop">Stop</button>
+      <button name="action" value="auto">Auto</button>
+      <button name="action" value="manual">Manual</button>
+      <button name="action" value="reset_alarms">Reset Alarms</button>
+    </form>
+    <h2>DPF Regeneration</h2>
+    <form method="post">
+      <button name="action" value="dpf_regen_inhibit_on">Inhibit On</button>
+      <button name="action" value="dpf_regen_inhibit_off">Inhibit Off</button>
+      <button name="action" value="dpf_regen_start">Start Regen</button>
+      <button name="action" value="dpf_regen_stop">Stop Regen</button>
+    </form>
+    <h2>Status</h2>
+    <table>
+      <%status.each do |key, value|%>
+        <tr>
+          <td><%=key%></td>
+          <td><%=value%></td>
+        </tr>
+      <%end%>
+    </table>
+    <h2>Measurements</h2>
+    <table>
+      <%measurements.each do |key, value|%>
+        <tr>
+          <td><%=key%></td>
+          <td><%=value%></td>
+        </tr>
+      <%end%>
+    </table>
+  </body>
+</html>

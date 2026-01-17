@@ -11,6 +11,7 @@ require_relative "./http_server/em"
 require_relative "./http_server/eta"
 require_relative "./http_server/grundfos"
 require_relative "./http_server/shelly"
+require_relative "./http_server/gencomm"
 
 # Simple multithreaded HTTP server
 class HTTPServer
@@ -29,6 +30,7 @@ class HTTPServer
       "/em" => EMControl.new(em),
       "/grundfos" => GrundfosControl.new(devices.grundfos),
       "/shelly" => ShellyControl.new(em),
+      "/gencomm" => GenCommControl.new(devices.gencomm),
     }
   end
 

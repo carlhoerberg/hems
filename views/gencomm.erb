@@ -39,6 +39,8 @@ genset_engine_torque_pct{name="<%=name%>"} <%=measurements[:engine_torque_pct]%>
 genset_soot_load{name="<%=name%>"} <%=measurements[:soot_load]%>
 # TYPE genset_ash_load gauge
 genset_ash_load{name="<%=name%>"} <%=measurements[:ash_load]%>
+# TYPE genset_dpf_regen_status gauge
+genset_dpf_regen_status{name="<%=name%>"} <%=measurements[:dpf_regen_status]%>
 # TYPE genset_kwh counter
 genset_kwh{name="<%=name%>"} <%=accumulated[:kwh_positive]%>
 # TYPE genset_start_counter counter
