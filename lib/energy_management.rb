@@ -215,7 +215,7 @@ class EnergyManagement
         puts "Genset load #{max_load.round(1)}% > #{GENSET_MAX_LOAD_PCT}%, turning off 9kW heater"
         @devices.relays.heater_9kw = false
       end
-    # Turn on heaters if aftertreatment temp too low
+    # Turn on heaters if no shelly demand
     elsif !has_shelly_demand
       if !heater_9kw_on && max_load + HEATER_9KW_LOAD_PCT <= GENSET_MAX_LOAD_PCT
         puts "No shelly demand, turning on 9kW heater"
@@ -223,6 +223,15 @@ class EnergyManagement
       elsif !heater_6kw_on && max_load + HEATER_6KW_LOAD_PCT <= GENSET_MAX_LOAD_PCT
         puts "No shelly demand, turning on 6kW heater"
         @devices.relays.heater_6kw = true
+      # Swap 6kW for 9kW if it gets closer to 95% target load
+      elsif heater_6kw_on && !heater_9kw_on
+        load_without_heater = max_load - HEATER_6KW_LOAD_PCT
+        load_with_9kw = load_without_heater + HEATER_9KW_LOAD_PCT
+        if load_with_9kw <= GENSET_MAX_LOAD_PCT
+          puts "Swapping 6kW for 9kW heater (#{max_load.round(1)}% -> #{load_with_9kw.round(1)}%, closer to max load)"
+          @devices.relays.heater_6kw = false
+          @devices.relays.heater_9kw = true
+        end
       end
     end
   rescue => e
