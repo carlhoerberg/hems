@@ -9,6 +9,7 @@ class Devices
     # GenComm page addresses
     PAGE_STATUS = 0x0300          # Page 3 - Status
     PAGE_BASIC = 0x0400           # Page 4 - Basic Instrumentation
+    PAGE_EXTENDED = 0x0500        # Page 5 - Extended Instrumentation
     PAGE_DERIVED = 0x0600         # Page 6 - Derived Instrumentation
     PAGE_ACCUMULATED = 0x0700     # Page 7 - Accumulated Instrumentation
     PAGE_CONTROL = 0x1000         # Page 16 - Control
@@ -220,7 +221,22 @@ class Devices
         watts_l1: [m[28], m[29]].to_i32,
         watts_l2: [m[30], m[31]].to_i32,
         watts_l3: [m[32], m[33]].to_i32,
-      }.merge(derived_measurements).freeze
+      }.merge(extended_measurements).merge(derived_measurements).freeze
+    end
+
+    # Read extended instrumentation (Page 5)
+    def extended_measurements
+      e1 = @modbus.read_holding_registers(PAGE_EXTENDED, 12)
+      e2 = @modbus.read_holding_registers(PAGE_EXTENDED + 66, 6)
+      e3 = @modbus.read_holding_registers(PAGE_EXTENDED + 186, 2)
+      {
+        turbo_pressure: e1[4],
+        fuel_consumption: [e1[10], e1[11]].to_u32 / 100.0,
+        aftertreatment_temp: [e2[0]].to_i16,
+        engine_torque_pct: [e2[4], e2[5]].to_i32,
+        soot_load: e3[0],
+        ash_load: e3[1],
+      }.freeze
     end
 
     # Read derived instrumentation (Page 6) for VA and Var values

@@ -25,6 +25,18 @@ genset_coolant_temperature{name="<%=name%>"} <%=measurements[:coolant_temperatur
 genset_oil_pressure{name="<%=name%>"} <%=measurements[:oil_pressure]%>
 # TYPE genset_oil_temperature gauge
 genset_oil_temperature{name="<%=name%>"} <%=measurements[:oil_temperature]%>
+# TYPE genset_turbo_pressure gauge
+genset_turbo_pressure{name="<%=name%>"} <%=measurements[:turbo_pressure]%>
+# TYPE genset_fuel_consumption gauge
+genset_fuel_consumption{name="<%=name%>"} <%=measurements[:fuel_consumption]%>
+# TYPE genset_aftertreatment_temp gauge
+genset_aftertreatment_temp{name="<%=name%>"} <%=measurements[:aftertreatment_temp]%>
+# TYPE genset_engine_torque_pct gauge
+genset_engine_torque_pct{name="<%=name%>"} <%=measurements[:engine_torque_pct]%>
+# TYPE genset_soot_load gauge
+genset_soot_load{name="<%=name%>"} <%=measurements[:soot_load]%>
+# TYPE genset_ash_load gauge
+genset_ash_load{name="<%=name%>"} <%=measurements[:ash_load]%>
 # TYPE genset_kwh counter
 genset_kwh{name="<%=name%>"} <%=accumulated[:kwh_positive]%>
 # TYPE genset_start_counter counter
