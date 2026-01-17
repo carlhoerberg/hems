@@ -219,6 +219,9 @@ class Devices
         watts_l1: [m[28], m[29]].to_i32,
         watts_l2: [m[30], m[31]].to_i32,
         watts_l3: [m[32], m[33]].to_i32,
+        kva_l1: [m[40], m[41]].to_i32,
+        kva_l2: [m[42], m[43]].to_i32,
+        kva_l3: [m[44], m[45]].to_i32,
       }.freeze
     end
 
