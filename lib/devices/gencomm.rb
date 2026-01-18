@@ -421,7 +421,7 @@ class Devices
         current_time: [m[0], m[1]].to_u32,
         time_to_maintenance: [m[2], m[3]].to_i32,
         time_of_maintenance: [m[4], m[5]].to_u32,
-        engine_run_time: [m[6], m[7]].to_u32,
+        engine_hours: [m[6], m[7]].to_u32 / 3600.0,
         kwh_positive: [m[8], m[9]].to_u32 / 10.0,
         kwh_negative: [m[10], m[11]].to_u32 / 10.0,
         kvah: [m[12], m[13]].to_u32 / 10.0,
