@@ -49,8 +49,8 @@ genset_pct_full_var{name="<%=name%>"} <%=measurements[:pct_full_var]%>
 genset_kwh{name="<%=name%>"} <%=accumulated[:kwh_positive]%>
 # TYPE genset_start_counter counter
 genset_start_counter{name="<%=name%>"} <%=accumulated[:start_counter]%>
-# TYPE genset_engine_run_time counter
-genset_engine_run_time{name="<%=name%>"} <%=accumulated[:engine_run_time]%>
+# TYPE genset_hours gauge
+genset_hours{name="<%=name%>"} <%=accumulated[:engine_hours]%>
 # TYPE genset_status gauge
 genset_status{name="<%=name%>"} <%=status%>
 
