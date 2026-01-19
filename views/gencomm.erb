@@ -49,6 +49,8 @@ genset_soot_load{name="<%=name%>"} <%=measurements[:soot_load]%>
 genset_ash_load{name="<%=name%>"} <%=measurements[:ash_load]%>
 # TYPE genset_dpf_regen_status gauge
 genset_dpf_regen_status{name="<%=name%>"} <%=measurements[:dpf_regen_status]%>
+# TYPE genset_dptc_filter_status gauge
+genset_dptc_filter_status{name="<%=name%>"} <%=dpf_status[:dptc_filter_status]%>
 # TYPE genset_dpf_soot_mass gauge
 genset_dpf_soot_mass{name="<%=name%>"} <%=measurements[:dpf_soot_mass]%>
 # TYPE genset_air_mass_flow_rate gauge

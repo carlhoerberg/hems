@@ -84,7 +84,7 @@ class HTTPServer
         when "/metrics/lk"
           @@lk.result_with_hash({ t:, lk_devices: @devices.lk })
         when "/metrics/gencomm"
-          @@gencomm.result_with_hash({ t:, name: "QAS30", measurements: @devices.gencomm.measurements, accumulated: @devices.gencomm.accumulated, status: @devices.gencomm.status })
+          @@gencomm.result_with_hash({ t:, name: "QAS30", measurements: @devices.gencomm.measurements, accumulated: @devices.gencomm.accumulated, status: @devices.gencomm.status, dpf_status: @devices.gencomm.dpf_status })
         else
           res.status = 404
           "Not Found"
