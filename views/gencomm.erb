@@ -13,6 +13,8 @@ genset_kvar{name="<%=name%>",L="<%=l%>"} <%=measurements["kvar_l#{l}".to_sym]%>
 genset_load_pct{name="<%=name%>",L="<%=l%>"} <%=measurements["load_pct_l#{l}".to_sym]%>
 <%end%>
 
+# TYPE genset_current_earth gauge
+genset_current_earth{name="<%=name%>"} <%=measurements[:current_earth]%>
 # TYPE genset_frequency gauge
 genset_frequency{name="<%=name%>"} <%=measurements[:frequency]%>
 # TYPE genset_rpm gauge
