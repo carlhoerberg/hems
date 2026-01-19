@@ -29,6 +29,12 @@ genset_oil_pressure{name="<%=name%>"} <%=measurements[:oil_pressure]%>
 genset_oil_temperature{name="<%=name%>"} <%=measurements[:oil_temperature]%>
 # TYPE genset_turbo_pressure gauge
 genset_turbo_pressure{name="<%=name%>"} <%=measurements[:turbo_pressure]%>
+# TYPE genset_inlet_manifold_temp gauge
+genset_inlet_manifold_temp{name="<%=name%>"} <%=measurements[:inlet_manifold_temp]%>
+# TYPE genset_injector_rail_pressure gauge
+genset_injector_rail_pressure{name="<%=name%>"} <%=measurements[:injector_rail_pressure]%>
+# TYPE genset_air_intake_temp gauge
+genset_air_intake_temp{name="<%=name%>"} <%=measurements[:air_intake_temp]%>
 # TYPE genset_fuel_consumption gauge
 genset_fuel_consumption{name="<%=name%>"} <%=measurements[:fuel_consumption]%>
 # TYPE genset_aftertreatment_temp gauge

@@ -2,6 +2,8 @@
   dpf_regen_status = { 0 => "Not regenerating", 1 => "Automatic", 2 => "Forced", 3 => "Unimplemented" }
   dpf_regen_inhibit = { 0 => "Permitted", 1 => "Inhibited", 3 => "Unimplemented" }
   dpf_inhibit_status = { 0 => "Not inhibited", 1 => "Inhibited", 2 => "Undefined", 3 => "Unimplemented" }
+  dptc_filter_lamp = { 0 => "Off", 1 => "On - solid", 4 => "On - fast blink (1Hz)", 7 => "Not available" }
+  dptc_regen_forced = { 0 => "Not active", 1 => "Active forced by switch", 2 => "Active forced by service tool", 7 => "Not available" }
 %>
 <html>
   <head>
@@ -24,12 +26,17 @@
     </form>
     <table>
       <tr><td>regen_status</td><td><%=dpf_regen_status[dpf_status[:regen_status]] || dpf_status[:regen_status]%></td></tr>
+      <tr><td>dptc_filter_lamp</td><td><%=dptc_filter_lamp[dpf_status[:dptc_filter_lamp]] || dpf_status[:dptc_filter_lamp]%></td></tr>
+      <tr><td>dptc_regen_forced</td><td><%=dptc_regen_forced[dpf_status[:dptc_regen_forced]] || dpf_status[:dptc_regen_forced]%></td></tr>
       <tr><td>auto_regen_inhibit</td><td><%=dpf_regen_inhibit[dpf_status[:auto_regen_inhibit]] || dpf_status[:auto_regen_inhibit]%></td></tr>
       <tr><td>aftertreatment_status_reason</td><td><%=dpf_status[:aftertreatment_status_reason]%></td></tr>
       <tr><td>aftertreatment_status_severity</td><td><%=dpf_status[:aftertreatment_status_severity]%></td></tr>
       <tr><td>time_until_action_needed</td><td><%=dpf_status[:time_until_action_needed]%></td></tr>
       <tr><td>time_until_torque_reduction</td><td><%=dpf_status[:time_until_torque_reduction]%></td></tr>
       <tr><td>time_until_speed_reduction</td><td><%=dpf_status[:time_until_speed_reduction]%></td></tr>
+      <tr><td>dptc_filter_status</td><td><%=dpf_status[:dptc_filter_status]%></td></tr>
+      <tr><td>dptc_active_regen_inhibit</td><td><%=dpf_status[:dptc_active_regen_inhibit]%></td></tr>
+      <tr><td>dptc_active_regen_inhibit_et</td><td><%=dpf_status[:dptc_active_regen_inhibit_et]%></td></tr>
       <tr><td>inhibit_accelerator_off_idle</td><td><%=dpf_inhibit_status[dpf_status[:inhibit_accelerator_off_idle]] || dpf_status[:inhibit_accelerator_off_idle]%></td></tr>
       <tr><td>inhibit_out_of_neutral</td><td><%=dpf_inhibit_status[dpf_status[:inhibit_out_of_neutral]] || dpf_status[:inhibit_out_of_neutral]%></td></tr>
       <tr><td>inhibit_parking_brake_not_set</td><td><%=dpf_inhibit_status[dpf_status[:inhibit_parking_brake_not_set]] || dpf_status[:inhibit_parking_brake_not_set]%></td></tr>

@@ -206,16 +206,23 @@ class Devices
 
     def dpf_status
       d = @modbus.read_holding_registers(PAGE_EXTENDED2 + 4, 19)
-      e = @modbus.read_holding_registers(PAGE_EXTENDED + 184, 1)
-      e2 = @modbus.read_holding_registers(PAGE_EXTENDED + 195, 5)
+      e = @modbus.read_holding_registers(PAGE_EXTENDED + 122, 3)
+      e2 = @modbus.read_holding_registers(PAGE_EXTENDED + 184, 1)
+      e3 = @modbus.read_holding_registers(PAGE_EXTENDED + 195, 5)
+      e4 = @modbus.read_holding_registers(PAGE_EXTENDED + 222, 3)
       {
         regen_status: d[0],
-        auto_regen_inhibit: e[0],
-        aftertreatment_status_reason: e2[0],
-        aftertreatment_status_severity: e2[1],
-        time_until_action_needed: e2[2],
-        time_until_torque_reduction: e2[3],
-        time_until_speed_reduction: e2[4],
+        dptc_filter_lamp: e[0],
+        dptc_regen_forced: e[2],
+        auto_regen_inhibit: e2[0],
+        aftertreatment_status_reason: e3[0],
+        aftertreatment_status_severity: e3[1],
+        time_until_action_needed: e3[2],
+        time_until_torque_reduction: e3[3],
+        time_until_speed_reduction: e3[4],
+        dptc_filter_status: e4[0],
+        dptc_active_regen_inhibit: e4[1],
+        dptc_active_regen_inhibit_et: e4[2],
         inhibit_accelerator_off_idle: d[12],
         inhibit_out_of_neutral: d[13],
         inhibit_parking_brake_not_set: d[14],
@@ -400,16 +407,21 @@ class Devices
     def extended_measurements
       e1 = @modbus.read_holding_registers(PAGE_EXTENDED, 12)
       e2 = @modbus.read_holding_registers(PAGE_EXTENDED + 66, 6)
-      e3 = @modbus.read_holding_registers(PAGE_EXTENDED + 186, 2)
-      e4 = @modbus.read_holding_registers(PAGE_EXTENDED2 + 4, 1)
+      e3 = @modbus.read_holding_registers(PAGE_EXTENDED + 80, 1)
+      e4 = @modbus.read_holding_registers(PAGE_EXTENDED + 186, 2)
+      e5 = @modbus.read_holding_registers(PAGE_EXTENDED + 203, 1)
+      e6 = @modbus.read_holding_registers(PAGE_EXTENDED2 + 4, 1)
       {
         turbo_pressure: e1[4],
+        inlet_manifold_temp: [e1[6]].to_i16,
         fuel_consumption: [e1[10], e1[11]].to_u32 / 100.0,
         aftertreatment_temp: [e2[0]].to_i16,
         engine_torque_pct: [e2[4], e2[5]].to_i32,
-        soot_load: e3[0],
-        ash_load: e3[1],
-        dpf_regen_status: e4[0],
+        injector_rail_pressure: e3[0] / 100.0,
+        soot_load: e4[0],
+        ash_load: e4[1],
+        air_intake_temp: [e5[0]].to_i16,
+        dpf_regen_status: e6[0],
       }.freeze
     end
 
