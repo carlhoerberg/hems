@@ -210,12 +210,12 @@ class EnergyManagement
     has_shelly_demand = pending_shelly_load > 0
 
     # Turn off heaters if load too high
-    if max_load > 106
+    if avg_load > 100 || max_load > 110
       if heater_6kw_on
-        puts "Genset load #{max_load.round(1)}% > 106%, turning off 6kW heater"
+        puts "Genset load avg=#{avg_load.round(1)}% max=#{max_load.round(1)}%, turning off 6kW heater"
         @devices.relays.heater_6kw = false
       elsif heater_9kw_on
-        puts "Genset load #{max_load.round(1)}% > 106%, turning off 9kW heater"
+        puts "Genset load avg=#{avg_load.round(1)}% max=#{max_load.round(1)}%, turning off 9kW heater"
         @devices.relays.heater_9kw = false
       end
     # Turn off heaters to make room for pending shelly demand
