@@ -413,7 +413,6 @@ class Devices
       e6 = @modbus.read_holding_registers(PAGE_EXTENDED2 + 4, 1)
       {
         turbo_pressure: e1[4],
-        inlet_manifold_temp: [e1[6]].to_i16,
         fuel_consumption: [e1[10], e1[11]].to_u32 / 100.0,
         aftertreatment_temp: [e2[0]].to_i16,
         engine_torque_pct: [e2[4], e2[5]].to_i32,
