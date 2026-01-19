@@ -14,7 +14,8 @@ class HTTPServer
                                            status_flags: @gencomm.status_flags,
                                            dpf_status: @gencomm.dpf_status,
                                            measurements: @gencomm.measurements,
-                                           named_alarms: @gencomm.named_alarms })
+                                           named_alarms: @gencomm.named_alarms,
+                                           alarm_conditions: @gencomm.alarm_conditions })
     end
 
     def do_POST(req, res)

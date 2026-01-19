@@ -12,6 +12,7 @@ class Devices
     PAGE_EXTENDED = 0x0500        # Page 5 - Extended Instrumentation
     PAGE_DERIVED = 0x0600         # Page 6 - Derived Instrumentation
     PAGE_ACCUMULATED = 0x0700     # Page 7 - Accumulated Instrumentation
+    PAGE_ALARM = 0x0800           # Page 8 - Alarm Conditions
     PAGE_CONTROL = 0x1000         # Page 16 - Control
     PAGE_EXTENDED2 = 0x1300       # Page 19 - Extended Instrumentation 2
     PAGE_NAMED_ALARMS = 0x9A00    # Page 154 - Named Alarm Conditions
@@ -236,6 +237,28 @@ class Devices
     # Named Alarm Conditions (Page 154) - returns hash of active alarms
     def named_alarms
       regs = @modbus.read_holding_registers(PAGE_NAMED_ALARMS + 1, 18)
+      alarms = {}
+      regs.each_with_index do |reg, idx|
+        register = idx + 1
+        4.times do |nibble|
+          shift = nibble * 4
+          code = (reg >> shift) & 0x0F
+          condition = ALARM_CONDITIONS[code]
+          next unless condition
+
+          name = NAMED_ALARMS_73XX[[register, nibble]]
+          next unless name
+
+          alarms[name] = condition
+        end
+      end
+      alarms.freeze
+    end
+
+    # Alarm Conditions (Page 8) - returns hash of active alarms
+    # This is the old alarm system, registers 1-21
+    def alarm_conditions
+      regs = @modbus.read_holding_registers(PAGE_ALARM + 1, 21)
       alarms = {}
       regs.each_with_index do |reg, idx|
         register = idx + 1
