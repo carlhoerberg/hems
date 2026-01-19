@@ -434,6 +434,7 @@ class Devices
       e4 = @modbus.read_holding_registers(PAGE_EXTENDED + 186, 2)
       e5 = @modbus.read_holding_registers(PAGE_EXTENDED + 203, 1)
       e6 = @modbus.read_holding_registers(PAGE_EXTENDED2 + 4, 1)
+      e7 = @modbus.read_holding_registers(PAGE_EXTENDED2 + 30, 7)
       {
         turbo_pressure: e1[4],
         fuel_consumption: [e1[10], e1[11]].to_u32 / 100.0,
@@ -444,6 +445,9 @@ class Devices
         ash_load: e4[1],
         air_intake_temp: [e5[0]].to_i16,
         dpf_regen_status: e6[0],
+        dpf_soot_mass: e7[0] * 4,
+        air_mass_flow_rate: e7[3] * 0.05,
+        dpf_diff_pressure: e7[6] * 0.1,
       }.freeze
     end
 
