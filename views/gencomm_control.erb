@@ -52,8 +52,12 @@
     </table>
     <%end%>
     <h2>Status</h2>
+    <form method="post">
+      <button name="action" value="clear_telemetry_alarm">Clear Telemetry Alarm</button>
+    </form>
     <table>
       <tr><td>control_mode</td><td><%=control_mode%></td></tr>
+      <tr><td>status</td><td><%=status%> <%if active_status_flags.any?%>(<%=active_status_flags.join(", ")%>)<%end%></td></tr>
       <%status_flags.each do |key, value|%>
         <tr>
           <td><%=key%></td>

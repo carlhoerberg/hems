@@ -9,6 +9,8 @@ class HTTPServer
     def do_GET(req, res)
       res.content_type = "text/html"
       res.body = @@view.result_with_hash({ control_mode: @gencomm.control_mode_name,
+                                           status: @gencomm.status,
+                                           active_status_flags: @gencomm.active_status_flags,
                                            status_flags: @gencomm.status_flags,
                                            dpf_status: @gencomm.dpf_status,
                                            measurements: @gencomm.measurements,
@@ -26,6 +28,7 @@ class HTTPServer
       when "dpf_regen_inhibit_off" then @gencomm.dpf_regen_inhibit_off
       when "dpf_regen_start" then @gencomm.dpf_regen_start
       when "dpf_regen_stop" then @gencomm.dpf_regen_stop
+      when "clear_telemetry_alarm" then @gencomm.clear_telemetry_alarm
       else raise "no action selected"
       end
       res.status = 303

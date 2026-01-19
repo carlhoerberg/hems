@@ -105,6 +105,19 @@ class Devices
       [18, 2] => "Remote display link lost",
     }.freeze
 
+    # Status flags register bits (PAGE_STATUS + 6)
+    STATUS_FLAGS = {
+      0 => "Control unit not configured",
+      7 => "Controlled shutdown alarm",
+      8 => "No font file",
+      9 => "Satellite telemetry alarm",
+      10 => "Telemetry alarm",
+      11 => "Warning alarm",
+      12 => "Electrical trip",
+      13 => "Shutdown alarm",
+      14 => "Control unit failure",
+    }.freeze
+
     # Control keys (write to PAGE_CONTROL+8 and ones-complement to PAGE_CONTROL+9)
     CONTROL_STOP = 35700
     CONTROL_AUTO = 35701
@@ -114,6 +127,7 @@ class Devices
     CONTROL_DPF_REGEN_INHIBIT_OFF = 35770
     CONTROL_DPF_REGEN_START = 35771
     CONTROL_DPF_REGEN_STOP = 35785
+    CONTROL_CLEAR_TELEMETRY_ALARM = 35735
 
     def initialize(host, port = 502, unit: 1)
       @modbus = Modbus::TCP.new(host, port).unit(unit)
@@ -154,6 +168,10 @@ class Devices
 
     def dpf_regen_stop
       send_control(CONTROL_DPF_REGEN_STOP)
+    end
+
+    def clear_telemetry_alarm
+      send_control(CONTROL_CLEAR_TELEMETRY_ALARM)
     end
 
     # Status (Page 3)
@@ -432,6 +450,11 @@ class Devices
 
     def status
       @modbus.read_holding_register(PAGE_STATUS + 6)
+    end
+
+    def active_status_flags
+      v = status
+      STATUS_FLAGS.filter_map { |bit, name| name if v[bit] == 1 }
     end
 
     private
