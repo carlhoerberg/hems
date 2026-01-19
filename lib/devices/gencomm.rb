@@ -428,7 +428,7 @@ class Devices
 
     # Read extended instrumentation (Page 5)
     def extended_measurements
-      e1 = @modbus.read_holding_registers(PAGE_EXTENDED, 12)
+      e1 = @modbus.read_holding_registers(PAGE_EXTENDED, 15)
       e2 = @modbus.read_holding_registers(PAGE_EXTENDED + 66, 6)
       e3 = @modbus.read_holding_registers(PAGE_EXTENDED + 80, 1)
       e4 = @modbus.read_holding_registers(PAGE_EXTENDED + 186, 2)
@@ -438,6 +438,7 @@ class Devices
       {
         turbo_pressure: e1[4],
         fuel_consumption: [e1[10], e1[11]].to_u32 / 100.0,
+        atmospheric_pressure: e1[14],
         aftertreatment_temp: [e2[0]].to_i16,
         engine_torque_pct: [e2[4], e2[5]].to_i32,
         injector_rail_pressure: e3[0] / 100.0,
