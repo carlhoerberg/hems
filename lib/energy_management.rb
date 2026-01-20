@@ -237,16 +237,6 @@ class EnergyManagement
       elsif !heater_6kw_on && heater_load_allowed?(max_load, avg_load, HEATER_6KW_LOAD_PCT)
         puts "No shelly demand, turning on 6kW heater (max=#{max_load.round(1)}%, avg=#{avg_load.round(1)}%)"
         @devices.relays.heater_6kw = true
-      # Swap 6kW for 9kW if it gets closer to target load
-      elsif heater_6kw_on && !heater_9kw_on
-        max_without_heater = max_load - HEATER_6KW_LOAD_PCT
-        avg_without_heater = avg_load - HEATER_6KW_LOAD_PCT
-        if heater_load_allowed?(max_without_heater, avg_without_heater, HEATER_9KW_LOAD_PCT)
-          new_max = max_without_heater + HEATER_9KW_LOAD_PCT
-          puts "Swapping 6kW for 9kW heater (#{max_load.round(1)}% -> #{new_max.round(1)}%, closer to max load)"
-          @devices.relays.heater_6kw = false
-          @devices.relays.heater_9kw = true
-        end
       end
     end
   rescue => e
