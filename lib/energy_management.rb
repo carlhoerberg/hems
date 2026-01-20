@@ -215,8 +215,9 @@ class EnergyManagement
         puts "Genset load avg=#{avg_load.round(1)}% max=#{max_load.round(1)}%, turning off 6kW heater"
         @devices.relays.heater_6kw = false
       elsif heater_9kw_on
-        puts "Genset load avg=#{avg_load.round(1)}% max=#{max_load.round(1)}%, turning off 9kW heater"
+        puts "Genset load avg=#{avg_load.round(1)}% max=#{max_load.round(1)}%, swapping 9kW for 6kW heater"
         @devices.relays.heater_9kw = false
+        @devices.relays.heater_6kw = true
       end
     # Turn off heaters to make room for pending shelly demand
     elsif has_shelly_demand && max_load + pending_shelly_load > GENSET_MAX_LOAD_PCT
