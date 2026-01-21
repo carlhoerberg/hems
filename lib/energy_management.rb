@@ -32,6 +32,7 @@ class EnergyManagement
     @stopped = false
     @shelly_demands = {}  # { device_id => { host:, amps:, active: false } }
     @shelly_demands_mutex = Mutex.new
+    @checking_9kw_swap = false  # True when we've turned off 6kW to measure actual load
   end
 
   def start
@@ -234,18 +235,18 @@ class EnergyManagement
       if !heater_9kw_on && heater_load_allowed?(max_load, avg_load, HEATER_9KW_LOAD_PCT)
         puts "No shelly demand, turning on 9kW heater (max=#{max_load.round(1)}%, avg=#{avg_load.round(1)}%)"
         @devices.relays.heater_9kw = true
+        @checking_9kw_swap = false
       elsif !heater_6kw_on && heater_load_allowed?(max_load, avg_load, HEATER_6KW_LOAD_PCT)
         puts "No shelly demand, turning on 6kW heater (max=#{max_load.round(1)}%, avg=#{avg_load.round(1)}%)"
         @devices.relays.heater_6kw = true
-      # Swap 6kW for 9kW if both max phase and average allow it
-      elsif heater_6kw_on && !heater_9kw_on
-        heater_diff = HEATER_9KW_LOAD_PCT - HEATER_6KW_LOAD_PCT
-        new_max = max_load + heater_diff
-        new_avg = avg_load + heater_diff
-        if new_max < 105 && new_avg <= GENSET_MAX_LOAD_PCT
-          puts "Swapping 6kW for 9kW heater (max=#{max_load.round(1)}%->#{new_max.round(1)}%, avg=#{avg_load.round(1)}%->#{new_avg.round(1)}%)"
+        @checking_9kw_swap = false
+      # Check if we can swap 6kW for 9kW by measuring actual load without heater
+      elsif heater_6kw_on && !heater_9kw_on && !@checking_9kw_swap
+        # Only try swap if avg suggests 9kW might fit
+        if avg_load + (HEATER_9KW_LOAD_PCT - HEATER_6KW_LOAD_PCT) <= GENSET_MAX_LOAD_PCT
+          puts "Turning off 6kW heater to measure actual load for potential 9kW swap"
           @devices.relays.heater_6kw = false
-          @devices.relays.heater_9kw = true
+          @checking_9kw_swap = true
         end
       end
     end
