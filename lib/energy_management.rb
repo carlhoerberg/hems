@@ -33,6 +33,16 @@ class EnergyManagement
     @shelly_demands = {}  # { device_id => { host:, amps:, active: false } }
     @shelly_demands_mutex = Mutex.new
     @checking_9kw_swap = false  # True when we've turned off 6kW to measure actual load
+    @genset_load_shedding_enabled = true
+  end
+
+  def genset_load_shedding_enabled?
+    @genset_load_shedding_enabled
+  end
+
+  def genset_load_shedding_enabled=(value)
+    @genset_load_shedding_enabled = value
+    turn_off_heaters unless value
   end
 
   def start
@@ -197,6 +207,8 @@ class EnergyManagement
   # Turn on heaters if aftertreatment temp < 250°C, off if any phase > 90%
   # Shelly demands have priority over heaters
   def genset_load_management
+    return unless @genset_load_shedding_enabled
+
     measurements = @devices.gencomm.measurements
     phase_loads = [measurements[:load_pct_l1], measurements[:load_pct_l2], measurements[:load_pct_l3]]
     max_load = phase_loads.max
