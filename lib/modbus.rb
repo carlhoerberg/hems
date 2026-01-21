@@ -69,7 +69,7 @@ module Modbus
     # FC16, write 16 bit integers
     def write_holding_registers(addr, values, unit = 1)
       values.each do |v|
-        unless -2**15 < v && v < 2**15
+        unless v >= 0 && v < 2**16
           raise ArgumentError, "Values are not 16 bit integers: #{values.inspect}"
         end
       end
