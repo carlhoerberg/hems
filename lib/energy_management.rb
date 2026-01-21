@@ -27,6 +27,8 @@ class EnergyManagement
   HEATER_9KW_LOAD_PCT = 40
   AFTERTREATMENT_MIN_TEMP = 250
 
+  attr_accessor :genset_auto_started
+
   def initialize(devices)
     @devices = devices
     @stopped = false
@@ -34,6 +36,7 @@ class EnergyManagement
     @shelly_demands_mutex = Mutex.new
     @checking_9kw_swap = false  # True when we've turned off 6kW to measure actual load
     @genset_load_shedding_enabled = true
+    @genset_auto_started = true
   end
 
   def genset_load_shedding_enabled?
