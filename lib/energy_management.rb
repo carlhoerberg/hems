@@ -318,7 +318,7 @@ class EnergyManagement
   def genset_load_allows?(amps)
     derived = @devices.gencomm.derived_measurements
     max_load = [derived[:load_pct_l1], derived[:load_pct_l2], derived[:load_pct_l3]].max
-    estimated_additional_load = amps / 34.0 * 100  # 34A = 100% load
+    estimated_additional_load = amps / 32.0 * 100  # 32A = 100% load
     max_load + estimated_additional_load < GENSET_MAX_LOAD_PCT
   end
 
@@ -329,6 +329,7 @@ class EnergyManagement
 
       # Immediately check if we can activate
       if genset_overloaded?
+        turn_off_shelly(host)
         return { activated: false, reason: "overloaded" }
       end
 
