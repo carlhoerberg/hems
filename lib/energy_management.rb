@@ -346,8 +346,8 @@ class EnergyManagement
 
   def deregister_shelly_demand(host)
     @shelly_demands_mutex.synchronize do
-      demand = @shelly_demands.delete(host)
-      turn_off_shelly(host) if demand&.dig(:active)
+      @shelly_demands.delete(host)
+      turn_off_shelly(host)
     end
   end
 
