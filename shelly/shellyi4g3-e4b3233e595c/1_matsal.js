@@ -6,26 +6,26 @@ const CONFIG = {
   buttons: {
     0: { // Button for hallway/entrence lights
       dimmers: [
-        { ip: 'shellyprodm2pm-a0dd6c9de748', id: 0 }, // Spottar infällda hall
-        { ip: 'shellyprodm2pm-a0dd6c9de748', id: 1 }, // Entre innergård
-        { ip: 'shellyprodm2pm-a0dd6c9e5ccc', id: 0 }, // Väggarmatur hall
-        { ip: 'shellyprodm2pm-a0dd6c9e5ccc', id: 1 }, // Huvudentre
-        { ip: 'shellyprodm2pm-a0dd6c9e702c', id: 0 }, // Skena reception
-        { ip: 'shellyprodm2pm-a0dd6c9e702c', id: 1 }, // Skena utanför WC
-        { ip: 'shellyprodm1pm-34987aa90254', id: 0 }, // Ledlist hatthylla
-        { ip: 'shellyprodm2pm-a0dd6c9e6510', id: 0 } // Skena innegårdsentren
+        { ip: 'shellyprodm2pm-a0dd6c9de748', id: 0 },  // Spottar infällda hall
+        { ip: 'shellyprodm2pm-a0dd6c9de748', id: 1 },  // Entre innergård
+        { ip: 'shellyprodm2pm-a0dd6c9e5ccc', id: 0 },  // Väggarmatur hall
+        { ip: 'shellyprodm2pm-a0dd6c9e5ccc', id: 1 },  // Huvudentre
+        { ip: 'shellyprodm2pm-a0dd6c9e702c', id: 0 },  // Skena reception
+        { ip: 'shellyprodm2pm-a0dd6c9e702c', id: 1 },  // Skena utanför WC
+        { ip: 'shellyddimmerg3-e4b32334c7bc', id: 0 }, // Ledlist hatthylla
+        { ip: 'shellyprodm2pm-a0dd6c9e6510', id: 0 }   // Skena innegårdsentren
       ]
     },
     1: { // Button for dinner lights
       dimmers: [
-        { ip: 'shellyprodm2pm-a0dd6c9f776c', id: 0 }, // Skenor L1
-        { ip: 'shellyprodm2pm-a0dd6c9f776c', id: 1 }, // Skenor L2
-        { ip: 'shellyprodm2pm-2cbcbb9ec8f8', id: 0 }, // Balk 1
-        { ip: 'shellyprodm2pm-2cbcbb9ec8f8', id: 1 }, // Balk 2
-        { ip: 'shellyprodm1pm-34987aa8d868', id: 0 }, // Lampetter/väggarmaturer
-        { ip: 'shellyprodm1pm-34987aa95b70', id: 0 }, // Spot på balk
-        { ip: 'shellyprodm1pm-34987aa90c70', id: 0 }, // Fönsterbelysning
-        { ip: 'shellydimmerg3-b08184f2b4ac', id: 0 } // Bardisk
+        { ip: 'shellyprodm2pm-a0dd6c9f776c', id: 0 },  // Skenor L1
+        { ip: 'shellyprodm2pm-a0dd6c9f776c', id: 1 },  // Skenor L2
+        { ip: 'shellyddimmerg3-e4b32334c054', id: 0 }, // Balk 1
+        { ip: 'shellyddimmerg3-e4b063d70cc4', id: 0 }, // Balk 2
+        { ip: 'shellyprodm1pm-34987aa8d868', id: 0 },  // Lampetter/väggarmaturer
+        { ip: 'shellyprodm1pm-34987aa95b70', id: 0 },  // Spot på balk
+        { ip: 'shellyddimmerg3-e4b32334c7cc', id: 0 }, // Fönsterbelysning
+        { ip: 'shellydimmerg3-b08184f2b4ac', id: 0 }   // Bardisk
       ]
     }
   }
@@ -139,4 +139,3 @@ Shelly.addEventHandler(function (event) {
     }
   }
 })
-
