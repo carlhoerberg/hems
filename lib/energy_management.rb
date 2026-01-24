@@ -27,6 +27,13 @@ class EnergyManagement
   HEATER_9KW_LOAD_PCT = 40
   AFTERTREATMENT_MIN_TEMP = 250
 
+  # 2kW single-phase Shelly heaters (9A each, higher priority than 6kW/9kW)
+  SHELLY_HEATER_2KW = [
+    { host: "192.168.0.190", phase: 2, amps: 9 },  # Phase 2
+    { host: "192.168.0.137", phase: 3, amps: 9 },  # Phase 3
+  ].freeze
+  HEATER_2KW_LOAD_PCT = 9.0 / 32 * 100  # ~28% per heater on single phase
+
   attr_accessor :genset_auto_started
 
   def initialize(devices)
@@ -204,11 +211,39 @@ class EnergyManagement
     puts "Turning off heaters"
     @devices.relays.heater_6kw = false
     @devices.relays.heater_9kw = false
+    turn_off_2kw_heaters
+  end
+
+  def turn_on_2kw_heater(heater)
+    puts "Turning on 2kW heater #{heater[:host]} (phase #{heater[:phase]})"
+    turn_on_shelly(heater[:host])
+  end
+
+  def turn_off_2kw_heater(heater)
+    puts "Turning off 2kW heater #{heater[:host]} (phase #{heater[:phase]})"
+    turn_off_shelly(heater[:host])
+  end
+
+  def turn_off_2kw_heaters
+    SHELLY_HEATER_2KW.each { |heater| turn_off_2kw_heater(heater) }
+  end
+
+  def any_2kw_heater_on?
+    SHELLY_HEATER_2KW.any? { |heater| heater_2kw_on?(heater) }
+  end
+
+  def heater_2kw_on?(heater)
+    response = shelly_rpc(heater[:host], "Switch.GetStatus", { id: 0 })
+    JSON.parse(response.body)["result"]["output"]
+  rescue => e
+    puts "[ERROR] Failed to get 2kW heater status #{heater[:host]}: #{e.message}"
+    false
   end
 
   # Manage genset load using 6kW and 9kW heaters
   # Turn on heaters if aftertreatment temp < 250°C, off if any phase > 90%
   # Shelly demands have priority over heaters
+  # 2kW Shelly heaters are managed per-phase independently, higher priority than 6kW/9kW
   def genset_load_management
     return unless @genset_load_shedding_enabled
 
@@ -219,13 +254,31 @@ class EnergyManagement
     heater_6kw_on = @devices.relays.heater_6kw?
     heater_9kw_on = @devices.relays.heater_9kw?
 
-    # Calculate pending shelly demand (not yet active), 34A = 100% load
+    # Calculate pending shelly demand (not yet active), 32A = 100% load
     pending_shelly_load = @shelly_demands_mutex.synchronize do
-      @shelly_demands.sum { |_, d| d[:active] ? 0 : d[:amps] / 34.0 * 100 }
+      @shelly_demands.sum { |_, d| d[:active] ? 0 : d[:amps] / 32.0 * 100 }
     end
-    has_shelly_demand = pending_shelly_load > 0
 
-    # Turn off heaters if load too high
+    # Manage 2kW heaters per-phase independently
+    SHELLY_HEATER_2KW.each do |heater|
+      phase_load = phase_loads[heater[:phase] - 1]
+      if heater_2kw_on?(heater)
+        # Turn off only if this specific phase is overloaded
+        if phase_load > 110
+          puts "Phase #{heater[:phase]} load #{phase_load.round(1)}% > 110%, turning off 2kW heater"
+          turn_off_2kw_heater(heater)
+        end
+      else
+        # Turn on if this phase has capacity
+        if phase_load + HEATER_2KW_LOAD_PCT + pending_shelly_load < 100
+          puts "Phase #{heater[:phase]} has capacity (#{phase_load.round(1)}%), turning on 2kW heater"
+          turn_on_2kw_heater(heater)
+        end
+      end
+    end
+
+    # Manage 6kW/9kW heaters (3-phase, lower priority)
+    # Turn off if load too high
     if avg_load > 100 || max_load > 110
       if heater_6kw_on
         puts "Genset load avg=#{avg_load.round(1)}% max=#{max_load.round(1)}%, turning off 6kW heater"
@@ -235,8 +288,8 @@ class EnergyManagement
         @devices.relays.heater_9kw = false
         @devices.relays.heater_6kw = true
       end
-    # Turn off heaters to make room for pending shelly demand
-    elsif has_shelly_demand && max_load + pending_shelly_load > GENSET_MAX_LOAD_PCT
+    # Turn off to make room for pending shelly demand
+    elsif pending_shelly_load > 0 && max_load + pending_shelly_load > 105
       if heater_6kw_on
         puts "Turning off 6kW heater to make room for Shelly demand"
         @devices.relays.heater_6kw = false
@@ -244,9 +297,8 @@ class EnergyManagement
         puts "Turning off 9kW heater to make room for Shelly demand"
         @devices.relays.heater_9kw = false
       end
-    # Turn on heaters if no shelly demand and load allows
-    # Enable if: max phase < 105% AND average <= 100%
-    elsif !has_shelly_demand
+    # Turn on if no shelly demand and load allows
+    else
       if !heater_9kw_on && heater_load_allowed?(max_load, avg_load, HEATER_9KW_LOAD_PCT)
         puts "No shelly demand, turning on 9kW heater (max=#{max_load.round(1)}%, avg=#{avg_load.round(1)}%)"
         @devices.relays.heater_9kw = true
