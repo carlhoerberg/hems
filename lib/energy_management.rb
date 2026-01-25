@@ -44,6 +44,7 @@ class EnergyManagement
     @checking_9kw_swap = false  # True when we've turned off 6kW to measure actual load
     @genset_load_shedding_enabled = Time.now.hour < 6
     @genset_auto_started = true
+    @last_heater_off_time = 0
   end
 
   def genset_load_shedding_enabled?
@@ -53,6 +54,14 @@ class EnergyManagement
   def genset_load_shedding_enabled=(value)
     @genset_load_shedding_enabled = value
     turn_off_heaters unless value
+  end
+
+  def record_heater_off
+    @last_heater_off_time = Time.monotonic
+  end
+
+  def heater_cooldown_active?
+    Time.monotonic - @last_heater_off_time < 30
   end
 
   def start
@@ -136,7 +145,7 @@ class EnergyManagement
     available += current_9kw if heater_9kw_on
 
     if available >= current_6kw + current_9kw + 2
-      unless heater_6kw_on && heater_9kw_on
+      unless heater_6kw_on && heater_9kw_on || heater_cooldown_active?
         puts "Genset available #{available.round(1)}A, turning on both heaters"
         @devices.relays.heater_6kw = true
         @devices.relays.heater_9kw = true
@@ -168,10 +177,10 @@ class EnergyManagement
     excess = @devices.next3.solar.excess?
 
     if excess
-      if !heater_6kw_on && phase_current_capacity?(current_6kw)
+      if !heater_6kw_on && !heater_cooldown_active? && phase_current_capacity?(current_6kw)
         puts "Solar excess, turning on 6kW heater"
         @devices.relays.heater_6kw = true
-      elsif heater_6kw_on && !heater_9kw_on && phase_current_capacity?(current_9kw)
+      elsif heater_6kw_on && !heater_9kw_on && !heater_cooldown_active? && phase_current_capacity?(current_9kw)
         puts "Solar excess, turning on 9kW heater"
         @devices.relays.heater_9kw = true
       end
@@ -188,16 +197,20 @@ class EnergyManagement
           if discharge_power < 9000
             puts "Discharge #{discharge_power.round}W, turning off 6kW heater"
             @devices.relays.heater_6kw = false
+            record_heater_off
           else
             puts "Discharge #{discharge_power.round}W, turning off 9kW heater"
             @devices.relays.heater_9kw = false
+            record_heater_off
           end
         elsif heater_9kw_on
           puts "Discharge #{discharge_power.round}W > 9kW, turning off 9kW heater"
           @devices.relays.heater_9kw = false
+          record_heater_off
         else
           puts "Discharge #{discharge_power.round}W > 6kW, turning off 6kW heater"
           @devices.relays.heater_6kw = false
+          record_heater_off
         end
       end
     end
@@ -212,6 +225,7 @@ class EnergyManagement
     @devices.relays.heater_6kw = false
     @devices.relays.heater_9kw = false
     turn_off_2kw_heaters
+    record_heater_off
   end
 
   def turn_on_2kw_heater(heater)
@@ -222,6 +236,7 @@ class EnergyManagement
   def turn_off_2kw_heater(heater)
     puts "Turning off 2kW heater #{heater[:host]} (phase #{heater[:phase]})"
     turn_off_shelly(heater[:host])
+    record_heater_off
   end
 
   def turn_off_2kw_heaters
@@ -270,7 +285,7 @@ class EnergyManagement
         end
       else
         # Turn on if this phase has capacity
-        if phase_load + HEATER_2KW_LOAD_PCT + pending_shelly_load < 100
+        if phase_load + HEATER_2KW_LOAD_PCT + pending_shelly_load < 100 && !heater_cooldown_active?
           puts "Phase #{heater[:phase]} has capacity (#{phase_load.round(1)}%), turning on 2kW heater"
           turn_on_2kw_heater(heater)
         end
@@ -283,7 +298,9 @@ class EnergyManagement
       if heater_6kw_on
         puts "Genset load avg=#{avg_load.round(1)}% max=#{max_load.round(1)}%, turning off 6kW heater"
         @devices.relays.heater_6kw = false
+        record_heater_off
       elsif heater_9kw_on
+        # Swap: turn off 9kW and turn on 6kW (no cooldown for swap)
         puts "Genset load avg=#{avg_load.round(1)}% max=#{max_load.round(1)}%, swapping 9kW for 6kW heater"
         @devices.relays.heater_9kw = false
         @devices.relays.heater_6kw = true
@@ -293,17 +310,19 @@ class EnergyManagement
       if heater_6kw_on
         puts "Turning off 6kW heater to make room for Shelly demand"
         @devices.relays.heater_6kw = false
+        record_heater_off
       elsif heater_9kw_on
         puts "Turning off 9kW heater to make room for Shelly demand"
         @devices.relays.heater_9kw = false
+        record_heater_off
       end
     # Turn on if no shelly demand and load allows
     else
-      if !heater_9kw_on && heater_load_allowed?(max_load, avg_load, HEATER_9KW_LOAD_PCT)
+      if !heater_9kw_on && (@checking_9kw_swap || !heater_cooldown_active?) && heater_load_allowed?(max_load, avg_load, HEATER_9KW_LOAD_PCT)
         puts "No shelly demand, turning on 9kW heater (max=#{max_load.round(1)}%, avg=#{avg_load.round(1)}%)"
         @devices.relays.heater_9kw = true
         @checking_9kw_swap = false
-      elsif !heater_6kw_on && heater_load_allowed?(max_load, avg_load, HEATER_6KW_LOAD_PCT)
+      elsif !heater_6kw_on && !heater_cooldown_active? && heater_load_allowed?(max_load, avg_load, HEATER_6KW_LOAD_PCT)
         puts "No shelly demand, turning on 6kW heater (max=#{max_load.round(1)}%, avg=#{avg_load.round(1)}%)"
         @devices.relays.heater_6kw = true
         @checking_9kw_swap = false
@@ -313,6 +332,7 @@ class EnergyManagement
         if avg_load + (HEATER_9KW_LOAD_PCT - HEATER_6KW_LOAD_PCT) <= GENSET_MAX_LOAD_PCT
           puts "Turning off 6kW heater to measure actual load for potential 9kW swap"
           @devices.relays.heater_6kw = false
+          record_heater_off
           @checking_9kw_swap = true
         end
       end
