@@ -42,7 +42,7 @@ class EnergyManagement
     @shelly_demands = {}  # { device_id => { host:, amps:, active: false } }
     @shelly_demands_mutex = Mutex.new
     @checking_9kw_swap = false  # True when we've turned off 6kW to measure actual load
-    @genset_load_shedding_enabled = Time.now.hour < 6
+    @genset_load_shedding_enabled = true
     @genset_auto_started = true
     @last_heater_off_time = 0
   end
