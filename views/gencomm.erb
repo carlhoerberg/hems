@@ -23,6 +23,10 @@ genset_rpm{name="<%=name%>"} <%=measurements[:rpm]%>
 genset_battery_voltage{name="<%=name%>"} <%=measurements[:battery_voltage]%>
 # TYPE genset_fuel_level gauge
 genset_fuel_level{name="<%=name%>"} <%=measurements[:fuel_level]%>
+# TYPE genset_fuel_temperature gauge
+genset_fuel_temperature{name="<%=name%>"} <%=measurements[:fuel_temperature]%>
+# TYPE genset_water_in_fuel gauge
+genset_water_in_fuel{name="<%=name%>"} <%=measurements[:water_in_fuel]%>
 # TYPE genset_coolant_temperature gauge
 genset_coolant_temperature{name="<%=name%>"} <%=measurements[:coolant_temperature]%>
 # TYPE genset_oil_pressure gauge
@@ -35,12 +39,18 @@ genset_turbo_pressure{name="<%=name%>"} <%=measurements[:turbo_pressure]%>
 genset_atmospheric_pressure{name="<%=name%>"} <%=measurements[:atmospheric_pressure]%>
 # TYPE genset_injector_rail_pressure gauge
 genset_injector_rail_pressure{name="<%=name%>"} <%=measurements[:injector_rail_pressure]%>
+# TYPE genset_ambient_air_temp gauge
+genset_ambient_air_temp{name="<%=name%>"} <%=measurements[:ambient_air_temp]%>
 # TYPE genset_air_intake_temp gauge
 genset_air_intake_temp{name="<%=name%>"} <%=measurements[:air_intake_temp]%>
 # TYPE genset_fuel_consumption gauge
 genset_fuel_consumption{name="<%=name%>"} <%=measurements[:fuel_consumption]%>
 # TYPE genset_aftertreatment_temp gauge
 genset_aftertreatment_temp{name="<%=name%>"} <%=measurements[:aftertreatment_temp]%>
+# TYPE genset_aftertreatment_temp_t3 gauge
+genset_aftertreatment_temp_t3{name="<%=name%>"} <%=measurements[:aftertreatment_temp_t3]%>
+# TYPE genset_engine_reference_torque gauge
+genset_engine_reference_torque{name="<%=name%>"} <%=measurements[:engine_reference_torque]%>
 # TYPE genset_engine_torque_pct gauge
 genset_engine_torque_pct{name="<%=name%>"} <%=measurements[:engine_torque_pct]%>
 # TYPE genset_soot_load gauge
@@ -65,8 +75,18 @@ genset_pct_full_var{name="<%=name%>"} <%=measurements[:pct_full_var]%>
 genset_kwh{name="<%=name%>"} <%=accumulated[:kwh_positive]%>
 # TYPE genset_start_counter counter
 genset_start_counter{name="<%=name%>"} <%=accumulated[:start_counter]%>
+# TYPE genset_fuel_used counter
+genset_fuel_used{name="<%=name%>"} <%=accumulated[:fuel_used]%>
 # TYPE genset_hours gauge
 genset_hours{name="<%=name%>"} <%=accumulated[:engine_hours]%>
+# TYPE genset_trip_fuel counter
+genset_trip_fuel{name="<%=name%>"} <%=measurements[:trip_fuel]%>
+# TYPE genset_trip_average_fuel gauge
+genset_trip_average_fuel{name="<%=name%>"} <%=measurements[:trip_average_fuel]%>
+# TYPE genset_trip_avg_fuel_efficiency gauge
+genset_trip_avg_fuel_efficiency{name="<%=name%>"} <%=measurements[:trip_avg_fuel_efficiency]%>
+# TYPE genset_instantaneous_fuel_efficiency gauge
+genset_instantaneous_fuel_efficiency{name="<%=name%>"} <%=measurements[:instantaneous_fuel_efficiency]%>
 # TYPE genset_status gauge
 genset_status{name="<%=name%>"} <%=status%>
 

@@ -428,27 +428,39 @@ class Devices
 
     # Read extended instrumentation (Page 5)
     def extended_measurements
-      e1 = @modbus.read_holding_registers(PAGE_EXTENDED, 15)
+      e1 = @modbus.read_holding_registers(PAGE_EXTENDED, 16)
       e2 = @modbus.read_holding_registers(PAGE_EXTENDED + 66, 6)
       e3 = @modbus.read_holding_registers(PAGE_EXTENDED + 80, 1)
       e4 = @modbus.read_holding_registers(PAGE_EXTENDED + 186, 2)
-      e5 = @modbus.read_holding_registers(PAGE_EXTENDED + 203, 1)
+      e5 = @modbus.read_holding_registers(PAGE_EXTENDED + 202, 2)
       e6 = @modbus.read_holding_registers(PAGE_EXTENDED2 + 4, 1)
       e7 = @modbus.read_holding_registers(PAGE_EXTENDED2 + 30, 7)
+      e8 = @modbus.read_holding_registers(PAGE_EXTENDED + 117, 2)
+      e9 = @modbus.read_holding_registers(PAGE_EXTENDED + 175, 1)
+      e10 = @modbus.read_holding_registers(PAGE_EXTENDED + 231, 2)
       {
         turbo_pressure: e1[4],
         fuel_consumption: [e1[10], e1[11]].to_u32 / 100.0,
+        water_in_fuel: e1[12],
         atmospheric_pressure: e1[14],
+        fuel_temperature: [e1[15]].to_i16,
         aftertreatment_temp: [e2[0]].to_i16,
+        aftertreatment_temp_t3: [e2[1]].to_i16,
+        engine_reference_torque: [e2[2], e2[3]].to_u32,
         engine_torque_pct: [e2[4], e2[5]].to_i32,
         injector_rail_pressure: e3[0] / 100.0,
         soot_load: e4[0],
         ash_load: e4[1],
-        air_intake_temp: [e5[0]].to_i16,
+        ambient_air_temp: [e5[0]].to_i16,
+        air_intake_temp: [e5[1]].to_i16,
         dpf_regen_status: e6[0],
         dpf_soot_mass: e7[0] * 4,
         air_mass_flow_rate: e7[3] * 0.05,
         dpf_diff_pressure: e7[6] * 0.1,
+        trip_fuel: [e8[0], e8[1]].to_u32,
+        trip_average_fuel: e9[0] / 100.0,
+        trip_avg_fuel_efficiency: e10[0] / 100.0,
+        instantaneous_fuel_efficiency: e10[1] / 100.0,
       }.freeze
     end
 
@@ -474,6 +486,7 @@ class Devices
     # Read accumulated instrumentation
     def accumulated
       m = @modbus.read_holding_registers(PAGE_ACCUMULATED, 18)
+      m2 = @modbus.read_holding_registers(PAGE_ACCUMULATED + 34, 2)
       {
         current_time: [m[0], m[1]].to_u32,
         time_to_maintenance: [m[2], m[3]].to_i32,
@@ -484,6 +497,7 @@ class Devices
         kvah: [m[12], m[13]].to_u32 / 10.0,
         kvarh: [m[14], m[15]].to_u32 / 10.0,
         start_counter: [m[16], m[17]].to_u32,
+        fuel_used: [m2[0], m2[1]].to_u32,
       }.freeze
     end
 
