@@ -67,6 +67,6 @@ class Devices
           7 => "Disken",
         }),
     }
-    @gencomm = GenComm.new("192.168.0.4", unit: 10)
+    @gencomm = GenComm.new("192.168.0.10", unit: 1)
   end
 end
