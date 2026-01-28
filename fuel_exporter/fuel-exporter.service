@@ -1,0 +1,18 @@
+# Deploy with deploy.sh - places fuel_exporter.py in /opt/fuel_monitor
+[Unit]
+Description=Prometheus Exporter for Watchman Diesel Tank
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+DynamicUser=true
+SupplementaryGroups=plugdev
+
+WorkingDirectory=/opt/fuel_monitor
+ExecStart=/opt/fuel_monitor/venv/bin/python /opt/fuel_monitor/fuel_exporter.py
+
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
