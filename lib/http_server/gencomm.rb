@@ -15,7 +15,8 @@ class HTTPServer
                                            dpf_status: @gencomm.dpf_status,
                                            measurements: @gencomm.measurements,
                                            named_alarms: @gencomm.named_alarms,
-                                           alarm_conditions: @gencomm.alarm_conditions })
+                                           alarm_conditions: @gencomm.alarm_conditions,
+                                           accumulated: @gencomm.accumulated })
     end
 
     def do_POST(req, res)
@@ -30,6 +31,7 @@ class HTTPServer
       when "dpf_regen_start" then @gencomm.dpf_regen_start
       when "dpf_regen_stop" then @gencomm.dpf_regen_stop
       when "clear_telemetry_alarm" then @gencomm.clear_telemetry_alarm
+      when "set_time" then @gencomm.set_time
       else raise "no action selected"
       end
       res.status = 303

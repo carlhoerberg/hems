@@ -175,6 +175,13 @@ class Devices
       send_control(CONTROL_CLEAR_TELEMETRY_ALARM)
     end
 
+    def set_time(time = Time.now)
+      timestamp = time.to_i
+      high = (timestamp >> 16) & 0xFFFF
+      low = timestamp & 0xFFFF
+      @modbus.write_holding_registers(PAGE_ACCUMULATED, [high, low])
+    end
+
     # Status (Page 3)
     def control_mode
       @modbus.read_holding_register(PAGE_STATUS + 4)

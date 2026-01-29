@@ -74,7 +74,11 @@
     <h2>Status</h2>
     <form method="post">
       <button name="action" value="clear_telemetry_alarm">Clear Telemetry Alarm</button>
+      <button name="action" value="set_time">Set Time</button>
     </form>
+    <table>
+      <tr><td>controller_time</td><td><%=Time.at(accumulated[:current_time]).strftime("%Y-%m-%d %H:%M:%S")%></td></tr>
+    </table>
     <table>
       <tr><td>control_mode</td><td><%=control_mode%></td></tr>
       <tr><td>status</td><td><%=status%> <%if active_status_flags.any?%>(<%=active_status_flags.join(", ")%>)<%end%></td></tr>
