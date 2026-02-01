@@ -19,18 +19,18 @@ pel103_current{L="N"} <%=measurements[:in] / 1000.0%>
 <%[1, 2, 3].each do |l|%>
 pel103_power_active{L="<%=l%>"} <%=measurements["p#{l}".to_sym]%>
 <%end%>
-pel103_power_active{L="total"} <%=measurements[:pt]%>
+pel103_power_active_total <%=measurements[:pt]%>
 # TYPE pel103_power_reactive gauge
 # HELP pel103_power_reactive Reactive power in var
 <%[1, 2, 3].each do |l|%>
 pel103_power_reactive{L="<%=l%>"} <%=measurements["q#{l}".to_sym]%>
 <%end%>
-pel103_power_reactive{L="total"} <%=measurements[:qt]%>
+pel103_power_reactive_total <%=measurements[:qt]%>
 # TYPE pel103_power_apparent gauge
 # HELP pel103_power_apparent Apparent power in VA
 <%[1, 2, 3].each do |l|%>
 pel103_power_apparent{L="<%=l%>"} <%=measurements["s#{l}".to_sym]%>
 <%end%>
-pel103_power_apparent{L="total"} <%=measurements[:st]%>
+pel103_power_apparent_total <%=measurements[:st]%>
 # TYPE metrics_gather_time gauge
 metrics_gather_time{device="pel103"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>
