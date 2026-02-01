@@ -78,8 +78,6 @@
     </form>
     <table>
       <tr><td>controller_time</td><td><%=Time.at(accumulated[:current_time]).strftime("%Y-%m-%d %H:%M:%S")%></td></tr>
-      <tr><td>fuel_temperature</td><td><%=measurements[:fuel_temperature]%> °C</td></tr>
-      <tr><td>water_in_fuel</td><td><%=measurements[:water_in_fuel]%></td></tr>
     </table>
     <table>
       <tr><td>control_mode</td><td><%=control_mode%></td></tr>
