@@ -22,6 +22,7 @@ class HTTPServer
     @@grundfos = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "grundfos.erb")))
     @@lk = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "lk.erb")))
     @@gencomm = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "gencomm.erb")))
+    @@pel103 = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "pel103.erb")))
 
     def do_GET(req, res)
       res.content_type = "text/plain"
@@ -85,6 +86,8 @@ class HTTPServer
           @@lk.result_with_hash({ t:, lk_devices: @devices.lk })
         when "/metrics/gencomm"
           @@gencomm.result_with_hash({ t:, name: "QAS45", measurements: @devices.gencomm.measurements, accumulated: @devices.gencomm.accumulated, status: @devices.gencomm.status, dpf_status: @devices.gencomm.dpf_status })
+        when "/metrics/pel103"
+          @@pel103.result_with_hash({ t:, measurements: @devices.pel103.measurements })
         else
           res.status = 404
           "Not Found"

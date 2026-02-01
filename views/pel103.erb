@@ -1,0 +1,36 @@
+# TYPE pel103_voltage_ln gauge
+# HELP pel103_voltage_ln Phase to neutral voltage in volts
+<%[1, 2, 3].each do |l|%>
+pel103_voltage_ln{L="<%=l%>"} <%=measurements["v#{l}_n".to_sym]%>
+<%end%>
+# TYPE pel103_voltage_ll gauge
+# HELP pel103_voltage_ll Phase to phase voltage in volts
+pel103_voltage_ll{L="12"} <%=measurements[:v1_2]%>
+pel103_voltage_ll{L="23"} <%=measurements[:v2_3]%>
+pel103_voltage_ll{L="31"} <%=measurements[:v3_1]%>
+# TYPE pel103_current gauge
+# HELP pel103_current Phase current in amperes
+<%[1, 2, 3].each do |l|%>
+pel103_current{L="<%=l%>"} <%=measurements["i#{l}".to_sym] / 1000.0%>
+<%end%>
+pel103_current{L="N"} <%=measurements[:in] / 1000.0%>
+# TYPE pel103_power_active gauge
+# HELP pel103_power_active Active power in watts
+<%[1, 2, 3].each do |l|%>
+pel103_power_active{L="<%=l%>"} <%=measurements["p#{l}".to_sym]%>
+<%end%>
+pel103_power_active{L="total"} <%=measurements[:pt]%>
+# TYPE pel103_power_reactive gauge
+# HELP pel103_power_reactive Reactive power in var
+<%[1, 2, 3].each do |l|%>
+pel103_power_reactive{L="<%=l%>"} <%=measurements["q#{l}".to_sym]%>
+<%end%>
+pel103_power_reactive{L="total"} <%=measurements[:qt]%>
+# TYPE pel103_power_apparent gauge
+# HELP pel103_power_apparent Apparent power in VA
+<%[1, 2, 3].each do |l|%>
+pel103_power_apparent{L="<%=l%>"} <%=measurements["s#{l}".to_sym]%>
+<%end%>
+pel103_power_apparent{L="total"} <%=measurements[:st]%>
+# TYPE metrics_gather_time gauge
+metrics_gather_time{device="pel103"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>
