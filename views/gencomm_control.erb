@@ -44,6 +44,8 @@
       <tr><td>inhibit_system_timeout</td><td><%=dpf_inhibit_status[dpf_status[:inhibit_system_timeout]] || dpf_status[:inhibit_system_timeout]%></td></tr>
       <tr><td>inhibit_permanent_lockout</td><td><%=dpf_inhibit_status[dpf_status[:inhibit_permanent_lockout]] || dpf_status[:inhibit_permanent_lockout]%></td></tr>
       <tr><td>inhibit_system_fault</td><td><%=dpf_inhibit_status[dpf_status[:inhibit_system_fault]] || dpf_status[:inhibit_system_fault]%></td></tr>
+      <tr><td>fuel_temperature</td><td><%=measurements[:fuel_temperature]%> °C</td></tr>
+      <tr><td>water_in_fuel</td><td><%=measurements[:water_in_fuel]%></td></tr>
     </table>
     <h2>Named Alarms (Page 154)</h2>
     <%if named_alarms.empty?%>
