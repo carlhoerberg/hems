@@ -90,5 +90,10 @@ genset_instantaneous_fuel_efficiency{name="<%=name%>"} <%=measurements[:instanta
 # TYPE genset_status gauge
 genset_status{name="<%=name%>"} <%=status%>
 
+# TYPE genset_digital_output gauge
+<%digital_outputs.each do |key, value|%>
+genset_digital_output{name="<%=name%>",output="<%=key.upcase%>"} <%=value%>
+<%end%>
+
 # TYPE metrics_gather_time gauge
 metrics_gather_time{device="gencomm"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>

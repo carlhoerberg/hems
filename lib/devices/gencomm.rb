@@ -512,6 +512,23 @@ class Devices
       @modbus.read_holding_register(PAGE_STATUS + 6)
     end
 
+    # Digital Outputs (Page 3, register 8) - returns hash of outputs A-J
+    def digital_outputs
+      reg = @modbus.read_holding_register(PAGE_STATUS + 8)
+      {
+        a: reg[0],
+        b: reg[1],
+        c: reg[2],
+        d: reg[3],
+        e: reg[4],
+        f: reg[5],
+        g: reg[6],
+        h: reg[7],
+        i: reg[8],
+        j: reg[9],
+      }.freeze
+    end
+
     def active_status_flags
       v = status
       STATUS_FLAGS.filter_map { |bit, name| name if v[bit] == 1 }
