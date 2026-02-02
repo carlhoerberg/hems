@@ -29,10 +29,13 @@ module Modbus
           lrc = calc_lrc(hex)
           message = ":#{hex}#{lrc}\r\n"
 
-          socket.send(message, 0, @host, @port)
+          socket.send(message, 0)
 
-          # Read response
-          response_ascii, = socket.recvfrom(1024)
+          # Read response with timeout
+          unless IO.select([socket], nil, nil, @timeout)
+            raise Timeout::Error, "Modbus read timeout after #{@timeout}s"
+          end
+          response_ascii = socket.recv(1024)
           @response_binary = decode_ascii_response(response_ascii)
 
           @response_pos = 0
@@ -58,11 +61,7 @@ module Modbus
     end
 
     def socket
-      @socket ||= begin
-        sock = UDPSocket.new
-        sock.setsockopt(Socket::SOL_SOCKET, Socket::SO_RCVTIMEO, [@timeout, 0].pack("l_2"))
-        sock
-      end
+      @socket ||= UDPSocket.new.tap { |s| s.connect(@host, @port) }
     end
 
     def calc_lrc(hex_string)
