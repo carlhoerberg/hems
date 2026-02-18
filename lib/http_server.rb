@@ -65,6 +65,14 @@ class HTTPServer
   private
 
   def handle_client(socket)
+    request = parse_request(socket) || return
+    response = handle_request(request)
+    send_response(socket, response)
+  ensure
+    socket.close
+  end
+
+  def parse_request(socket)
     remote_ip = socket.peeraddr[3] # get remote IP address first, later socket may be closed
 
     request_line = socket.gets("\r\n", chomp: true) || return # read request line
@@ -86,15 +94,18 @@ class HTTPServer
       key, value = line.split(": ", 2)
       headers[key.downcase] = value
     end
+
     # Read body if Content-Length is present
-    body = if headers["content-length"]
-             socket.read(headers["content-length"].to_i)
+    body = if (content_length = headers["content-length"])
+             socket.read(content_length.to_i)
            else
               ""
            end
 
-    # Handle the request
-    request = Request.new(method, path.chomp("/"), query, headers, body, remote_ip)
+    Request.new(method, path.chomp("/"), query, headers, body, remote_ip)
+  end
+
+  def handle_request(request)
     response = Response.new
     first_part = path[0, path.index("/", 1) || path.length]
     if (controller = @controllers[first_part])
@@ -116,17 +127,17 @@ class HTTPServer
       response.status = 404
       response.body = "Not Found\n"
     end
+    response
+  end
 
-    # Send the response
-    socket.print "HTTP/1.0 #{response.status_header}\r\n"
-    (response.headers || {}).each do |key, value|
-      socket.print "#{key}: #{value}\r\n"
-    end
-    socket.print "Content-Length: #{response.body.bytesize}\r\n"
-    socket.print "\r\n"
-    socket.print response.body
-  ensure
-    socket.close
+  def send_response(socket, response)
+    socket.write "HTTP/1.0 ", response.status_header, "\r\n"
+    headers = response.headers || {}
+    socket.write(*headers.flat_map { |k, v| [key, ": ", value, "\r\n"] })
+    socket.write "Content-Length: ", response.body.bytesize, "\r\n\r\n", response.body
+  rescue SystemCallError => e
+    puts "Error sending response to client: #{e.message}"
+    puts "At line #{e.backtrace.first}"
   end
 
   class Request
