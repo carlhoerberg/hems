@@ -83,6 +83,7 @@ class HTTPServer
     response = Response.new
     path = request.path
     first_part = path[0, path.index("/", 1) || path.length]
+    p path, first_part
     if (controller = @controllers[first_part])
       begin
         case request.method
