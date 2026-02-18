@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+require "erb"
 require_relative "../lib/devices"
 require_relative "../lib/energy_management"
 require_relative "../lib/http_server"
