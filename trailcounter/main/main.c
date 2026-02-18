@@ -12,7 +12,7 @@
 #include "esp_mac.h"
 
 /* ── Configuration ──────────────────────────────────────────────── */
-#define API_URL         "http://webhook.site/2cd9319d-ce88-475d-b3e8-cb9f9d9c7afe"
+#define API_URL         "http://trailcounter.hallfjallet.se"
 #define GROUP_TIMEOUT_S 30    /* seconds of no motion before sending batch */
 #define PIR_SETTLE_MS   4000  /* wait for PIR to go LOW before sleeping (measured ~3.4s) */
 
@@ -39,7 +39,7 @@
 /* ── RTC-persistent data ────────────────────────────────────────── */
 
 static RTC_DATA_ATTR uint32_t total_count = 0;   /* lifetime total, persists across deep sleep */
-static RTC_DATA_ATTR uint32_t batch_count = 0;   /* current group, reset after send */
+static RTC_DATA_ATTR bool     has_unsent  = false; /* true when detections haven't been reported yet */
 
 static const char *TAG = "trail";
 static char device_id[13];  /* 12 hex chars + null */
@@ -55,7 +55,7 @@ static void battery_init(void);
 static int battery_read_mv(void);
 static void battery_deinit(void);
 static int modem_read_rssi(void);
-static bool modem_http_post(uint32_t total, uint32_t batch, int battery_mv, int rssi);
+static bool modem_http_post(uint32_t total, int battery_mv, int rssi);
 static void enter_deep_sleep(void);
 static void wait_pir_low(void);
 
@@ -71,9 +71,9 @@ void app_main(void)
     esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
 
     if (cause == ESP_SLEEP_WAKEUP_TIMER) {
-        /* Timer expired = no motion for GROUP_TIMEOUT_S, send the batch */
-        ESP_LOGI(TAG, "Group timeout, sending batch=%lu total=%lu",
-                 (unsigned long)batch_count, (unsigned long)total_count);
+        /* Timer expired = no motion for GROUP_TIMEOUT_S, send report */
+        ESP_LOGI(TAG, "Group timeout, sending total=%lu",
+                 (unsigned long)total_count);
 
         /* Wake MAX17048 early so it has time to settle while modem connects */
         battery_init();
@@ -87,7 +87,7 @@ void app_main(void)
                 vTaskDelay(pdMS_TO_TICKS(2000));
             }
             if (modem_power_on() && modem_wait_network() &&
-                modem_http_post(total_count, batch_count,
+                modem_http_post(total_count,
                                 battery_read_mv(), modem_read_rssi())) {
                 sent = true;
             }
@@ -96,18 +96,17 @@ void app_main(void)
 
         if (sent) {
             ESP_LOGI(TAG, "POST successful");
+            has_unsent = false;
         } else {
-            ESP_LOGE(TAG, "POST failed, will retry at next send interval");
+            ESP_LOGE(TAG, "POST failed, will retry on next timeout");
         }
 
         modem_power_off();
-        batch_count = 0;
     } else {
         /* PIR wakeup (or first boot) = new detection */
         total_count++;
-        batch_count++;
-        ESP_LOGI(TAG, "Detection! batch=%lu total=%lu",
-                 (unsigned long)batch_count, (unsigned long)total_count);
+        has_unsent = true;
+        ESP_LOGI(TAG, "Detection! total=%lu", (unsigned long)total_count);
     }
 
     wait_pir_low();
@@ -118,11 +117,10 @@ void app_main(void)
 
 static void enter_deep_sleep(void)
 {
-    if (batch_count > 0) {
+    if (has_unsent) {
         /* Pending detections: set timer so we send even if no more motion */
         esp_sleep_enable_timer_wakeup((uint64_t)GROUP_TIMEOUT_S * 1000000ULL);
-        ESP_LOGI(TAG, "Sleep: PIR + %ds timer, batch=%lu",
-                 GROUP_TIMEOUT_S, (unsigned long)batch_count);
+        ESP_LOGI(TAG, "Sleep: PIR + %ds timer", GROUP_TIMEOUT_S);
     } else {
         /* Nothing pending: wait for PIR only */
         ESP_LOGI(TAG, "Sleep: PIR only, total=%lu", (unsigned long)total_count);
@@ -385,13 +383,13 @@ static int modem_read_rssi(void)
 
 /* ── HTTP POST ──────────────────────────────────────────────────── */
 
-static bool modem_http_post(uint32_t total, uint32_t batch, int battery_mv, int rssi)
+static bool modem_http_post(uint32_t total, int battery_mv, int rssi)
 {
     /* Build JSON payload */
     char payload[160];
     snprintf(payload, sizeof(payload),
-             "{\"device_id\":\"%s\",\"total\":%lu,\"batch\":%lu,\"battery_mv\":%d,\"rssi_dbm\":%d}",
-             device_id, (unsigned long)total, (unsigned long)batch, battery_mv, rssi);
+             "{\"device_id\":\"%s\",\"total\":%lu,\"battery_mv\":%d,\"rssi_dbm\":%d}",
+             device_id, (unsigned long)total, battery_mv, rssi);
 
     /* Initialize HTTP service */
     if (!modem_send_at("AT+HTTPINIT", "OK", AT_TIMEOUT_MS)) {
