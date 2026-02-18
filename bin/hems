@@ -1,14 +1,38 @@
 #!/usr/bin/env ruby
 require_relative "../lib/devices"
-require_relative "../lib/http_server"
 require_relative "../lib/energy_management"
+require_relative "../lib/http_server"
+require_relative "../lib/http_server/metrics"
+require_relative "../lib/http_server/relays"
+require_relative "../lib/http_server/sdmo"
+require_relative "../lib/http_server/button"
+require_relative "../lib/http_server/topas"
+require_relative "../lib/http_server/casa"
+require_relative "../lib/http_server/envistar"
+require_relative "../lib/http_server/em"
+require_relative "../lib/http_server/eta"
+require_relative "../lib/http_server/grundfos"
+require_relative "../lib/http_server/shelly"
+require_relative "../lib/http_server/gencomm"
 
 $stdout.sync = true
 Thread.abort_on_exception = false
 devices = Devices.new
 em = EnergyManagement.new(devices)
-srv = HTTPServer.new(devices, em)
-
+srv = HTTPServer.new(controllers: {
+  "/metrics" => Metrics.new(devices),
+  "/relays" => RelaysControl.new(devices.relays),
+  "/sdmo" => SDMOControl.new(devices.sdmo),
+  "/button1" => ButtonControl.new(devices),
+  "/topas" => TopasControl.new(devices.topas),
+  "/casa" => CasaControl.new(devices.casa),
+  "/envistar" => EnvistarControl.new(devices.envistar),
+  "/eta" => ETAControl.new(devices.eta),
+  "/em" => EMControl.new(em),
+  "/grundfos" => GrundfosControl.new(devices.grundfos),
+  "/shelly" => ShellyControl.new(em),
+  "/gencomm" => GenCommControl.new(devices.gencomm),
+})
 trap('INT') { em.stop; srv.stop }
 trap('TERM') { em.stop; srv.stop }
 em_thread = Thread.new { em.start }

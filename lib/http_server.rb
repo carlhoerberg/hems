@@ -1,37 +1,11 @@
 require "socket"
-require "erb"
-require_relative "./http_server/metrics"
-require_relative "./http_server/relays"
-require_relative "./http_server/sdmo"
-require_relative "./http_server/button"
-require_relative "./http_server/topas"
-require_relative "./http_server/casa"
-require_relative "./http_server/envistar"
-require_relative "./http_server/em"
-require_relative "./http_server/eta"
-require_relative "./http_server/grundfos"
-require_relative "./http_server/shelly"
-require_relative "./http_server/gencomm"
 
 # Simple multithreaded HTTP server
 class HTTPServer
-  def initialize(devices, em)
+  def initialize(controllers)
     @server = TCPServer.new("0.0.0.0", ENV.fetch("PORT", 8000).to_i)
     @queue = Queue.new
-    @controllers = {
-      "/metrics" => Metrics.new(devices),
-      "/relays" => RelaysControl.new(devices.relays),
-      "/sdmo" => SDMOControl.new(devices.sdmo),
-      "/button1" => ButtonControl.new(devices),
-      "/topas" => TopasControl.new(devices.topas),
-      "/casa" => CasaControl.new(devices.casa),
-      "/envistar" => EnvistarControl.new(devices.envistar),
-      "/eta" => ETAControl.new(devices.eta),
-      "/em" => EMControl.new(em),
-      "/grundfos" => GrundfosControl.new(devices.grundfos),
-      "/shelly" => ShellyControl.new(em),
-      "/gencomm" => GenCommControl.new(devices.gencomm),
-    }
+    @controllers = controllers 
   end
 
   def start
