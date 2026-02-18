@@ -21,18 +21,18 @@ Thread.abort_on_exception = false
 devices = Devices.new
 em = EnergyManagement.new(devices)
 srv = HTTPServer.new(controllers: {
-  "/metrics" => Metrics.new(devices),
-  "/relays" => RelaysControl.new(devices.relays),
-  "/sdmo" => SDMOControl.new(devices.sdmo),
-  "/button1" => ButtonControl.new(devices),
-  "/topas" => TopasControl.new(devices.topas),
-  "/casa" => CasaControl.new(devices.casa),
-  "/envistar" => EnvistarControl.new(devices.envistar),
-  "/eta" => ETAControl.new(devices.eta),
-  "/em" => EMControl.new(em),
-  "/grundfos" => GrundfosControl.new(devices.grundfos),
-  "/shelly" => ShellyControl.new(em),
-  "/gencomm" => GenCommControl.new(devices.gencomm),
+  "/metrics" => HTTPServer::Metrics.new(devices),
+  "/relays" => HTTPServer::RelaysControl.new(devices.relays),
+  "/sdmo" => HTTPServer::SDMOControl.new(devices.sdmo),
+  "/button1" => HTTPServer::ButtonControl.new(devices),
+  "/topas" => HTTPServer::TopasControl.new(devices.topas),
+  "/casa" => HTTPServer::CasaControl.new(devices.casa),
+  "/envistar" => HTTPServer::EnvistarControl.new(devices.envistar),
+  "/eta" => HTTPServer::ETAControl.new(devices.eta),
+  "/em" => HTTPServer::EMControl.new(em),
+  "/grundfos" => HTTPServer::GrundfosControl.new(devices.grundfos),
+  "/shelly" => HTTPServer::ShellyControl.new(em),
+  "/gencomm" => HTTPServer::GenCommControl.new(devices.gencomm),
 })
 trap('INT') { em.stop; srv.stop }
 trap('TERM') { em.stop; srv.stop }
