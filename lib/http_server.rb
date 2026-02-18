@@ -107,6 +107,7 @@ class HTTPServer
 
   def handle_request(request)
     response = Response.new
+    path = request.path
     first_part = path[0, path.index("/", 1) || path.length]
     if (controller = @controllers[first_part])
       begin
