@@ -1,0 +1,40 @@
+# TYPE victron_battery_voltage gauge
+victron_battery_voltage <%=m[:battery_voltage]%>
+# TYPE victron_battery_current gauge
+victron_battery_current <%=m[:battery_current]%>
+# TYPE victron_battery_power gauge
+victron_battery_power <%=m[:battery_power]%>
+# TYPE victron_battery_soc gauge
+victron_battery_soc <%=m[:battery_soc]%>
+# TYPE victron_battery_state gauge
+victron_battery_state <%=m[:battery_state]%>
+# TYPE victron_ac_input_voltage gauge
+victron_ac_input_voltage <%=m[:ac_input_voltage]%>
+# TYPE victron_ac_input_current gauge
+victron_ac_input_current <%=m[:ac_input_current]%>
+# TYPE victron_ac_input_power gauge
+victron_ac_input_power <%=m[:ac_input_power]%>
+# TYPE victron_ac_output_voltage gauge
+victron_ac_output_voltage <%=m[:ac_output_voltage]%>
+# TYPE victron_ac_output_current gauge
+victron_ac_output_current <%=m[:ac_output_current]%>
+# TYPE victron_ac_output_power gauge
+victron_ac_output_power <%=m[:ac_output_power]%>
+# TYPE victron_dc_current gauge
+victron_dc_current <%=m[:dc_current]%>
+# TYPE victron_ac_consumption gauge
+victron_ac_consumption <%=m[:ac_consumption]%>
+# TYPE victron_grid_power gauge
+victron_grid_power <%=m[:grid_power]%>
+# TYPE victron_state gauge
+victron_state <%=m[:state]%>
+# TYPE victron_error gauge
+victron_error <%=m[:error]%>
+# TYPE victron_mode gauge
+victron_mode <%=m[:mode]%>
+# TYPE victron_alarm gauge
+victron_alarm{type="high_temperature"} <%=m[:alarm_high_temp]%>
+victron_alarm{type="low_battery"} <%=m[:alarm_low_battery]%>
+victron_alarm{type="overload"} <%=m[:alarm_overload]%>
+# TYPE metrics_gather_time gauge
+metrics_gather_time{device="victron"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>

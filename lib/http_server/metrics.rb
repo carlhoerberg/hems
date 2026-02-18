@@ -23,6 +23,7 @@ class HTTPServer
     @@lk = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "lk.erb")))
     @@gencomm = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "gencomm.erb")))
     @@pel103 = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "pel103.erb")))
+    @@victron = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "victron.erb")))
 
     def do_GET(req, res)
       res.content_type = "text/plain"
@@ -49,6 +50,7 @@ class HTTPServer
             rescue EOFError
               warn "SDMO is offline"
             end,
+            Thread.new { @@victron.result_with_hash({ t:, m: @devices.victron.measurements }) },
           ].map do |t|
             t.value
           rescue
@@ -88,6 +90,8 @@ class HTTPServer
           @@gencomm.result_with_hash({ t:, name: "QAS45", measurements: @devices.gencomm.measurements, accumulated: @devices.gencomm.accumulated, status: @devices.gencomm.status, dpf_status: @devices.gencomm.dpf_status, digital_outputs: @devices.gencomm.digital_outputs })
         when "/metrics/pel103"
           @@pel103.result_with_hash({ t:, measurements: @devices.pel103.measurements })
+        when "/metrics/victron"
+          @@victron.result_with_hash({ t:, m: @devices.victron.measurements })
         else
           res.status = 404
           "Not Found"
