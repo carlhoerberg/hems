@@ -1,0 +1,14 @@
+CONFIG_IDF_TARGET="esp32s3"
+
+# Disable WiFi and Bluetooth to save power
+CONFIG_ESP_WIFI_ENABLED=n
+CONFIG_BT_ENABLED=n
+
+# UART
+CONFIG_ESP_CONSOLE_UART_DEFAULT=y
+
+# Power management
+CONFIG_PM_ENABLE=y
+
+# Log level - keep info for development, change to WARNING for production
+CONFIG_LOG_DEFAULT_LEVEL_INFO=y
