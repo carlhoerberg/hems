@@ -117,12 +117,17 @@ class HTTPServer
         when "POST"
           controller.do_POST(request, response)
         else
+          response.status = 405
+          response.headers = {}
+          response.content_type = "text/plain"
+          response.body = "Method Not Allowed\n"
         end
       rescue => e
         response.status = 500
         response.headers = {}
         response.content_type = "text/plain"
-        response.body = "Internal Server Error\n#{e.message}\n"
+        bt = e.backtrace.map { |line| "  at #{line}" }.join("\n")
+        response.body = "Internal Server Error\n#{e.message}\n#{bt}\n"
       end
     else
       response.status = 404
