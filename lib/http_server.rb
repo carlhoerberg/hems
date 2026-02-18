@@ -111,7 +111,7 @@ class HTTPServer
     first_part = path[0, path.index("/", 1) || path.length]
     if (controller = @controllers[first_part])
       begin
-        case method
+        case request.method
         when "GET"
           controller.do_GET(request, response)
         when "POST"
