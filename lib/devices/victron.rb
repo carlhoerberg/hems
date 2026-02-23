@@ -51,10 +51,10 @@ class Devices
         # VEBus (unit 228), base register 3
         ac_input_voltage: vb[3 - 3] / 10.0,
         ac_input_current: [vb[6 - 3]].to_i16 / 10.0,
-        ac_input_power: [vb[12 - 3]].to_i16,
+        ac_input_power: [vb[12 - 3]].to_i16 * 10,
         ac_output_voltage: vb[15 - 3] / 10.0,
-        ac_output_current: vb[18 - 3] / 10.0,
-        ac_output_power: [vb[23 - 3]].to_i16,
+        ac_output_current: [vb[18 - 3]].to_i16 / 10.0,
+        ac_output_power: [vb[23 - 3]].to_i16 * 10,
         dc_current: [vb[27 - 3]].to_i16 / 10.0,
         state: vb[31 - 3],
         error: vb[32 - 3],
