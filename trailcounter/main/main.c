@@ -10,11 +10,11 @@
 #include "esp_timer.h"
 #include "driver/i2c_master.h"
 #include "esp_mac.h"
+#include "led_strip.h"
 
 /* ── Configuration ──────────────────────────────────────────────── */
 #define API_URL         "http://trailcounter.hallfjallet.se"
 #define GROUP_TIMEOUT_S 30    /* seconds of no motion before sending batch */
-#define PIR_SETTLE_MS   4000  /* wait for PIR to go LOW before sleeping (measured ~3.4s) */
 
 /* ── Pin assignments ────────────────────────────────────────────── */
 
@@ -27,6 +27,7 @@
 #define MAX17048_ADDR   0x36
 #define MAX17048_VCELL  0x02
 #define I2C_PORT        I2C_NUM_0
+#define PIN_LED         GPIO_NUM_38
 
 /* ── Modem UART ─────────────────────────────────────────────────── */
 
@@ -58,6 +59,9 @@ static int modem_read_rssi(void);
 static bool modem_http_post(uint32_t total, int battery_mv, int rssi);
 static void enter_deep_sleep(void);
 static void wait_pir_low(void);
+static void led_init(void);
+static void led_set(uint8_t r, uint8_t g, uint8_t b);
+static void led_off(void);
 
 /* ── Main ───────────────────────────────────────────────────────── */
 
@@ -68,12 +72,15 @@ void app_main(void)
     snprintf(device_id, sizeof(device_id), "%02x%02x%02x%02x%02x%02x",
              mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
+    led_init();
+
     esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
 
     if (cause == ESP_SLEEP_WAKEUP_TIMER) {
         /* Timer expired = no motion for GROUP_TIMEOUT_S, send report */
         ESP_LOGI(TAG, "Group timeout, sending total=%lu",
                  (unsigned long)total_count);
+        led_set(16, 0, 0);  /* red = sending */
 
         /* Wake MAX17048 early so it has time to settle while modem connects */
         battery_init();
@@ -83,6 +90,7 @@ void app_main(void)
         bool sent = false;
         for (int attempt = 0; attempt < 2 && !sent; attempt++) {
             if (attempt > 0) {
+                led_set(16, 8, 0);  /* orange = retrying */
                 ESP_LOGW(TAG, "Retry %d", attempt);
                 vTaskDelay(pdMS_TO_TICKS(2000));
             }
@@ -107,9 +115,11 @@ void app_main(void)
         total_count++;
         has_unsent = true;
         ESP_LOGI(TAG, "Detection! total=%lu", (unsigned long)total_count);
+        led_set(0, 16, 0);  /* green = motion detected */
     }
 
     wait_pir_low();
+    led_off();
     enter_deep_sleep();
 }
 
@@ -140,10 +150,15 @@ static void wait_pir_low(void)
     };
     gpio_config(&pir_conf);
 
-    int waited = 0;
-    while (gpio_get_level(PIN_PIR) == 1 && waited < PIR_SETTLE_MS) {
+    int held_ms = 0;
+    while (gpio_get_level(PIN_PIR) == 1) {
         vTaskDelay(pdMS_TO_TICKS(50));
-        waited += 50;
+        held_ms += 50;
+        if (held_ms >= 4000) {
+            total_count++;
+            ESP_LOGI(TAG, "Sustained detection, total=%lu", (unsigned long)total_count);
+            held_ms = 0;
+        }
     }
 }
 
@@ -379,6 +394,36 @@ static int modem_read_rssi(void)
     }
     ESP_LOGW(TAG, "Could not read signal quality");
     return 99;
+}
+
+/* ── WS2812B LED ───────────────────────────────────────────────── */
+
+static led_strip_handle_t led_strip = NULL;
+
+static void led_init(void)
+{
+    led_strip_config_t strip_conf = {
+        .strip_gpio_num = PIN_LED,
+        .max_leds = 1,
+    };
+    led_strip_rmt_config_t rmt_conf = {
+        .resolution_hz = 10 * 1000 * 1000,
+    };
+    led_strip_new_rmt_device(&strip_conf, &rmt_conf, &led_strip);
+}
+
+static void led_set(uint8_t r, uint8_t g, uint8_t b)
+{
+    if (!led_strip) return;
+    led_strip_set_pixel(led_strip, 0, g, r, b);
+    led_strip_refresh(led_strip);
+}
+
+static void led_off(void)
+{
+    if (!led_strip) return;
+    led_strip_clear(led_strip);
+    led_strip_refresh(led_strip);
 }
 
 /* ── HTTP POST ──────────────────────────────────────────────────── */
