@@ -28,6 +28,7 @@ class Devices
       {
         # System (unit 100), base register 817
         ac_consumption: sys[817 - 817],
+        ac_genset: [sys[823 - 817]].to_i16,
         grid_power: [sys[820 - 817]].to_i16,
         battery_voltage: sys[840 - 817] / 10.0,
         battery_current: [sys[841 - 817]].to_i16 / 10.0,
