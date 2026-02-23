@@ -8,6 +8,26 @@ victron_battery_power <%=m[:battery_power]%>
 victron_battery_soc <%=m[:battery_soc]%>
 # TYPE victron_battery_state gauge
 victron_battery_state <%=m[:battery_state]%>
+# TYPE victron_consumed_amphours counter
+victron_consumed_amphours <%=m[:consumed_amphours]%>
+# TYPE victron_charge_cycles counter
+victron_charge_cycles <%=m[:charge_cycles]%>
+# TYPE victron_state_of_health gauge
+victron_state_of_health <%=m[:state_of_health]%>
+# TYPE victron_max_charge_voltage gauge
+victron_max_charge_voltage <%=m[:max_charge_voltage]%>
+# TYPE victron_min_discharge_voltage gauge
+victron_min_discharge_voltage <%=m[:min_discharge_voltage]%>
+# TYPE victron_max_charge_current gauge
+victron_max_charge_current <%=m[:max_charge_current]%>
+# TYPE victron_max_discharge_current gauge
+victron_max_discharge_current <%=m[:max_discharge_current]%>
+# TYPE victron_cell_voltage gauge
+victron_cell_voltage{limit="min"} <%=m[:min_cell_voltage]%>
+victron_cell_voltage{limit="max"} <%=m[:max_cell_voltage]%>
+# TYPE victron_cell_temperature gauge
+victron_cell_temperature{limit="min"} <%=m[:min_cell_temperature]%>
+victron_cell_temperature{limit="max"} <%=m[:max_cell_temperature]%>
 # TYPE victron_ac_input_voltage gauge
 victron_ac_input_voltage <%=m[:ac_input_voltage]%>
 # TYPE victron_ac_input_current gauge

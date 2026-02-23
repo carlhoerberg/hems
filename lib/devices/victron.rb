@@ -2,13 +2,14 @@ require_relative "../modbus/tcp"
 
 class Devices
   # Victron MultiPlus II GX inverter/charger
-  # Modbus TCP with unit IDs: 100 = system, 227 = vebus
+  # Modbus TCP with unit IDs: 100 = system, 225 = CAN-bus BMS battery, 228 = vebus
   class Victron
     using Modbus::TypeExtensions
 
     def initialize(host, port = 502)
       @transport = Modbus::TCP.new(host, port)
       @system = @transport.unit(100)
+      @battery = @transport.unit(225)
       @vebus = @transport.unit(228)
     end
 
@@ -18,6 +19,11 @@ class Devices
 
     def measurements
       sys = @system.read_holding_registers(817, 28)
+      bat_ah = @battery.read_holding_registers(265, 1)
+      bat_cycles = @battery.read_holding_registers(284, 1)
+      bat_soh = @battery.read_holding_registers(304, 5)
+      bat_temp = @battery.read_holding_registers(318, 2)
+      bat_cell = @battery.read_holding_registers(1290, 2)
       vb = @vebus.read_holding_registers(3, 34)
       {
         # System (unit 100), base register 817
@@ -29,7 +35,20 @@ class Devices
         battery_soc: sys[843 - 817],
         battery_state: sys[844 - 817],
 
-        # VEBus (unit 227), base register 3
+        # Battery (unit 225)
+        consumed_amphours: bat_ah[0] / 10.0,
+        charge_cycles: bat_cycles[0],
+        state_of_health: bat_soh[0] / 10.0,
+        max_charge_voltage: bat_soh[1] / 10.0,
+        min_discharge_voltage: bat_soh[2] / 10.0,
+        max_charge_current: bat_soh[3] / 10.0,
+        max_discharge_current: bat_soh[4] / 10.0,
+        min_cell_voltage: bat_cell[0] / 100.0,
+        max_cell_voltage: bat_cell[1] / 100.0,
+        min_cell_temperature: [bat_temp[0]].to_i16 / 10.0,
+        max_cell_temperature: [bat_temp[1]].to_i16 / 10.0,
+
+        # VEBus (unit 228), base register 3
         ac_input_voltage: vb[3 - 3] / 10.0,
         ac_input_current: [vb[6 - 3]].to_i16 / 10.0,
         ac_input_power: [vb[12 - 3]].to_i16,
