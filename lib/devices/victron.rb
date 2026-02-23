@@ -18,8 +18,7 @@ class Devices
     end
 
     def measurements
-      sys = @system.read_holding_registers(817, 28)
-      sys2 = @system.read_holding_registers(872, 8)
+      sys = @system.read_holding_registers(817, 63)
       bat_ah = @battery.read_holding_registers(265, 1)
       bat_cycles = @battery.read_holding_registers(284, 1)
       bat_soh = @battery.read_holding_registers(304, 5)
@@ -52,10 +51,10 @@ class Devices
         # VEBus (unit 228), base register 3
         ac_input_voltage: vb[3 - 3] / 10.0,
         ac_input_current: [vb[6 - 3]].to_i16 / 10.0,
-        ac_input_power: [sys2[872 - 872], sys2[873 - 872]].to_i32,
+        ac_input_power: [sys[872 - 817], sys[873 - 817]].to_i32,
         ac_output_voltage: vb[15 - 3] / 10.0,
         ac_output_current: [vb[18 - 3]].to_i16 / 10.0,
-        ac_output_power: [sys2[878 - 872], sys2[879 - 872]].to_i32,
+        ac_output_power: [sys[878 - 817], sys[879 - 817]].to_i32,
         dc_current: [vb[27 - 3]].to_i16 / 10.0,
         state: vb[31 - 3],
         error: vb[32 - 3],
