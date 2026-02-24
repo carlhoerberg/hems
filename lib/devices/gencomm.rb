@@ -495,7 +495,7 @@ class Devices
       m = @modbus.read_holding_registers(PAGE_ACCUMULATED, 18)
       m2 = @modbus.read_holding_registers(PAGE_ACCUMULATED + 34, 2)
       {
-        current_time: u32([m[0], m[1]]),
+        current_time: [m[0], m[1]].to_u32,
         time_to_maintenance: i32([m[2], m[3]]),
         time_of_maintenance: u32([m[4], m[5]]),
         engine_hours: u32([m[6], m[7]]) / 3600.0,
@@ -547,7 +547,7 @@ class Devices
     def u16(val) = val >= 0xFFF8 ? Float::NAN : val
 
     def i16(val)
-      return Float::NAN if val >= 0xFFF8
+      return Float::NAN if val >= 0xFFF8 || val >= 0x7FF8 && val <= 0x7FFF
       [val].to_i16
     end
 
@@ -558,7 +558,7 @@ class Devices
 
     def i32(arr)
       val = arr.to_u32
-      return Float::NAN if val >= 0xFFFFFFF8
+      return Float::NAN if val >= 0xFFFFFFF8 || val >= 0x7FFFFFF8 && val <= 0x7FFFFFFF
       arr.to_i32
     end
 
