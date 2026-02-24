@@ -290,90 +290,90 @@ class Devices
 
     # Basic Instrumentation (Page 4)
     def oil_pressure
-      @modbus.read_holding_register(PAGE_BASIC + 0)
+      u16(@modbus.read_holding_register(PAGE_BASIC + 0))
     end
 
     def coolant_temperature
-      [@modbus.read_holding_register(PAGE_BASIC + 1)].to_i16
+      i16([@modbus.read_holding_register(PAGE_BASIC + 1)].to_i16)
     end
 
     def oil_temperature
-      [@modbus.read_holding_register(PAGE_BASIC + 2)].to_i16
+      i16([@modbus.read_holding_register(PAGE_BASIC + 2)].to_i16)
     end
 
     def fuel_level
-      @modbus.read_holding_register(PAGE_BASIC + 3)
+      u16(@modbus.read_holding_register(PAGE_BASIC + 3))
     end
 
     def charge_alternator_voltage
-      @modbus.read_holding_register(PAGE_BASIC + 4) / 10.0
+      u16(@modbus.read_holding_register(PAGE_BASIC + 4)) / 10.0
     end
 
     def battery_voltage
-      @modbus.read_holding_register(PAGE_BASIC + 5) / 10.0
+      u16(@modbus.read_holding_register(PAGE_BASIC + 5)) / 10.0
     end
 
     def rpm
-      @modbus.read_holding_register(PAGE_BASIC + 6)
+      u16(@modbus.read_holding_register(PAGE_BASIC + 6))
     end
 
     def frequency
-      @modbus.read_holding_register(PAGE_BASIC + 7) / 10.0
+      u16(@modbus.read_holding_register(PAGE_BASIC + 7)) / 10.0
     end
 
     # Generator voltages (32-bit values)
     def voltage_l1_n
-      @modbus.read_holding_registers(PAGE_BASIC + 8, 2).to_u32 / 10.0
+      u32(@modbus.read_holding_registers(PAGE_BASIC + 8, 2).to_u32) / 10.0
     end
 
     def voltage_l2_n
-      @modbus.read_holding_registers(PAGE_BASIC + 10, 2).to_u32 / 10.0
+      u32(@modbus.read_holding_registers(PAGE_BASIC + 10, 2).to_u32) / 10.0
     end
 
     def voltage_l3_n
-      @modbus.read_holding_registers(PAGE_BASIC + 12, 2).to_u32 / 10.0
+      u32(@modbus.read_holding_registers(PAGE_BASIC + 12, 2).to_u32) / 10.0
     end
 
     def voltage_l1_l2
-      @modbus.read_holding_registers(PAGE_BASIC + 14, 2).to_u32 / 10.0
+      u32(@modbus.read_holding_registers(PAGE_BASIC + 14, 2).to_u32) / 10.0
     end
 
     def voltage_l2_l3
-      @modbus.read_holding_registers(PAGE_BASIC + 16, 2).to_u32 / 10.0
+      u32(@modbus.read_holding_registers(PAGE_BASIC + 16, 2).to_u32) / 10.0
     end
 
     def voltage_l3_l1
-      @modbus.read_holding_registers(PAGE_BASIC + 18, 2).to_u32 / 10.0
+      u32(@modbus.read_holding_registers(PAGE_BASIC + 18, 2).to_u32) / 10.0
     end
 
     # Generator currents (32-bit values)
     def current_l1
-      @modbus.read_holding_registers(PAGE_BASIC + 20, 2).to_u32 / 10.0
+      u32(@modbus.read_holding_registers(PAGE_BASIC + 20, 2).to_u32) / 10.0
     end
 
     def current_l2
-      @modbus.read_holding_registers(PAGE_BASIC + 22, 2).to_u32 / 10.0
+      u32(@modbus.read_holding_registers(PAGE_BASIC + 22, 2).to_u32) / 10.0
     end
 
     def current_l3
-      @modbus.read_holding_registers(PAGE_BASIC + 24, 2).to_u32 / 10.0
+      u32(@modbus.read_holding_registers(PAGE_BASIC + 24, 2).to_u32) / 10.0
     end
 
     def current_earth
-      @modbus.read_holding_registers(PAGE_BASIC + 26, 2).to_u32 / 10.0
+      u32(@modbus.read_holding_registers(PAGE_BASIC + 26, 2).to_u32) / 10.0
     end
 
     # Generator power (32-bit signed values)
     def watts_l1
-      @modbus.read_holding_registers(PAGE_BASIC + 28, 2).to_i32
+      i32(@modbus.read_holding_registers(PAGE_BASIC + 28, 2).to_i32)
     end
 
     def watts_l2
-      @modbus.read_holding_registers(PAGE_BASIC + 30, 2).to_i32
+      i32(@modbus.read_holding_registers(PAGE_BASIC + 30, 2).to_i32)
     end
 
     def watts_l3
-      @modbus.read_holding_registers(PAGE_BASIC + 32, 2).to_i32
+      i32(@modbus.read_holding_registers(PAGE_BASIC + 32, 2).to_i32)
     end
 
     def watts_total
@@ -386,7 +386,7 @@ class Devices
 
     # Accumulated Instrumentation (Page 7)
     def engine_run_time
-      @modbus.read_holding_registers(PAGE_ACCUMULATED + 6, 2).to_u32
+      u32(@modbus.read_holding_registers(PAGE_ACCUMULATED + 6, 2).to_u32)
     end
 
     def engine_run_hours
@@ -394,11 +394,11 @@ class Devices
     end
 
     def kwh
-      @modbus.read_holding_registers(PAGE_ACCUMULATED + 8, 2).to_u32 / 10.0
+      u32(@modbus.read_holding_registers(PAGE_ACCUMULATED + 8, 2).to_u32) / 10.0
     end
 
     def start_counter
-      @modbus.read_holding_registers(PAGE_ACCUMULATED + 16, 2).to_u32
+      u32(@modbus.read_holding_registers(PAGE_ACCUMULATED + 16, 2).to_u32)
     end
 
     def currents
@@ -409,27 +409,27 @@ class Devices
     def measurements
       m = @modbus.read_holding_registers(PAGE_BASIC, 64)
       {
-        oil_pressure: m[0],
-        coolant_temperature: [m[1]].to_i16,
-        oil_temperature: [m[2]].to_i16,
-        fuel_level: m[3],
-        charge_alternator_voltage: m[4] / 10.0,
-        battery_voltage: m[5] / 10.0,
-        rpm: m[6],
-        frequency: m[7] / 10.0,
-        voltage_l1_n: [m[8], m[9]].to_u32 / 10.0,
-        voltage_l2_n: [m[10], m[11]].to_u32 / 10.0,
-        voltage_l3_n: [m[12], m[13]].to_u32 / 10.0,
-        voltage_l1_l2: [m[14], m[15]].to_u32 / 10.0,
-        voltage_l2_l3: [m[16], m[17]].to_u32 / 10.0,
-        voltage_l3_l1: [m[18], m[19]].to_u32 / 10.0,
-        current_l1: [m[20], m[21]].to_u32 / 10.0,
-        current_l2: [m[22], m[23]].to_u32 / 10.0,
-        current_l3: [m[24], m[25]].to_u32 / 10.0,
-        current_earth: [m[26], m[27]].to_u32 / 10.0,
-        watts_l1: [m[28], m[29]].to_i32,
-        watts_l2: [m[30], m[31]].to_i32,
-        watts_l3: [m[32], m[33]].to_i32,
+        oil_pressure: u16(m[0]),
+        coolant_temperature: i16([m[1]].to_i16),
+        oil_temperature: i16([m[2]].to_i16),
+        fuel_level: u16(m[3]),
+        charge_alternator_voltage: u16(m[4]) / 10.0,
+        battery_voltage: u16(m[5]) / 10.0,
+        rpm: u16(m[6]),
+        frequency: u16(m[7]) / 10.0,
+        voltage_l1_n: u32([m[8], m[9]].to_u32) / 10.0,
+        voltage_l2_n: u32([m[10], m[11]].to_u32) / 10.0,
+        voltage_l3_n: u32([m[12], m[13]].to_u32) / 10.0,
+        voltage_l1_l2: u32([m[14], m[15]].to_u32) / 10.0,
+        voltage_l2_l3: u32([m[16], m[17]].to_u32) / 10.0,
+        voltage_l3_l1: u32([m[18], m[19]].to_u32) / 10.0,
+        current_l1: u32([m[20], m[21]].to_u32) / 10.0,
+        current_l2: u32([m[22], m[23]].to_u32) / 10.0,
+        current_l3: u32([m[24], m[25]].to_u32) / 10.0,
+        current_earth: u32([m[26], m[27]].to_u32) / 10.0,
+        watts_l1: i32([m[28], m[29]].to_i32),
+        watts_l2: i32([m[30], m[31]].to_i32),
+        watts_l3: i32([m[32], m[33]].to_i32),
       }.merge(extended_measurements).merge(derived_measurements).freeze
     end
 
@@ -446,28 +446,28 @@ class Devices
       e9 = @modbus.read_holding_registers(PAGE_EXTENDED + 175, 1)
       e10 = @modbus.read_holding_registers(PAGE_EXTENDED + 231, 2)
       {
-        turbo_pressure: e1[4],
-        fuel_consumption: [e1[10], e1[11]].to_u32 / 100.0,
-        water_in_fuel: e1[12],
-        atmospheric_pressure: e1[14],
-        fuel_temperature: [e1[15]].to_i16,
-        aftertreatment_temp: [e2[0]].to_i16,
-        aftertreatment_temp_t3: [e2[1]].to_i16,
-        engine_reference_torque: [e2[2], e2[3]].to_u32,
-        engine_torque_pct: [e2[4], e2[5]].to_i32,
-        injector_rail_pressure: e3[0] / 100.0,
-        soot_load: e4[0],
-        ash_load: e4[1],
-        ambient_air_temp: [e5[0]].to_i16,
-        air_intake_temp: [e5[1]].to_i16,
-        dpf_regen_status: e6[0],
-        dpf_soot_mass: e7[0] * 4,
-        air_mass_flow_rate: e7[3] * 0.05,
-        dpf_diff_pressure: e7[6] * 0.1,
-        trip_fuel: [e8[0], e8[1]].to_u32,
-        trip_average_fuel: e9[0] / 100.0,
-        trip_avg_fuel_efficiency: e10[0] / 100.0,
-        instantaneous_fuel_efficiency: e10[1] / 100.0,
+        turbo_pressure: u16(e1[4]),
+        fuel_consumption: u32([e1[10], e1[11]].to_u32) / 100.0,
+        water_in_fuel: u16(e1[12]),
+        atmospheric_pressure: u16(e1[14]),
+        fuel_temperature: i16([e1[15]].to_i16),
+        aftertreatment_temp: i16([e2[0]].to_i16),
+        aftertreatment_temp_t3: i16([e2[1]].to_i16),
+        engine_reference_torque: u32([e2[2], e2[3]].to_u32),
+        engine_torque_pct: i32([e2[4], e2[5]].to_i32),
+        injector_rail_pressure: u16(e3[0]) / 100.0,
+        soot_load: u16(e4[0]),
+        ash_load: u16(e4[1]),
+        ambient_air_temp: i16([e5[0]].to_i16),
+        air_intake_temp: i16([e5[1]].to_i16),
+        dpf_regen_status: u16(e6[0]),
+        dpf_soot_mass: u16(e7[0]) * 4,
+        air_mass_flow_rate: u16(e7[3]) * 0.05,
+        dpf_diff_pressure: u16(e7[6]) * 0.1,
+        trip_fuel: u32([e8[0], e8[1]].to_u32),
+        trip_average_fuel: u16(e9[0]) / 100.0,
+        trip_avg_fuel_efficiency: u16(e10[0]) / 100.0,
+        instantaneous_fuel_efficiency: u16(e10[1]) / 100.0,
       }.freeze
     end
 
@@ -476,17 +476,17 @@ class Devices
       d = @modbus.read_holding_registers(PAGE_DERIVED, 24)
       d2 = @modbus.read_holding_registers(PAGE_DERIVED + 82, 3)
       {
-        kva_l1: [d[2], d[3]].to_u32 / 1000.0,
-        kva_l2: [d[4], d[5]].to_u32 / 1000.0,
-        kva_l3: [d[6], d[7]].to_u32 / 1000.0,
-        kvar_l1: [d[10], d[11]].to_i32 / 1000.0,
-        kvar_l2: [d[12], d[13]].to_i32 / 1000.0,
-        kvar_l3: [d[14], d[15]].to_i32 / 1000.0,
-        pct_full_power: [d[22]].to_i16 / 10.0,
-        pct_full_var: [d[23]].to_i16 / 10.0,
-        load_pct_l1: [d2[0]].to_i16 / 10.0,
-        load_pct_l2: [d2[1]].to_i16 / 10.0,
-        load_pct_l3: [d2[2]].to_i16 / 10.0,
+        kva_l1: u32([d[2], d[3]].to_u32) / 1000.0,
+        kva_l2: u32([d[4], d[5]].to_u32) / 1000.0,
+        kva_l3: u32([d[6], d[7]].to_u32) / 1000.0,
+        kvar_l1: i32([d[10], d[11]].to_i32) / 1000.0,
+        kvar_l2: i32([d[12], d[13]].to_i32) / 1000.0,
+        kvar_l3: i32([d[14], d[15]].to_i32) / 1000.0,
+        pct_full_power: i16([d[22]].to_i16) / 10.0,
+        pct_full_var: i16([d[23]].to_i16) / 10.0,
+        load_pct_l1: i16([d2[0]].to_i16) / 10.0,
+        load_pct_l2: i16([d2[1]].to_i16) / 10.0,
+        load_pct_l3: i16([d2[2]].to_i16) / 10.0,
       }.freeze
     end
 
@@ -496,15 +496,15 @@ class Devices
       m2 = @modbus.read_holding_registers(PAGE_ACCUMULATED + 34, 2)
       {
         current_time: [m[0], m[1]].to_u32,
-        time_to_maintenance: [m[2], m[3]].to_i32,
-        time_of_maintenance: [m[4], m[5]].to_u32,
-        engine_hours: [m[6], m[7]].to_u32 / 3600.0,
-        kwh_positive: [m[8], m[9]].to_u32 / 10.0,
-        kwh_negative: [m[10], m[11]].to_u32 / 10.0,
-        kvah: [m[12], m[13]].to_u32 / 10.0,
-        kvarh: [m[14], m[15]].to_u32 / 10.0,
-        start_counter: [m[16], m[17]].to_u32,
-        fuel_used: [m2[0], m2[1]].to_u32,
+        time_to_maintenance: i32([m[2], m[3]].to_i32),
+        time_of_maintenance: u32([m[4], m[5]].to_u32),
+        engine_hours: u32([m[6], m[7]].to_u32) / 3600.0,
+        kwh_positive: u32([m[8], m[9]].to_u32) / 10.0,
+        kwh_negative: u32([m[10], m[11]].to_u32) / 10.0,
+        kvah: u32([m[12], m[13]].to_u32) / 10.0,
+        kvarh: u32([m[14], m[15]].to_u32) / 10.0,
+        start_counter: u32([m[16], m[17]].to_u32),
+        fuel_used: u32([m2[0], m2[1]].to_u32),
       }.freeze
     end
 
@@ -535,6 +535,18 @@ class Devices
     end
 
     private
+
+    # Sentinel values indicating unimplemented/unavailable data
+    # 0xFFF8..0xFFFF (u16), 0xFFFFFFF8..0xFFFFFFFF (u32)
+    # 0x7FF8..0x7FFF (i16), 0x7FFFFFF8..0x7FFFFFFF (i32)
+    # Covers: unimplemented, over/under range, transducer fault,
+    # bad data, high/low digital input, reserved
+
+    # Replace sentinel values with NaN so they don't pollute charts
+    def u16(val)  = val >= 0xFFF8     ? Float::NAN : val
+    def i16(val)  = val >= 0x7FF8     ? Float::NAN : val
+    def u32(val)  = val >= 0xFFFFFFF8 ? Float::NAN : val
+    def i32(val)  = val >= 0x7FFFFFF8 ? Float::NAN : val
 
     def send_control(key)
       complement = key ^ 0xFFFF
