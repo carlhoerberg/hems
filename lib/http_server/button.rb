@@ -7,15 +7,15 @@ class HTTPServer
     def do_GET(req, res)
       case req.path
       when %r(/short$)
-        @devices.relays.open_air_vents
+        res.status = 204
       when %r(/double$)
-        @devices.genset.stop
-        @devices.genset.close_air_vents
+        @devices.next3.aux1.operating_mode = 2 # Auto
+        res.status = 204
       when %r(/triple$)
-        @devices.genset.close_air_vents
+        res.status = 204
       when %r(/long$)
-        @devices.relays.open_air_vents
-        @devices.genset.start
+        @devices.next3.aux1.operating_mode = 1 # Manual On
+        res.status = 204
       else
         res.status = 404
         res.body = 'Not Found'
