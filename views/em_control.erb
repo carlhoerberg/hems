@@ -10,10 +10,5 @@
       <button name="action" value="start_genset">Start genset</button>
       <button name="action" value="stop_genset">Stop genset</button>
     </form>
-    <h2>Load Shedding</h2>
-    <form method="post">
-      <button name="action" value="enable_load_shedding" <%=em.genset_load_shedding_enabled? ? "disabled" : ""%>>Enable load shedding</button>
-      <button name="action" value="disable_load_shedding" <%=em.genset_load_shedding_enabled? ? "" : "disabled"%>>Disable load shedding</button>
-    </form>
   </body>
 </html>

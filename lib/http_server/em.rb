@@ -16,10 +16,8 @@ class HTTPServer
       case form["action"]
       when "genset_auto_started" then @em.genset_auto_started = true
       when "genset_manually_started" then @em.genset_auto_started = false
-      when "stop_genset" then @em.stop_genset
       when "start_genset" then @em.start_genset
-      when "enable_load_shedding" then @em.genset_load_shedding_enabled = true
-      when "disable_load_shedding" then @em.genset_load_shedding_enabled = false
+      when "stop_genset" then @em.stop_genset
       else raise "no action selected"
       end
       res.status = 303

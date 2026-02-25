@@ -1,5 +1,4 @@
 require_relative "./devices"
-require_relative "./solar_forecast"
 require "net/http"
 require "json"
 
@@ -21,55 +20,33 @@ class EnergyManagement
   DEFAULT_GENSET_ACTIVATION_SOC = 20
   DEFAULT_GENSET_DEACTIVATION_SOC = 95
 
-  # Genset load management thresholds
-  GENSET_MAX_LOAD_PCT = 100
-  HEATER_6KW_LOAD_PCT = 25
-  HEATER_9KW_LOAD_PCT = 40
-  AFTERTREATMENT_MIN_TEMP = 250
-
-  # 2kW single-phase Shelly heaters (9A each, higher priority than 6kW/9kW)
+  # 2kW single-phase Shelly heaters (9A each)
   SHELLY_HEATER_2KW = [
     { host: "192.168.0.190", phase: 2, amps: 9 },  # Phase 2
     { host: "192.168.0.137", phase: 3, amps: 9 },  # Phase 3
   ].freeze
-  HEATER_2KW_LOAD_PCT = 9.0 / 50 * 100  # ~28% per heater on single phase
+
+  INVERTER_CURRENT_LIMIT = 22
+  GENSET_CURRENT_LIMIT = 50
 
   attr_accessor :genset_auto_started
+
+  BATTERY_KWH = 31.2
 
   def initialize(devices)
     @devices = devices
     @stopped = false
-    @shelly_demands = {}  # { device_id => { host:, amps:, active: false } }
+    @shelly_demands = {}  # { device_id => { amps:, active: false } }
     @shelly_demands_mutex = Mutex.new
-    @checking_9kw_swap = false  # True when we've turned off 6kW to measure actual load
-    @genset_load_shedding_enabled = true
     @genset_auto_started = true
-    @last_heater_off_time = 0
-  end
-
-  def genset_load_shedding_enabled?
-    @genset_load_shedding_enabled
-  end
-
-  def genset_load_shedding_enabled=(value)
-    @genset_load_shedding_enabled = value
-    turn_off_heaters unless value
-  end
-
-  def record_heater_off
-    @last_heater_off_time = Time.monotonic
-  end
-
-  def heater_cooldown_active?
-    Time.monotonic - @last_heater_off_time < 30
+    @phase_current_history = []
   end
 
   def start
-    duration = 0
     until @stopped
       begin
         duration = Time.measure do
-          genset_load_management
+          update_phase_current_history
           manage_shelly_demands
         end
         puts "Energy management loop duration: #{duration.round(2)}s" if duration > 1
@@ -86,264 +63,28 @@ class EnergyManagement
     @stopped = true
   end
 
-  # Add heater load when:
-  # 1. Genset running: keep it at high load (DFS requires it)
-  # 2. Solar excess: use excess solar to heat water
-  # Only when battery is charge-limited by BMS, stop if discharging
-  def load_shedding(soc = @devices.next3.battery.soc)
-    heaters_on = @devices.relays.any_heater_on?
-
-    # Stop heaters if battery is discharging
-    if battery_discharging?
-      if heaters_on
-        puts "Battery discharging, turning off heaters"
-        turn_off_heaters
-      end
-      return
-    end
-
-    # Only add load when battery is charge-limited by BMS
-    unless battery_charge_limited?
-      turn_off_heaters if heaters_on
-      return
-    end
-
-    if genset_running?
-      # genset_load_shedding
-    else
-      solar_load_shedding
-    end
-  end
-
-  def battery_discharging?
-    @devices.next3.battery.charging_current < 0
-  end
-
-  def battery_charge_limited?
-    recommended = @devices.next3.battery.bms_recommended_charging_current
-    actual = @devices.next3.battery.charging_current
-    # Limited when actual is within 5A of recommended
-    recommended - actual < 5
-  end
-
-  # Add heaters to match rated_current when genset is running
-  def genset_load_shedding
-    rated = @devices.next3.acsource.rated_current
-    max_current = (1..3).map { |p| @devices.next3.acsource.current(p) }.max
-
-    # Heater current per phase (3-phase balanced load)
-    current_6kw = 6000.0 / 3 / 230  # ~8.7A
-    current_9kw = 9000.0 / 3 / 230  # ~13A
-
-    heater_6kw_on = @devices.relays.heater_6kw?
-    heater_9kw_on = @devices.relays.heater_9kw?
-
-    # Add back current from active heaters to get total available capacity
-    # (their draw is already included in max_current)
-    available = rated - max_current
-    available += current_6kw if heater_6kw_on
-    available += current_9kw if heater_9kw_on
-
-    if available >= current_6kw + current_9kw + 2
-      unless heater_6kw_on && heater_9kw_on || heater_cooldown_active?
-        puts "Genset available #{available.round(1)}A, turning on both heaters"
-        @devices.relays.heater_6kw = true
-        @devices.relays.heater_9kw = true
-      end
-    elsif available >= current_9kw + 2
-      unless heater_9kw_on && !heater_6kw_on
-        puts "Genset available #{available.round(1)}A, using 9kW heater"
-        @devices.relays.heater_6kw = false
-        @devices.relays.heater_9kw = true
-      end
-    elsif available >= current_6kw + 2
-      unless heater_6kw_on && !heater_9kw_on
-        puts "Genset available #{available.round(1)}A, using 6kW heater"
-        @devices.relays.heater_6kw = true
-        @devices.relays.heater_9kw = false
-      end
-    else
-      turn_off_heaters if heater_6kw_on || heater_9kw_on
-    end
-  end
-
-  # Add heaters when solar production exceeds consumption
-  def solar_load_shedding
-    current_6kw = 6000.0 / 3 / 230  # ~8.7A
-    current_9kw = 9000.0 / 3 / 230  # ~13A
-
-    heater_6kw_on = @devices.relays.heater_6kw?
-    heater_9kw_on = @devices.relays.heater_9kw?
-    excess = @devices.next3.solar.excess?
-
-    if excess
-      if !heater_6kw_on && !heater_cooldown_active? && phase_current_capacity?(current_6kw)
-        puts "Solar excess, turning on 6kW heater"
-        @devices.relays.heater_6kw = true
-      elsif heater_6kw_on && !heater_9kw_on && !heater_cooldown_active? && phase_current_capacity?(current_9kw)
-        puts "Solar excess, turning on 9kW heater"
-        @devices.relays.heater_9kw = true
-      end
-    elsif heater_6kw_on || heater_9kw_on
-      # Keep heaters on if solar is contributing (discharge power < heater power)
-      # Turn off one heater at a time, matching size to the deficit
-      heater_power = (heater_6kw_on ? 6000 : 0) + (heater_9kw_on ? 9000 : 0)
-      discharge_power = -@devices.next3.battery.power  # positive when discharging
-
-      if discharge_power > heater_power
-        # Turn off heater that best matches the discharge
-        if heater_6kw_on && heater_9kw_on
-          # Both on: turn off the one closest to discharge power
-          if discharge_power < 9000
-            puts "Discharge #{discharge_power.round}W, turning off 6kW heater"
-            @devices.relays.heater_6kw = false
-            record_heater_off
-          else
-            puts "Discharge #{discharge_power.round}W, turning off 9kW heater"
-            @devices.relays.heater_9kw = false
-            record_heater_off
-          end
-        elsif heater_9kw_on
-          puts "Discharge #{discharge_power.round}W > 9kW, turning off 9kW heater"
-          @devices.relays.heater_9kw = false
-          record_heater_off
-        else
-          puts "Discharge #{discharge_power.round}W > 6kW, turning off 6kW heater"
-          @devices.relays.heater_6kw = false
-          record_heater_off
-        end
-      end
-    end
-  end
-
   def genset_running?
-    true
-  end
-
-  def turn_off_heaters
-    puts "Turning off heaters"
-    @devices.relays.heater_6kw = false
-    @devices.relays.heater_9kw = false
-    turn_off_2kw_heaters
-    record_heater_off
-  end
-
-  def turn_on_2kw_heater(heater)
-    puts "Turning on 2kW heater #{heater[:host]} (phase #{heater[:phase]})"
-    turn_on_shelly(heater[:host])
-  end
-
-  def turn_off_2kw_heater(heater)
-    puts "Turning off 2kW heater #{heater[:host]} (phase #{heater[:phase]})"
-    turn_off_shelly(heater[:host])
-    record_heater_off
-  end
-
-  def turn_off_2kw_heaters
-    SHELLY_HEATER_2KW.each { |heater| turn_off_2kw_heater(heater) }
-  end
-
-  def any_2kw_heater_on?
-    SHELLY_HEATER_2KW.any? { |heater| heater_2kw_on?(heater) }
-  end
-
-  def heater_2kw_on?(heater)
-    response = shelly_rpc(heater[:host], "Switch.GetStatus", { id: 0 })
-    JSON.parse(response.body)["result"]["output"]
+    @devices.gencomm.is_running?
   rescue => e
-    puts "[ERROR] Failed to get 2kW heater status #{heater[:host]}: #{e.message}"
+    puts "[ERROR] genset_running? check failed: #{e.message}"
     false
   end
 
-  # Manage genset load using 6kW and 9kW heaters
-  # Turn on heaters if aftertreatment temp < 250°C, off if any phase > 90%
-  # Shelly demands have priority over heaters
-  # 2kW Shelly heaters are managed per-phase independently, higher priority than 6kW/9kW
-  def genset_load_management
-    return unless @genset_load_shedding_enabled
-
-    measurements = @devices.gencomm.measurements
-    phase_loads = [measurements[:load_pct_l1], measurements[:load_pct_l2], measurements[:load_pct_l3]]
-    max_load = phase_loads.max
-    avg_load = phase_loads.sum / 3.0
-    heater_6kw_on = @devices.relays.heater_6kw?
-    heater_9kw_on = @devices.relays.heater_9kw?
-
-    # Calculate pending shelly demand (not yet active), 50A = 100% load
-    pending_shelly_load = @shelly_demands_mutex.synchronize do
-      @shelly_demands.sum { |_, d| d[:active] ? 0 : d[:amps] / 50.0 * 100 }
-    end
-
-    # Manage 2kW heaters per-phase independently
-    SHELLY_HEATER_2KW.each do |heater|
-      phase_load = phase_loads[heater[:phase] - 1]
-      if heater_2kw_on?(heater)
-        # Turn off only if this specific phase is overloaded
-        if phase_load > 110
-          puts "Phase #{heater[:phase]} load #{phase_load.round(1)}% > 110%, turning off 2kW heater"
-          turn_off_2kw_heater(heater)
-        end
-      else
-        # Turn on if this phase has capacity
-        if phase_load + HEATER_2KW_LOAD_PCT + pending_shelly_load < 100 && !heater_cooldown_active?
-          puts "Phase #{heater[:phase]} has capacity (#{phase_load.round(1)}%), turning on 2kW heater"
-          turn_on_2kw_heater(heater)
-        end
-      end
-    end
-
-    # Manage 6kW/9kW heaters (3-phase, lower priority)
-    # Turn off if load too high
-    if avg_load > 100 || max_load > 110
-      if heater_6kw_on
-        puts "Genset load avg=#{avg_load.round(1)}% max=#{max_load.round(1)}%, turning off 6kW heater"
-        @devices.relays.heater_6kw = false
-        record_heater_off
-      elsif heater_9kw_on
-        # Swap: turn off 9kW and turn on 6kW (no cooldown for swap)
-        puts "Genset load avg=#{avg_load.round(1)}% max=#{max_load.round(1)}%, swapping 9kW for 6kW heater"
-        @devices.relays.heater_9kw = false
-        @devices.relays.heater_6kw = true
-      end
-    # Turn off to make room for pending shelly demand
-    elsif pending_shelly_load > 0 && max_load + pending_shelly_load > 105
-      if heater_6kw_on
-        puts "Turning off 6kW heater to make room for Shelly demand"
-        @devices.relays.heater_6kw = false
-        record_heater_off
-      elsif heater_9kw_on
-        puts "Turning off 9kW heater to make room for Shelly demand"
-        @devices.relays.heater_9kw = false
-        record_heater_off
-      end
-    # Turn on if no shelly demand and load allows
-    else
-      if !heater_9kw_on && (@checking_9kw_swap || !heater_cooldown_active?) && heater_load_allowed?(max_load, avg_load, HEATER_9KW_LOAD_PCT)
-        puts "No shelly demand, turning on 9kW heater (max=#{max_load.round(1)}%, avg=#{avg_load.round(1)}%)"
-        @devices.relays.heater_9kw = true
-        @checking_9kw_swap = false
-      elsif !heater_6kw_on && !heater_cooldown_active? && heater_load_allowed?(max_load, avg_load, HEATER_6KW_LOAD_PCT)
-        puts "No shelly demand, turning on 6kW heater (max=#{max_load.round(1)}%, avg=#{avg_load.round(1)}%)"
-        @devices.relays.heater_6kw = true
-        @checking_9kw_swap = false
-      # Check if we can swap 6kW for 9kW by measuring actual load without heater
-      elsif heater_6kw_on && !heater_9kw_on && !@checking_9kw_swap
-        # Only try swap if avg suggests 9kW might fit
-        if avg_load + (HEATER_9KW_LOAD_PCT - HEATER_6KW_LOAD_PCT) <= GENSET_MAX_LOAD_PCT
-          puts "Turning off 6kW heater to measure actual load for potential 9kW swap"
-          @devices.relays.heater_6kw = false
-          record_heater_off
-          @checking_9kw_swap = true
-        end
-      end
-    end
-  rescue => e
-    puts "[ERROR] Genset load management: #{e.message}"
+  # Manually start genset by setting aux1 to Manual On
+  def start_genset
+    puts "Starting genset (aux1 manual on)"
+    @devices.next3.aux1.operating_mode = 1
   end
 
-  # Check if adding heater load is allowed: max phase < 105% AND average <= 100%
-  def heater_load_allowed?(max_load, avg_load, heater_load_pct)
-    max_load + heater_load_pct < 105 && avg_load + heater_load_pct <= GENSET_MAX_LOAD_PCT
+  # Stop genset by returning aux1 to Auto mode
+  def stop_genset
+    puts "Stopping genset (aux1 back to auto)"
+    @devices.next3.aux1.operating_mode = 2
+  end
+
+  # Per-phase current capacity: inverter 22A, genset adds 50A
+  def per_phase_capacity
+    genset_running? ? INVERTER_CURRENT_LIMIT + GENSET_CURRENT_LIMIT : INVERTER_CURRENT_LIMIT
   end
 
   def phase_current
@@ -352,10 +93,25 @@ class EnergyManagement
     end
   end
 
-  INVERTER_CURRENT_LIMIT = 22
+  def update_phase_current_history
+    @phase_current_history << phase_current
+    @phase_current_history.shift if @phase_current_history.size > 60
+  end
 
-  # Returns true if the current on any phase has been over 20A for 25s in a row,
-  # during the last 5 minutes. That will result in a voltage drop. 
+  # Check if any phase is currently overloaded
+  def phase_overloaded?
+    capacity = per_phase_capacity
+    phase_current.any? { |c| c >= capacity }
+  end
+
+  # Check if adding amps would overload any phase
+  def phase_allows?(amps)
+    capacity = per_phase_capacity
+    phase_current.max + amps < capacity
+  end
+
+  # Returns true if the current on any phase has been over the limit for 25s in a row,
+  # during the last 5 minutes
   def high_phase_current?
     not phase_current_capacity?(0)
   end
@@ -363,7 +119,6 @@ class EnergyManagement
   # Can the requested current be added without overload? Look at the current draw
   # for the past 5 minutes
   def phase_current_capacity?(requested_current)
-    # we can't know if there's capacity until we have 5 or more measurments
     return false if @phase_current_history.size < 5
 
     (0..2).each do |phase|
@@ -380,32 +135,17 @@ class EnergyManagement
     true
   end
 
-  # Check if any phase is overloaded (>= 100%)
-  def genset_overloaded?
-    derived = @devices.gencomm.derived_measurements
-    [derived[:load_pct_l1], derived[:load_pct_l2], derived[:load_pct_l3]].any? { |l| l >= 100 }
-  end
-
-  # Check if genset load allows additional amps
-  def genset_load_allows?(amps)
-    derived = @devices.gencomm.derived_measurements
-    max_load = [derived[:load_pct_l1], derived[:load_pct_l2], derived[:load_pct_l3]].max
-    estimated_additional_load = amps / 50.0 * 100  # 50A = 100% load
-    max_load + estimated_additional_load < GENSET_MAX_LOAD_PCT
-  end
-
   # Shelly demand management
   def register_shelly_demand(host, amps)
     @shelly_demands_mutex.synchronize do
       @shelly_demands[host] = { amps:, active: false }
 
-      # Immediately check if we can activate
-      if genset_overloaded?
+      if phase_overloaded?
         turn_off_shelly(host)
         return { activated: false, reason: "overloaded" }
       end
 
-      if genset_running? && genset_load_allows?(amps)
+      if phase_allows?(amps)
         puts "Activating Shelly #{host} (#{amps}A) on registration"
         turn_on_shelly(host)
         @shelly_demands[host][:active] = true
@@ -429,18 +169,15 @@ class EnergyManagement
 
   def manage_shelly_demands
     @shelly_demands_mutex.synchronize do
-      # Manage demands based on genset load capacity
       @shelly_demands.each do |host, demand|
         if demand[:active]
-          # Already active, check if we need to shed load
-          if genset_overloaded?
-            puts "Genset load high, turning off Shelly #{host}"
+          if phase_overloaded?
+            puts "Phase overloaded, turning off Shelly #{host}"
             turn_off_shelly(host)
             demand[:active] = false
           end
         else
-          # Not active, check if we have capacity
-          if genset_load_allows?(demand[:amps])
+          if phase_allows?(demand[:amps])
             puts "Capacity available, turning on Shelly #{host} (#{demand[:amps]}A)"
             turn_on_shelly(host)
             demand[:active] = true
@@ -448,6 +185,39 @@ class EnergyManagement
         end
       end
     end
+  end
+
+  def turn_off_heaters
+    puts "Turning off heaters"
+    @devices.relays.heater_6kw = false
+    @devices.relays.heater_9kw = false
+    turn_off_2kw_heaters
+  end
+
+  def turn_on_2kw_heater(heater)
+    puts "Turning on 2kW heater #{heater[:host]} (phase #{heater[:phase]})"
+    turn_on_shelly(heater[:host])
+  end
+
+  def turn_off_2kw_heater(heater)
+    puts "Turning off 2kW heater #{heater[:host]} (phase #{heater[:phase]})"
+    turn_off_shelly(heater[:host])
+  end
+
+  def turn_off_2kw_heaters
+    SHELLY_HEATER_2KW.each { |heater| turn_off_2kw_heater(heater) }
+  end
+
+  def any_2kw_heater_on?
+    SHELLY_HEATER_2KW.any? { |heater| heater_2kw_on?(heater) }
+  end
+
+  def heater_2kw_on?(heater)
+    response = shelly_rpc(heater[:host], "Switch.GetStatus", { id: 0 })
+    JSON.parse(response.body)["result"]["output"]
+  rescue => e
+    puts "[ERROR] Failed to get 2kW heater status #{heater[:host]}: #{e.message}"
+    false
   end
 
   def turn_on_shelly(host)
@@ -472,8 +242,6 @@ class EnergyManagement
     http.request(request)
   end
 
-  BATTERY_KWH = 31.2
-
   # Manage genset start/stop thresholds via Next3 aux1 relay
   def genset_threshold_management(soc = @devices.next3.battery.soc)
     return if Time.monotonic - @last_threshold_check < 60
@@ -488,45 +256,12 @@ class EnergyManagement
     if soc_diff > 5
       target_deactivation = 99
       puts "Battery module SoC drift #{soc_diff.round(1)}% > 5%, setting genset deactivation to 99%"
-    # If solar forecast shows we'll survive, decrease threshold to stop genset earlier
-    elsif genset_running? && will_survive_on_solar?(soc)
-      target_deactivation = [soc.ceil + 5, DEFAULT_GENSET_DEACTIVATION_SOC].min
-      puts "Solar forecast positive, lowering genset deactivation to #{target_deactivation}%"
     end
 
     if current_deactivation != target_deactivation
       puts "Adjusting genset deactivation threshold: #{current_deactivation}% -> #{target_deactivation}%"
       @devices.next3.aux1.soc_deactivation_threshold = target_deactivation
     end
-  end
-
-  # Check if solar will sustain us for the rest of the day
-  def will_survive_on_solar?(soc)
-    return false if @phase_current_history.size < 5
-
-    avg_power_kw = @phase_current_history.sum { |phases| phases.sum } * 230 / @phase_current_history.size / 1000.0
-    battery_kwh = BATTERY_KWH * soc / 100.0
-
-    produced_solar_today = @devices.next3.solar.total_day_energy / 1000.0
-    @solar_forecast.actual = produced_solar_today if produced_solar_today > 1
-
-    last_time = start = Time.now
-    @solar_forecast.estimate_watt_hours.each do |t, watthours|
-      time = Time.parse(t)
-      next if time <= last_time
-
-      period = (time - last_time) / 3600
-      battery_kwh += ((watthours / 1000.0) - (avg_power_kw * period))
-      estimated_soc = (battery_kwh / BATTERY_KWH * 100).round
-      return false if estimated_soc <= DEFAULT_GENSET_ACTIVATION_SOC
-
-      last_time = time
-    end
-    return false if last_time == start
-    true
-  rescue => e
-    puts "[ERROR] Solar forecast: #{e.inspect}"
-    false
   end
 
   def weco_module_soc_diff
