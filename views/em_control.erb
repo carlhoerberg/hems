@@ -4,11 +4,10 @@
   </head>
   <body>
     <h1>Energy Management control</h1>
+    <p>Aux1 mode: <%= case em.aux1_operating_mode when 0 then "Manual Off" when 1 then "Manual On" when 2 then "Auto" else "Unknown (#{em.aux1_operating_mode})" end %></p>
     <form method="post">
-      <button name="action" value="genset_auto_started" <%=em.genset_auto_started ? "disabled" : ""%>>Genset is auto started</button>
-      <button name="action" value="genset_manually_started" <%=em.genset_auto_started ? "" : "disabled"%>>Genset is manually started</button>
-      <button name="action" value="start_genset">Start genset</button>
-      <button name="action" value="stop_genset">Stop genset</button>
+      <button name="action" value="start_genset" <%=em.genset_auto_started? ? "" : "disabled"%>>Start genset</button>
+      <button name="action" value="stop_genset" <%=em.genset_auto_started? ? "disabled" : ""%>>Stop genset</button>
     </form>
   </body>
 </html>

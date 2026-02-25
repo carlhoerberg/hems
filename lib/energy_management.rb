@@ -29,8 +29,6 @@ class EnergyManagement
   INVERTER_CURRENT_LIMIT = 22
   GENSET_CURRENT_LIMIT = 50
 
-  attr_accessor :genset_auto_started
-
   BATTERY_KWH = 31.2
 
   def initialize(devices)
@@ -38,7 +36,6 @@ class EnergyManagement
     @stopped = false
     @shelly_demands = {}  # { device_id => { amps:, active: false } }
     @shelly_demands_mutex = Mutex.new
-    @genset_auto_started = true
     @phase_current_history = []
   end
 
@@ -68,6 +65,15 @@ class EnergyManagement
   rescue => e
     puts "[ERROR] genset_running? check failed: #{e.message}"
     false
+  end
+
+  # Aux1 operating mode: 0 = Manual Off, 1 = Manual On, 2 = Auto
+  def aux1_operating_mode
+    @devices.next3.aux1.operating_mode
+  end
+
+  def genset_auto_started?
+    aux1_operating_mode == 2
   end
 
   # Manually start genset by setting aux1 to Manual On
