@@ -37,6 +37,7 @@ class EnergyManagement
     @shelly_demands = {}  # { device_id => { amps:, active: false } }
     @shelly_demands_mutex = Mutex.new
     @phase_current_history = []
+    @genset_heaters_on = false
   end
 
   def start
@@ -45,6 +46,7 @@ class EnergyManagement
         duration = Time.measure do
           update_phase_current_history
           manage_shelly_demands
+          manage_genset_heaters
         end
         puts "Energy management loop duration: #{duration.round(2)}s" if duration > 1
         break if @stopped
@@ -189,6 +191,22 @@ class EnergyManagement
             demand[:active] = true
           end
         end
+      end
+    end
+  end
+
+  def manage_genset_heaters
+    if genset_running?
+      unless @genset_heaters_on
+        puts "Genset running, turning on 2kW heaters"
+        SHELLY_HEATER_2KW.each { |heater| turn_on_2kw_heater(heater) }
+        @genset_heaters_on = true
+      end
+    else
+      if @genset_heaters_on
+        puts "Genset stopped, turning off 2kW heaters"
+        turn_off_2kw_heaters
+        @genset_heaters_on = false
       end
     end
   end
