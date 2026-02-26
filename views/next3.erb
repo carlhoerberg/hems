@@ -79,5 +79,12 @@ solar_limitation{array="<%=array%>"} <%=next3.solar.limitation(array)%>
 # TYPE aux1_is_connected gauge
 aux1_is_connected <%=next3.aux1.is_connected ? 1 : 0%>
 
+# TYPE converter_errors gauge
+converter_errors <%=next3.converter.errors%>
+# TYPE converter_adc_noise gauge
+converter_adc_noise <%=next3.converter.adc_noise%>
+# TYPE battery_contributor_temp gauge
+battery_contributor_temp <%=next3.battery_contributor.temp%>
+
 # TYPE metrics_gather_time gauge
 metrics_gather_time{device="next3"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>

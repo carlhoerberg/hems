@@ -4,7 +4,7 @@ class Devices
   class Next3
     using Modbus::TypeExtensions
 
-    attr_reader :acload, :battery, :acsource, :solar, :aux1
+    attr_reader :acload, :battery, :acsource, :solar, :aux1, :converter, :battery_contributor
 
     def initialize
       host = ENV.fetch("NEXT3_HOST", "studer-next")
@@ -15,6 +15,8 @@ class Devices
       @acsource = AcSource.new next3
       @solar = Solar.new next3
       @aux1 = Aux.new next3, 1
+      @converter = Converter.new next3
+      @battery_contributor = BatteryContributor.new next3
     end
 
     class Battery
@@ -296,6 +298,30 @@ class Devices
       # 0 not limited, 1 temperature limited, 2 max power reached, 3 max current reached, 4 solar excess
       def limitation(array)
         @unit.read_holding_registers(6918 + (array - 1) * 300, 2).to_u32
+      end
+    end
+
+    class Converter
+      def initialize(next3)
+        @unit = next3.unit(14)
+      end
+
+      def errors
+        @unit.read_holding_registers(5102, 2).to_u32
+      end
+
+      def adc_noise
+        @unit.read_holding_registers(5162, 2).to_f32
+      end
+    end
+
+    class BatteryContributor
+      def initialize(next3)
+        @unit = next3.unit(14)
+      end
+
+      def temp
+        @unit.read_holding_registers(9904, 2).to_f32
       end
     end
 
