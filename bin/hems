@@ -15,6 +15,7 @@ require_relative "../lib/http_server/eta"
 require_relative "../lib/http_server/grundfos"
 require_relative "../lib/http_server/shelly"
 require_relative "../lib/http_server/gencomm"
+require_relative "../lib/http_server/modbus"
 
 $stdout.sync = true
 Thread.abort_on_exception = false
@@ -33,6 +34,7 @@ srv = HTTPServer.new({
   "/grundfos" => HTTPServer::GrundfosControl.new(devices.grundfos),
   "/shelly" => HTTPServer::ShellyControl.new(em),
   "/gencomm" => HTTPServer::GenCommControl.new(devices.gencomm),
+  "/modbus" => HTTPServer::ModbusControl.new,
 })
 trap('INT') { em.stop; srv.stop }
 trap('TERM') { em.stop; srv.stop }
