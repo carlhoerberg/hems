@@ -31,6 +31,9 @@ class EnergyManagement
 
   BATTERY_KWH = 31.2
 
+  GENSET_DEMAND_START_DELAY = 30    # seconds of unmet demand before starting genset
+  GENSET_DEMAND_STOP_DELAY = 15 * 60 # seconds after last demand before stopping genset
+
   def initialize(devices)
     @devices = devices
     @stopped = false
@@ -38,6 +41,9 @@ class EnergyManagement
     @shelly_demands_mutex = Mutex.new
     @phase_current_history = []
     @genset_heaters_on = false
+    @unmet_demand_since = nil         # monotonic time when unmet demand first noticed
+    @genset_started_for_demand = false # true if we manually started genset for shelly demand
+    @last_shelly_demand_at = nil      # monotonic time of last shelly demand registration
   end
 
   def start
@@ -46,6 +52,7 @@ class EnergyManagement
         duration = Time.measure do
           update_phase_current_history
           manage_shelly_demands
+          manage_genset_for_demand
           manage_genset_heaters
         end
         puts "Energy management loop duration: #{duration.round(2)}s" if duration > 1
@@ -147,6 +154,7 @@ class EnergyManagement
   def register_shelly_demand(host, amps)
     @shelly_demands_mutex.synchronize do
       @shelly_demands[host] = { amps:, active: false }
+      @last_shelly_demand_at = Time.monotonic
 
       if phase_overloaded?
         turn_off_shelly(host)
@@ -190,6 +198,33 @@ class EnergyManagement
             turn_on_shelly(host)
             demand[:active] = true
           end
+        end
+      end
+    end
+  end
+
+  def manage_genset_for_demand
+    @shelly_demands_mutex.synchronize do
+      has_unmet = @shelly_demands.any? { |_, d| !d[:active] }
+
+      if has_unmet
+        @unmet_demand_since ||= Time.monotonic
+        if !@genset_started_for_demand && !genset_running? &&
+           Time.monotonic - @unmet_demand_since >= GENSET_DEMAND_START_DELAY
+          puts "Unmet shelly demand for #{GENSET_DEMAND_START_DELAY}s, starting genset"
+          start_genset
+          @genset_started_for_demand = true
+        end
+      else
+        @unmet_demand_since = nil
+      end
+
+      if @genset_started_for_demand
+        if @shelly_demands.empty? && @last_shelly_demand_at &&
+           Time.monotonic - @last_shelly_demand_at >= GENSET_DEMAND_STOP_DELAY
+          puts "No shelly demand for #{GENSET_DEMAND_STOP_DELAY / 60} minutes, stopping genset"
+          stop_genset
+          @genset_started_for_demand = false
         end
       end
     end
