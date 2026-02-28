@@ -42,6 +42,9 @@ class HTTPServer
     request = parse_request(socket) || return
     response = handle_request(request)
     send_response(socket, response)
+  rescue => e
+    puts "Unhandled error in worker thread: #{e.message}"
+    e.backtrace.each { |line| puts "  at #{line}" }
   ensure
     socket.close
   end
