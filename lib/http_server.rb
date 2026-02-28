@@ -80,6 +80,12 @@ class HTTPServer
            end
 
     Request.new(method, path.chomp("/"), query, headers, body, remote_ip)
+  rescue Errno::ENOTCONN
+    puts "Client disconnected before request could be read"
+  rescue => e
+    puts "Error parsing request: #{e.message}"
+    e.backtrace.each { |line| puts "  at #{line}" }
+    nil
   end
 
   def handle_request(request)
@@ -125,7 +131,7 @@ class HTTPServer
       "Content-Length: ", response.body.bytesize.to_s, "\r\n\r\n",
       response.body
     )
-  rescue SystemCallError => e
+  rescue => e
     puts "Error sending response to client: #{e.message}"
     puts "At line #{e.backtrace.first}"
   end
