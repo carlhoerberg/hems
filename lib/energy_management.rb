@@ -31,12 +31,17 @@ class EnergyManagement
 
   BATTERY_KWH = 31.2
 
+  GENSET_AUTO_START_TIMEOUT = 60   # seconds of unfulfilled demand before auto-starting genset
+  GENSET_MIN_RUNTIME = 20 * 60    # 20 minutes minimum runtime in seconds
+
   def initialize(devices)
     @devices = devices
     @stopped = false
     @shelly_demands = {}  # { device_id => { amps:, active: false } }
     @shelly_demands_mutex = Mutex.new
     @phase_current_history = []
+    @unfulfilled_demand_since = nil  # monotonic time when unfulfilled demand first detected
+    @genset_auto_started_at = nil    # monotonic time when we auto-started the genset
   end
 
   def start
@@ -190,6 +195,59 @@ class EnergyManagement
           end
         end
       end
+
+      manage_genset_for_demands
+    end
+  end
+
+  # Auto-start genset when Shelly demand can't be fulfilled, with minimum runtime
+  # States: Idle -> Waiting (unfulfilled demand) -> Running (genset auto-started) -> Idle
+  def manage_genset_for_demands
+    now = Time.monotonic
+
+    if @genset_auto_started_at
+      # If someone externally changed aux1 mode, respect that
+      if aux1_operating_mode != 1
+        puts "Genset auto-start overridden externally, resetting"
+        @genset_auto_started_at = nil
+        @unfulfilled_demand_since = nil
+        return
+      end
+
+      # If load exceeds inverter capacity, reset the minimum runtime timer
+      if phase_current.any? { |c| c > INVERTER_CURRENT_LIMIT }
+        @genset_auto_started_at = now
+        return
+      end
+
+      if now - @genset_auto_started_at >= GENSET_MIN_RUNTIME
+        puts "Genset minimum runtime (#{GENSET_MIN_RUNTIME / 60}min) elapsed, returning to auto mode"
+        stop_genset
+        @genset_auto_started_at = nil
+        @unfulfilled_demand_since = nil
+      end
+      return
+    end
+
+    # Don't interfere if genset is already running or manually started
+    return if genset_running?
+    return if aux1_operating_mode == 1
+
+    # Check if there are any unfulfilled (inactive) demands
+    has_unfulfilled = @shelly_demands.any? { |_host, demand| !demand[:active] }
+
+    if has_unfulfilled
+      @unfulfilled_demand_since ||= now
+      elapsed = now - @unfulfilled_demand_since
+
+      if elapsed >= GENSET_AUTO_START_TIMEOUT
+        puts "Unfulfilled Shelly demand for #{elapsed.round(0)}s, auto-starting genset"
+        start_genset
+        @genset_auto_started_at = now
+        @unfulfilled_demand_since = nil
+      end
+    else
+      @unfulfilled_demand_since = nil
     end
   end
 
