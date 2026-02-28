@@ -114,11 +114,17 @@ class HTTPServer
   end
 
   def send_response(socket, response)
-    socket.write "HTTP/1.0 ", response.status_header, "\r\n"
-    headers = response.headers || {}
-    response_headers = headers.flat_map { |key, value| [key, ": ", value, "\r\n"] }
-    socket.write(*response_headers) if response_headers.any?
-    socket.write "Content-Length: ", response.body.bytesize, "\r\n\r\n", response.body
+    headers = if (hdrs = response.headers)
+                hdrs.flat_map { |k, v| [k, ": ", v, "\r\n"] }
+              else
+                []
+              end
+    socket.write(
+      "HTTP/1.0 ", response.status_header, "\r\n",
+      *headers,
+      "Content-Length: ", response.body.bytesize.to_s, "\r\n\r\n",
+      response.body
+    )
   rescue SystemCallError => e
     puts "Error sending response to client: #{e.message}"
     puts "At line #{e.backtrace.first}"
