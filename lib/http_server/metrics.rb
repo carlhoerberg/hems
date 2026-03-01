@@ -29,33 +29,6 @@ class HTTPServer
       res.content_type = "text/plain"
       metrics =
         case req.path
-        when "/metrics"
-          [
-            Thread.new { @@next3.result_with_hash({ t:, next3: @devices.next3 }) },
-            Thread.new { @@eta.result_with_hash({ t:, eta: @devices.eta }) },
-            Thread.new { @@starlink.result_with_hash({ t:, metrics: @devices.starlink.metrics }) },
-            Thread.new { @@shelly.result_with_hash({ t:, devices: @devices.shelly.devices }) },
-            Thread.new { @@ups.result_with_hash({ t:, ups: @devices.ups }) },
-            Thread.new { @@unifi.result_with_hash({ t:, unifi_health: @devices.unifi.health }) },
-            Thread.new { @@topas.result_with_hash({ t:, measurements: @devices.topas.measurements, status: @devices.topas.status }) },
-            Thread.new { @@weco.result_with_hash({ t:, modules: @devices.weco.modules, total: @devices.weco.total }) },
-            Thread.new { @@relays.result_with_hash({ t:, status: @devices.relays.status }) },
-            Thread.new { @@envistar.result_with_hash({ t:, m: @devices.envistar }) },
-            Thread.new { @@casa.result_with_hash({ t:, casa: @devices.casa }) },
-            Thread.new { @@grundfos.result_with_hash({ t:, grundfos: @devices.grundfos }) },
-            Thread.new { @@lk.result_with_hash({ t:, lk_devices: @devices.lk }) },
-            Thread.new { @@ecowitt.result_with_hash({ t:, measurements: @devices.ecowitt.measurements }) },
-            Thread.new do
-              @@sdmo.result_with_hash({ t:, measurements: @devices.sdmo.measurements, status: @devices.sdmo.status_integer })
-            rescue EOFError
-              warn "SDMO is offline"
-            end,
-            Thread.new { @@victron.result_with_hash({ t:, m: @devices.victron.measurements }) },
-          ].map do |t|
-            t.value
-          rescue
-            # Thread#report_on_exception
-          end.join
         when "/metrics/next3"
           @@next3.result_with_hash({ t:, next3: @devices.next3 })
         when "/metrics/sdmo"
