@@ -55,7 +55,7 @@ class EnergyManagement
           manage_genset_for_demand
           manage_genset_heaters
         end
-        puts "Energy management loop duration: #{duration.round(2)}s" if duration > 1
+        puts "Energy management loop duration: #{duration.round(2)}s" if duration > 5
         break if @stopped
         sleep [5 - duration, 0].max
       rescue => e
