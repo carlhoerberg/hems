@@ -64,24 +64,34 @@ class Devices
       @device_info = {}
       @cloud_auth_key = ENV["SHELLY_CLOUD_AUTH_KEY"]
       @cloud_server = ENV["SHELLY_CLOUD_SERVER"]
+      @cloud_pending = {} # device_id => hex_id
       @server = Thread.new { listen }
+      start_cloud_fetcher if @cloud_auth_key && @cloud_server
     end
 
     private
 
-    def fetch_cloud_device_info(device_id)
+    def start_cloud_fetcher
+      Thread.new do
+        loop do
+          sleep 1
+          flush_cloud_pending
+        end
+      end
+    end
+
+    def queue_cloud_fetch(device_id)
       return unless @cloud_auth_key && @cloud_server
       return if @device_info.key?(device_id)
+      @cloud_pending[device_id] = device_id.split("-").last
+    end
 
-      # Rate limit: 1 req/sec
-      now = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      if @last_cloud_fetch && now - @last_cloud_fetch < 1.0
-        sleep(1.0 - (now - @last_cloud_fetch))
-      end
-      @last_cloud_fetch = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    def flush_cloud_pending
+      return if @cloud_pending.empty?
+      batch = @cloud_pending.shift(10)
+      device_ids = batch.map(&:first)
+      hex_ids = batch.map(&:last)
 
-      # Extract hex ID from device_id (e.g. "shellyplusplugs-fcb4670cf7fc" -> "fcb4670cf7fc")
-      hex_id = device_id.split("-").last
       uri = URI("https://#{@cloud_server}/v2/devices/api/get?auth_key=#{@cloud_auth_key}")
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = true
@@ -89,27 +99,33 @@ class Devices
       http.read_timeout = 10
       req = Net::HTTP::Post.new(uri)
       req.content_type = "application/json"
-      req.body = JSON.generate({ ids: [hex_id], select: ["settings"] })
+      req.body = JSON.generate({ ids: hex_ids, select: ["settings"] })
       res = http.request(req)
       unless res.is_a?(Net::HTTPSuccess)
-        warn "Shelly Cloud API error for #{device_id}: #{res.code} #{res.body}"
-        @device_info[device_id] = {}
+        warn "Shelly Cloud API error: #{res.code} #{res.body}"
+        device_ids.each { |id| @device_info[id] = {} }
         return
       end
-      data = JSON.parse(res.body)
-      device = data.first
-      if device
-        settings = device["settings"] || {}
-        name = settings["name"]
-        room = settings.dig("room", "name")
-        @device_info[device_id] = { name:, room: }
-        puts "Shelly Cloud: #{device_id} -> #{name} (#{room})"
-      else
-        @device_info[device_id] = {}
+      results = JSON.parse(res.body)
+      results_by_id = {}
+      results.each do |device|
+        id = device["id"] || next
+        results_by_id[id] = device
+      end
+      batch.each do |device_id, hex_id|
+        if (device = results_by_id[hex_id])
+          settings = device["settings"] || {}
+          name = settings["name"]
+          room = settings.dig("room", "name")
+          @device_info[device_id] = { name:, room: }
+          puts "Shelly Cloud: #{device_id} -> #{name} (#{room})"
+        else
+          @device_info[device_id] = {}
+        end
       end
     rescue => e
-      warn "Shelly Cloud API fetch failed for #{device_id}: #{e.inspect}"
-      @device_info[device_id] = {}
+      warn "Shelly Cloud API fetch failed: #{e.inspect}"
+      device_ids&.each { |id| @device_info[id] ||= {} }
     end
 
     def listen
@@ -137,9 +153,7 @@ class Devices
 
     def notify_status(device_id, params)
       ts = (params["ts"] * 1000).to_i
-      unless @devices.key?(device_id)
-        fetch_cloud_device_info(device_id)
-      end
+      queue_cloud_fetch(device_id) unless @devices.key?(device_id)
       device = @devices[device_id] ||= {}
       matched = false
 
