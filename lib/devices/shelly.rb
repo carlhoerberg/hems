@@ -108,6 +108,7 @@ class Devices
         return
       end
       results = JSON.parse(res.body)
+      puts "Shelly Cloud API response: #{res.body[0, 2000]}"
       results_by_id = {}
       results.each do |device|
         id = device["id"] || next
