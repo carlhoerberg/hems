@@ -88,9 +88,10 @@ class Devices
 
     def flush_cloud_pending
       return if @cloud_pending.empty?
-      batch = @cloud_pending.shift(10)
-      device_ids = batch.map(&:first)
-      hex_ids = batch.map(&:last)
+      batch = @cloud_pending.first(10)
+      batch.each_key { |k| @cloud_pending.delete(k) }
+      device_ids = batch.keys
+      hex_ids = batch.values
 
       uri = URI("https://#{@cloud_server}/v2/devices/api/get?auth_key=#{@cloud_auth_key}")
       http = Net::HTTP.new(uri.host, uri.port)
