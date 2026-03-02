@@ -77,7 +77,7 @@ class Devices
           ip = from[2]
           case data["method"]
           when "NotifyStatus", "NotifyFullStatus"
-            fetch_device_name(data["src"], ip) unless @device_names.key?(data["src"])
+            fetch_device_names(data["src"], ip) unless @device_names.key?(data["src"])
             notify_status(data["src"], data["params"])
           when "NotifyEvent"
             data.dig("params", "events").each do |event|
@@ -91,19 +91,23 @@ class Devices
       end
     end
 
-    def fetch_device_name(device_id, ip)
+    def fetch_device_names(device_id, ip)
       http = Net::HTTP.new(ip, 80)
       http.open_timeout = 2
       http.read_timeout = 2
-      res = http.get("/rpc/Shelly.GetDeviceInfo")
+      res = http.get("/rpc/Shelly.GetConfig")
       return unless res.is_a?(Net::HTTPSuccess)
-      info = JSON.parse(res.body)
-      name = info["name"]
-      @device_names[device_id] = name
-      puts "Shelly: #{device_id} (#{ip}) name=#{name.inspect}"
+      config = JSON.parse(res.body)
+      names = {}
+      config.each do |key, val|
+        next unless val.is_a?(Hash) && val.key?("name") && val["name"]
+        names[key] = val["name"]
+      end
+      @device_names[device_id] = names
+      puts "Shelly: #{device_id} (#{ip}) names=#{names}" unless names.empty?
     rescue => e
-      @device_names[device_id] = nil
-      warn "Shelly: failed to fetch name for #{device_id} (#{ip}): #{e.inspect}"
+      @device_names[device_id] = {}
+      warn "Shelly: failed to fetch names for #{device_id} (#{ip}): #{e.inspect}"
     end
 
     def notify_status(device_id, params)

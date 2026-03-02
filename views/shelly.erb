@@ -1,9 +1,10 @@
 <%devices.each do |device_id, metrics|%>
-<%dn = device_names[device_id]%>
+<%names = device_names[device_id] || {}%>
 <%metrics.select { |_, m| m[:v] && m[:ts] / 1000 > Time.now.to_i - 3600 }.each do |key, m|%>
-<%name = key.to_s.split("/", 2).first%>
+<%name, component = key.to_s.split("/", 2)%>
+<%cn = names[component] if component%>
 # TYPE <%=name%> <%=m[:counter] ? "counter" : "gauge"%>
-<%=name%>{device_id="<%=device_id%>"<%=dn ? ",name=\"#{dn}\"" : ""%>} <%=m[:v]%> <%=m[:ts]%>
+<%=name%>{device_id="<%=device_id%>"<%=cn ? ",name=\"#{cn}\"" : ""%>} <%=m[:v]%> <%=m[:ts]%>
 <%end%>
 <%end%>
 
