@@ -49,6 +49,9 @@ class Devices
       /^humidity:\d+$/ => {
         "rh" => "shelly_humidity",
       },
+      /^cover:\d+$/ => {
+        "current_pos" => "shelly_cover_position",
+      },
       /^input:\d+$/ => {
         ["counts", "xtotal"] => ["shelly_count", :counter],
       },
