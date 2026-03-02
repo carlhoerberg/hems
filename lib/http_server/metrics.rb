@@ -38,7 +38,7 @@ class HTTPServer
         when "/metrics/starlink"
           @@starlink.result_with_hash({ t:, metrics: @devices.starlink.metrics })
         when "/metrics/shelly"
-          @@shelly.result_with_hash({ t:, devices: @devices.shelly.devices })
+          @@shelly.result_with_hash({ t:, devices: @devices.shelly.devices, device_names: @devices.shelly.device_names })
         when "/metrics/ups"
           @@ups.result_with_hash({ t:, ups: @devices.ups })
         when "/metrics/unifi"

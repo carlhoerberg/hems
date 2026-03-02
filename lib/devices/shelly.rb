@@ -1,5 +1,6 @@
 require "socket"
 require "json"
+require "net/http"
 
 class Devices
   class Shelly
@@ -55,10 +56,11 @@ class Devices
       },
     }
 
-    attr_reader :devices
+    attr_reader :devices, :device_names
 
     def initialize
       @devices = {}
+      @device_names = {}
       @server = Thread.new { listen }
     end
 
@@ -69,11 +71,13 @@ class Devices
       udp.bind("0.0.0.0", 4913)
       puts "Shelly UDP server listening on #{udp.local_address.inspect_sockaddr}"
       loop do
-        json, _from = udp.recvfrom(4096)
+        json, from = udp.recvfrom(4096)
         begin
           data = JSON.parse(json)
+          ip = from[2]
           case data["method"]
           when "NotifyStatus", "NotifyFullStatus"
+            fetch_device_name(data["src"], ip) unless @device_names.key?(data["src"])
             notify_status(data["src"], data["params"])
           when "NotifyEvent"
             data.dig("params", "events").each do |event|
@@ -85,6 +89,21 @@ class Devices
           STDERR.puts e.backtrace.join("\n")
         end
       end
+    end
+
+    def fetch_device_name(device_id, ip)
+      http = Net::HTTP.new(ip, 80)
+      http.open_timeout = 2
+      http.read_timeout = 2
+      res = http.get("/rpc/Shelly.GetDeviceInfo")
+      return unless res.is_a?(Net::HTTPSuccess)
+      info = JSON.parse(res.body)
+      name = info["name"]
+      @device_names[device_id] = name
+      puts "Shelly: #{device_id} (#{ip}) name=#{name.inspect}"
+    rescue => e
+      @device_names[device_id] = nil
+      warn "Shelly: failed to fetch name for #{device_id} (#{ip}): #{e.inspect}"
     end
 
     def notify_status(device_id, params)
