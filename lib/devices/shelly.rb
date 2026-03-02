@@ -74,7 +74,6 @@ class Devices
         json, from = udp.recvfrom(4096)
         begin
           data = JSON.parse(json)
-          puts "Shelly UDP: #{json}"
           ip = from[2]
           case data["method"]
           when "NotifyStatus", "NotifyFullStatus"
