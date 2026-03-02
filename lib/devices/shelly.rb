@@ -62,41 +62,47 @@ class Devices
     def initialize
       @devices = {}
       @device_info = {}
-      fetch_cloud_device_info
+      @cloud_auth_key = ENV["SHELLY_CLOUD_AUTH_KEY"]
+      @cloud_server = ENV["SHELLY_CLOUD_SERVER"]
       @server = Thread.new { listen }
     end
 
     private
 
-    def fetch_cloud_device_info
-      auth_key = ENV["SHELLY_CLOUD_AUTH_KEY"]
-      server = ENV["SHELLY_CLOUD_SERVER"]
-      return unless auth_key && server
+    def fetch_cloud_device_info(device_id)
+      return unless @cloud_auth_key && @cloud_server
+      return if @device_info.key?(device_id)
 
-      uri = URI("https://#{server}/v2/devices/api/get?auth_key=#{auth_key}")
+      # Extract hex ID from device_id (e.g. "shellyplusplugs-fcb4670cf7fc" -> "fcb4670cf7fc")
+      hex_id = device_id.split("-").last
+      uri = URI("https://#{@cloud_server}/v2/devices/api/get?auth_key=#{@cloud_auth_key}")
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = true
       http.open_timeout = 5
       http.read_timeout = 10
       req = Net::HTTP::Post.new(uri)
       req.content_type = "application/json"
-      req.body = JSON.generate({ select: ["settings"] })
+      req.body = JSON.generate({ ids: [hex_id], select: ["settings"] })
       res = http.request(req)
       unless res.is_a?(Net::HTTPSuccess)
-        warn "Shelly Cloud API error: #{res.code} #{res.body}"
+        warn "Shelly Cloud API error for #{device_id}: #{res.code} #{res.body}"
+        @device_info[device_id] = {}
         return
       end
       data = JSON.parse(res.body)
-      data.each do |device|
-        id = device["id"] || next
-        settings = device["settings"] || next
-        name = settings["name"] || next
-        room = settings.dig("room", "name") || next
-        @device_info[id] = { name:, room: }
+      device = data.first
+      if device
+        settings = device["settings"] || {}
+        name = settings["name"]
+        room = settings.dig("room", "name")
+        @device_info[device_id] = { name:, room: }
+        puts "Shelly Cloud: #{device_id} -> #{name} (#{room})"
+      else
+        @device_info[device_id] = {}
       end
-      puts "Shelly Cloud: loaded info for #{@device_info.size} devices"
     rescue => e
-      warn "Shelly Cloud API fetch failed: #{e.inspect}"
+      warn "Shelly Cloud API fetch failed for #{device_id}: #{e.inspect}"
+      @device_info[device_id] = {}
     end
 
     def listen
@@ -124,6 +130,9 @@ class Devices
 
     def notify_status(device_id, params)
       ts = (params["ts"] * 1000).to_i
+      unless @devices.key?(device_id)
+        fetch_cloud_device_info(device_id)
+      end
       device = @devices[device_id] ||= {}
       matched = false
 
