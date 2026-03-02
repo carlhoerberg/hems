@@ -73,6 +73,13 @@ class Devices
       return unless @cloud_auth_key && @cloud_server
       return if @device_info.key?(device_id)
 
+      # Rate limit: 1 req/sec
+      now = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      if @last_cloud_fetch && now - @last_cloud_fetch < 1.0
+        sleep(1.0 - (now - @last_cloud_fetch))
+      end
+      @last_cloud_fetch = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+
       # Extract hex ID from device_id (e.g. "shellyplusplugs-fcb4670cf7fc" -> "fcb4670cf7fc")
       hex_id = device_id.split("-").last
       uri = URI("https://#{@cloud_server}/v2/devices/api/get?auth_key=#{@cloud_auth_key}")
