@@ -108,7 +108,6 @@ class Devices
         return
       end
       results = JSON.parse(res.body)
-      puts "Shelly Cloud API response: #{res.body[0, 2000]}"
       results_by_id = {}
       results.each do |device|
         id = device["id"] || next
@@ -117,7 +116,7 @@ class Devices
       batch.each do |device_id, hex_id|
         if (device = results_by_id[hex_id])
           settings = device["settings"] || {}
-          name = settings["name"]
+          name = settings.dig("sys", "device", "name")
           room = settings.dig("room", "name")
           @device_info[device_id] = { name:, room: }
           puts "Shelly Cloud: #{device_id} -> #{name} (#{room})"
