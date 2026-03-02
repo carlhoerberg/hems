@@ -125,6 +125,7 @@ class Devices
       matched = false
 
       params.each_key do |component_key|
+        next if component_key == "ts" || component_key == "sys"
         COMPONENT_METRICS.each do |pattern, fields|
           next unless pattern.match?(component_key)
           matched = true
