@@ -88,7 +88,7 @@ class Devices
 
     def flush_cloud_pending
       return if @cloud_pending.empty?
-      batch = @cloud_pending.first(10)
+      batch = @cloud_pending.first(10).to_h
       batch.each_key { |k| @cloud_pending.delete(k) }
       device_ids = batch.keys
       hex_ids = batch.values
