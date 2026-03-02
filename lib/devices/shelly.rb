@@ -1,22 +1,100 @@
 require "socket"
 require "json"
+require "net/http"
+require "uri"
 
 class Devices
   class Shelly
-    # Example
-    # @devices = {
-    #   "deviceid" => {
-    #     "shelly_temp" => { value: 123, ts: 11111111, counter: false },
-    #   }
-    # }
-    attr_reader :devices
+    COMPONENT_METRICS = {
+      /^switch:\d+$/ => {
+        "current" => "shelly_current",
+        "voltage" => "shelly_voltage",
+        "apower" => "shelly_apower",
+        ["aenergy", "total"] => ["shelly_aenergy_total", :counter],
+      },
+      /^light:\d+$/ => {
+        "current" => "shelly_current",
+        "voltage" => "shelly_voltage",
+        "apower" => "shelly_apower",
+        ["aenergy", "total"] => ["shelly_aenergy_total", :counter],
+        "brightness" => "shelly_brightness",
+        "output" => "shelly_output",
+      },
+      /^pm1:\d+$/ => {
+        "current" => "shelly_current",
+        "voltage" => "shelly_voltage",
+        "apower" => "shelly_apower",
+        ["aenergy", "total"] => ["shelly_aenergy_total", :counter],
+      },
+      /^em:\d+$/ => {
+        "total_current" => "shelly_current",
+        "total_act_power" => "shelly_apower",
+        "total_aprt_power" => "shelly_aprtpower",
+      },
+      /^emdata:\d+$/ => {
+        "total_act" => ["shelly_aenergy_total", :counter],
+      },
+      /^em1:\d+$/ => {
+        "current" => "shelly_current",
+        "voltage" => "shelly_voltage",
+        "act_power" => "shelly_apower",
+        "aprt_power" => "shelly_aprtpower",
+      },
+      /^em1data:\d+$/ => {
+        "total_act_energy" => ["shelly_aenergy_total", :counter],
+      },
+      /^temperature:\d+$/ => {
+        "tC" => "shelly_temperature",
+      },
+      /^humidity:\d+$/ => {
+        "rh" => "shelly_humidity",
+      },
+      /^input:\d+$/ => {
+        ["counts", "xtotal"] => ["shelly_count", :counter],
+      },
+    }
+
+    attr_reader :devices, :device_info
 
     def initialize
       @devices = {}
+      @device_info = {}
+      fetch_cloud_device_info
       @server = Thread.new { listen }
     end
 
     private
+
+    def fetch_cloud_device_info
+      auth_key = ENV["SHELLY_CLOUD_AUTH_KEY"]
+      server = ENV["SHELLY_CLOUD_SERVER"]
+      return unless auth_key && server
+
+      uri = URI("https://#{server}/v2/devices/api/get?auth_key=#{auth_key}")
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = true
+      http.open_timeout = 5
+      http.read_timeout = 10
+      req = Net::HTTP::Post.new(uri)
+      req.content_type = "application/json"
+      req.body = JSON.generate({ select: ["settings"] })
+      res = http.request(req)
+      unless res.is_a?(Net::HTTPSuccess)
+        warn "Shelly Cloud API error: #{res.code} #{res.body}"
+        return
+      end
+      data = JSON.parse(res.body)
+      data.each do |device|
+        id = device["id"] || next
+        settings = device["settings"] || next
+        name = settings["name"] || next
+        room = settings.dig("room", "name") || next
+        @device_info[id] = { name:, room: }
+      end
+      puts "Shelly Cloud: loaded info for #{@device_info.size} devices"
+    rescue => e
+      warn "Shelly Cloud API fetch failed: #{e.inspect}"
+    end
 
     def listen
       udp = UDPSocket.new
@@ -44,114 +122,37 @@ class Devices
     def notify_status(device_id, params)
       ts = (params["ts"] * 1000).to_i
       device = @devices[device_id] ||= {}
-      case device_id
-      when /^shellyhtg3-/
-        if (v = params.dig("humidity:0", "rh"))
-          device["shelly_ht_humidity"] = { v:, ts: }
+      matched = false
+
+      params.each_key do |component_key|
+        COMPONENT_METRICS.each do |pattern, fields|
+          next unless pattern.match?(component_key)
+          matched = true
+          component_data = params[component_key]
+          next unless component_data.is_a?(Hash)
+
+          fields.each do |field_path, metric_def|
+            metric_name, type = Array === metric_def ? metric_def : [metric_def, nil]
+            v = if Array === field_path
+                  component_data.dig(*field_path)
+                else
+                  component_data[field_path]
+                end
+            next if v.nil?
+            v = v ? 1 : 0 if v == true || v == false
+            entry = { v:, ts: }
+            entry[:counter] = true if type == :counter
+            device["#{metric_name}/#{component_key}"] = entry
+          end
         end
-        if (v = params.dig("temperature:0", "tC"))
-          device["shelly_ht_temperature"] = { v:, ts: }
-        end
-      when /^shellyplusplugs-/, /^shellyplugsg3-/, /^shelly2pmg3-/, /^shelly1pmg4-/
-        if (v = params.dig("switch:0", "current"))
-          device["shelly_plug_current"] = { v:, ts: }
-        end
-        if (v = params.dig("switch:0", "voltage"))
-          device["shelly_plug_voltage"] = { v:, ts: }
-        end
-        if (v = params.dig("switch:0", "apower"))
-          device["shelly_plug_apower"] = { v:, ts: }
-        end
-        if (v = params.dig("switch:0", "aenergy", "total"))
-          device["shelly_plug_aenergy_total"] = { v:, ts:, counter: true }
-        end
-      when /^shellyproem50-/
-        if (v = params.dig("em1:0", "current"))
-          device["shelly_plug_current"] = { v:, ts: }
-        end
-        if (v = params.dig("em1:0", "voltage"))
-          device["shelly_plug_voltage"] = { v:, ts: }
-        end
-        if (v = params.dig("em1:0", "act_power"))
-          device["shelly_plug_apower"] = { v:, ts: }
-        end
-        if (v = params.dig("em1:0", "aprt_power"))
-          device["shelly_plug_aprtpower"] = { v:, ts: }
-        end
-        if (v = params.dig("em1data:0", "total_act_energy"))
-          device["shelly_plug_aenergy_total"] = { v:, ts:, counter: true }
-        end
-      when /^shellypro3em-|^shelly3em63g3-/
-        if (v = params.dig("em:0", "total_current"))
-          device["shelly_plug_current"] = { v:, ts: }
-        end
-        if (v = params.dig("em:0", "total_act_power"))
-          device["shelly_plug_apower"] = { v:, ts: }
-        end
-        if (v = params.dig("em:0", "total_aprt_power"))
-          device["shelly_plug_aprtpower"] = { v:, ts: }
-        end
-        if (v = params.dig("emdata:0", "total_act"))
-          device["shelly_plug_aenergy_total"] = { v:, ts:, counter: true }
-        end
-      when /^shellypmminig3-/
-        if (v = params.dig("pm1:0", "current"))
-          device["shelly_plug_current"] = { v:, ts: }
-        end
-        if (v = params.dig("pm1:0", "voltage"))
-          device["shelly_plug_voltage"] = { v:, ts: }
-        end
-        if (v = params.dig("pm1:0", "apower"))
-          device["shelly_plug_apower"] = { v:, ts: }
-        end
-        if (v = params.dig("pm1:0", "aenergy", "total"))
-          device["shelly_plug_aenergy_total"] = { v:, ts:, counter: true }
-        end
-      when /^shelly0110dimg3-/
-        if (v = params.dig("light:0", "current"))
-          device["shelly_plug_current"] = { v:, ts: }
-        end
-        if (v = params.dig("light:0", "voltage"))
-          device["shelly_plug_voltage"] = { v:, ts: }
-        end
-        if (v = params.dig("light:0", "apower"))
-          device["shelly_plug_apower"] = { v:, ts: }
-        end
-        if (v = params.dig("light:0", "aenergy", "total"))
-          device["shelly_plug_aenergy_total"] = { v:, ts:, counter: true }
-        end
-        # "{\"src\":\"shelly0110dimg3-e4b3233d2ac4\",\"dst\":\"*\",\"method\":\"NotifyStatus\",\"params\":{\"ts\":1748813001.71,\"light:0\":{\"brightness\":52,\"output\":true,\"source\":\"SHC\"}}}"
-        # "{\"src\":\"shelly0110dimg3-e4b3233d2ac4\",\"dst\":\"*\",\"method\":\"NotifyStatus\",\"params\":{\"ts\":1748813165.50,\"light:0\":{\"brightness\":52,\"output\":false,\"source\":\"SHC\"}}}"
-      #when /^shelly1g3-/
-      #  if (v = params.dig("temperature:100", "tC"))
-      #    device["shelly_ht_temperature:100"] = { v:, ts: }
-      #  end
-      #  if (v = params.dig("temperature:101", "tC"))
-      #    device["shelly_ht_temperature"] = { v:, ts: }
-      #  end
-      #  if (v = params.dig("temperature:102", "tC"))
-      #    device["shelly_ht_temperature"] = { v:, ts: }
-      #  end
-      when /^shellyplusuni-/
-        if (v = params.dig("input:2", "counts", "xtotal"))
-          device["shelly_count"] = { v:, ts:, counter: true }
-        end
-        # {"ts"=>1754010420.05, "input:2"=>{"counts"=>{"by_minute"=>[0, 0, 0], "minute_ts"=>1754010420, "total"=>41, "xby_minute"=>[0.0, 0.0, 0.0], "xtotal"=>41.0}}}
-      when /^(shellyprodm1pm|shellyprodm2pm|shellydimmerg3)-/
-        #if (v = params.dig("light:0", "apower"))
-        #  device["shelly_plug_apower"] = { v:, ts: }
-        #end
-      when /^shellyblugwg3-/
-      when /^shelly1g3-/
-      when /^shelly1pmg4-/
-      else
-        puts "Unknown device id #{device_id}", params
+      end
+
+      unless matched
+        # Ignore known devices without component metrics
+        puts "Unknown shelly params: #{device_id} #{params.keys}" unless device_id.match?(/^shelly(blugwg3|1g3)-/)
       end
     end
 
-    # {"src"=>"shellyplusplugs-fcb4670cf7fc", "dst"=>"*", "method"=>"NotifyEvent", "params"=>{"ts"=>1729713785.0, "events"=>[{"component"=>"script:1", "id"=>1, "event"=>"shelly-blu", "data"=>{"encryption"=>false, "BTHome_version"=>2, "pid"=>82, "battery"=>100, "humidity"=>50, "temperature"=>19.7, "rssi"=>-71, "address"=>"7c:c6:b6:62:46:80"}, "ts"=>1729713785.0}]}}
-    #
-    # {"src"=>"shellyplusplugs-d4d4daecd810", "dst"=>"*", "method"=>"NotifyEvent", "params"=>{"ts"=>1729893268.8, "events"=>[{"component"=>"script:1", "id"=>1, "event"=>"aranet", "data"=>{"status"=>{"integration"=>true, "dfu"=>false, "cal_state"=>0}, "sys"=>{"fw_patch"=>19, "fw_minor"=>4, "fw_major"=>1, "hw"=>9, "addr"=>"cc:37:b5:bf:d6:a7", "rssi"=>-71}, "region"=>15, "packaging"=>1, "co2_ppm"=>1275, "tC"=>21.6, "pressure_dPa"=>9459, "rh"=>34, "battery"=>93, "co2_aranet_level"=>2, "refresh_interval"=>300, "age"=>4, "packet_counter"=>221}, "ts"=>1729893268.8}]}}
     def notify_event(event, src)
       data = event["data"]
       ts = (event["ts"] * 1000).to_i
@@ -160,35 +161,33 @@ class Devices
         device_id = "aranet-#{data["sys"]["addr"].delete(":")}"
         device = @devices[device_id] ||= {}
         if (v = data["co2_ppm"])
-          device[:aranet_co2_ppm] = { v:, ts: }
+          device["aranet_co2_ppm"] = { v:, ts: }
         end
         if (v = data["tC"])
-          device[:aranet_temperature] = { v:, ts: }
+          device["aranet_temperature"] = { v:, ts: }
         end
         if (v = data["rh"])
-          device[:aranet_humidity] = { v:, ts: }
+          device["aranet_humidity"] = { v:, ts: }
         end
         if (v = data["pressure_dPa"])
-          device[:aranet_pressure] = { v:, ts: }
+          device["aranet_pressure"] = { v:, ts: }
         end
         if (v = data["battery"])
-          device[:aranet_battery] = { v:, ts: }
+          device["aranet_battery"] = { v:, ts: }
         end
       when "shelly-blu"
         device_id = "shellybluht-#{data["address"].delete(":")}"
         device = @devices[device_id] ||= {}
         if (v = data["temperature"])
           if Numeric === v
-            device[:shelly_ht_temperature] = {v:, ts:}
-          else # array, multiple sensors
-            #puts "#{src}: #{event}"
+            device["shelly_temperature"] = {v:, ts:}
           end
         end
         if (v = data["humidity"])
-          device[:shelly_ht_humidity] = {v:, ts:}
+          device["shelly_humidity"] = {v:, ts:}
         end
         if (v = data["battery"])
-          device[:shelly_ht_battery] = {v:, ts:}
+          device["shelly_battery"] = {v:, ts:}
         end
       end
     end
