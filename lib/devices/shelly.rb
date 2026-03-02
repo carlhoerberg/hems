@@ -128,7 +128,7 @@ class Devices
       matched = false
 
       params.each_key do |component_key|
-        next if component_key == "ts" || component_key == "sys"
+        next if component_key == "ts" || component_key == "sys" || component_key == "wifi" || component_key == "cloud"
         COMPONENT_METRICS.each do |pattern, fields|
           next unless pattern.match?(component_key)
           matched = true
@@ -151,10 +151,9 @@ class Devices
         end
       end
 
-      unless matched
-        # Ignore known devices without component metrics
-        puts "Unknown shelly params: #{device_id} #{params.keys}" unless device_id.match?(/^shelly(blugwg3|1g3)-/)
-      end
+      unknown = params.keys - ["ts", "sys", "wifi", "cloud"]
+      unknown.reject! { |k| COMPONENT_METRICS.any? { |pattern, _| pattern.match?(k) } }
+      puts "Unknown shelly params: #{device_id} #{unknown}" if unknown.any?
     end
 
     def notify_event(event, src)
