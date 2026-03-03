@@ -1,7 +1,7 @@
 <%
 # Fetch all devices in parallel
 lk_data = lk_devices.map do |name, lk|
-  Thread.new { [name, lk.zones, lk.actuators] }
+  Thread.new { zones = lk.zones; [name, zones, lk.actuators(zones)] }
 end.map(&:value)
 %>
 <%lk_data.each do |name, zones, actuators|%>
