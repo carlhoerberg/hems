@@ -10,28 +10,26 @@ class Devices
       2 => "unknown",
     }.freeze
 
-    def initialize(host, port = 502, zone_names: {})
+    def initialize(host, port = 502, zone_names: {}, actuator_names: {})
       @modbus = Modbus::TCP.new(host, port, timeout: 30).unit(1)
       @zone_names = zone_names
+      @actuator_names = actuator_names
     end
 
     def zone_name(zone_number)
       @zone_names[zone_number] || "Zone #{zone_number}"
     end
 
-    def actuator_name(actuator_number, zones_data)
-      zones_data.each do |z|
-        return z[:name] if z[:connected_actuators][actuator_number - 1] == 1
-      end
-      "Actuator #{actuator_number}"
+    def actuator_name(actuator_number)
+      @actuator_names[actuator_number] || "Actuator #{actuator_number}"
     end
 
     def configured_zones
       @zone_names.keys
     end
 
-    def connected_actuator_numbers(bitmask)
-      (0..11).select { |bit| bitmask[bit] == 1 }.map { |bit| bit + 1 }
+    def configured_actuators
+      @actuator_names.keys
     end
 
     def number_of_zones
@@ -47,12 +45,10 @@ class Devices
       @modbus.read_input_registers(60, 12)
     end
 
-    def actuators(zones_data = nil)
-      zones_data ||= zones
+    def actuators
       statuses = actuator_statuses
-      actuator_nums = zones_data.flat_map { |z| connected_actuator_numbers(z[:connected_actuators]) }.uniq.sort
-      actuator_nums.map do |i|
-        { actuator: i, name: actuator_name(i, zones_data), status: statuses[i - 1] }
+      configured_actuators.map do |i|
+        { actuator: i, name: actuator_name(i), status: statuses[i - 1] }
       end
     end
 

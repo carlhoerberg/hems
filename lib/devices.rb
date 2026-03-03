@@ -39,6 +39,13 @@ class Devices
           2 => "WC",
           3 => "Köket",
           4 => "Altan ingång",
+        },
+        actuator_names: {
+          1 => "WC",
+          2 => "Kök",
+          3 => "Kök",
+          4 => "Entré hall",
+          5 => "Altan ingång",
         }),
       "kontoret" => LK.new("lksystemsgw-2218C1D75D54CC7E",
         zone_names: {
@@ -48,6 +55,15 @@ class Devices
           4 => "Kontoret",
           5 => "Personalbadrum",
           6 => "Bastun",
+        },
+        actuator_names: {
+          1 => "Kontoret",
+          2 => "Personalentré",
+          3 => "Personalrum",
+          4 => "Personalbadrum",
+          5 => "Bastu",
+          6 => "Bastu",
+          7 => "Disken",
         }),
     }
     @gencomm = GenComm.new("192.168.0.10", unit: 1)
