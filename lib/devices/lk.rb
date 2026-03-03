@@ -56,16 +56,12 @@ class Devices
       raise ArgumentError, "Zone must be 1-12" unless (1..12).include?(zone_number)
       base = zone_number * 100
       input = @modbus.read_input_registers(base, 8)
-      holding = @modbus.read_holding_registers(base, 3)
       {
         actual_temperature: to_signed(input[0]) / 10.0,
         actual_humidity: input[1] / 10.0,
         battery: input[2],
         signal_strength: to_signed(input[3]),
         connected_actuators: input[7],
-        target_temperature: to_signed(holding[0]) / 10.0,
-        override: holding[1] == 1,
-        override_level: holding[2],
       }
     end
 
@@ -75,13 +71,6 @@ class Devices
       rescue Modbus::Base::ResponseError
         nil
       end.compact
-    end
-
-    def set_target_temperature(zone_number, temp)
-      raise ArgumentError, "Zone must be 1-12" unless (1..12).include?(zone_number)
-      raise ArgumentError, "Temperature must be between -100 and 100" unless (-100..100).include?(temp)
-      base = zone_number * 100
-      @modbus.write_holding_register(base, (temp * 10).to_i)
     end
 
     private

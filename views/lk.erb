@@ -17,12 +17,6 @@ lk_zone_actual_temperature{device="<%=name%>",zone="<%=z[:zone]%>",name="<%=z[:n
 lk_zone_actual_humidity{device="<%=name%>",zone="<%=z[:zone]%>",name="<%=z[:name]%>"} <%=z[:actual_humidity]%>
 <%end%>
 
-# TYPE lk_zone_target_temperature gauge
-# HELP lk_zone_target_temperature Target temperature in degrees Celsius
-<%zones.each do |z|%>
-lk_zone_target_temperature{device="<%=name%>",zone="<%=z[:zone]%>",name="<%=z[:name]%>"} <%=z[:target_temperature]%>
-<%end%>
-
 # TYPE lk_zone_battery gauge
 # HELP lk_zone_battery Thermostat battery level in percent
 <%zones.each do |z|%>
