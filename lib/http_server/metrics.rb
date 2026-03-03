@@ -54,7 +54,10 @@ class HTTPServer
         when "/metrics/grundfos"
           @@grundfos.result_with_hash({ t:, grundfos: @devices.grundfos })
         when "/metrics/lk"
-          @@lk.result_with_hash({ t:, lk_devices: @devices.lk })
+          lk_data = @devices.lk.map do |name, lk|
+            Thread.new { [name, lk.zones, lk.actuators] }
+          end.map(&:value)
+          @@lk.result_with_hash({ t:, lk_data: })
         when "/metrics/gencomm"
           @@gencomm.result_with_hash({ t:, name: "QAS45", measurements: @devices.gencomm.measurements, accumulated: @devices.gencomm.accumulated, status: @devices.gencomm.status, dpf_status: @devices.gencomm.dpf_status, digital_outputs: @devices.gencomm.digital_outputs })
         when "/metrics/victron"

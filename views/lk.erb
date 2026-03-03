@@ -1,32 +1,8 @@
-<%
-# Fetch all devices in parallel
-lk_data = lk_devices.map do |name, lk|
-  Thread.new { [name, lk.zones, lk.actuators] }
-end.map(&:value)
-%>
 <%lk_data.each do |name, zones, actuators|%>
 # TYPE lk_zone_actual_temperature gauge
 # HELP lk_zone_actual_temperature Current temperature in degrees Celsius
 <%zones.each do |z|%>
 lk_zone_actual_temperature{device="<%=name%>",zone="<%=z[:zone]%>",name="<%=z[:name]%>"} <%=z[:actual_temperature]%>
-<%end%>
-
-# TYPE lk_zone_actual_humidity gauge
-# HELP lk_zone_actual_humidity Current humidity in percent
-<%zones.each do |z|%>
-lk_zone_actual_humidity{device="<%=name%>",zone="<%=z[:zone]%>",name="<%=z[:name]%>"} <%=z[:actual_humidity]%>
-<%end%>
-
-# TYPE lk_zone_battery gauge
-# HELP lk_zone_battery Thermostat battery level in percent
-<%zones.each do |z|%>
-lk_zone_battery{device="<%=name%>",zone="<%=z[:zone]%>",name="<%=z[:name]%>"} <%=z[:battery]%>
-<%end%>
-
-# TYPE lk_zone_signal_strength gauge
-# HELP lk_zone_signal_strength Thermostat signal strength in dBm
-<%zones.each do |z|%>
-lk_zone_signal_strength{device="<%=name%>",zone="<%=z[:zone]%>",name="<%=z[:name]%>"} <%=z[:signal_strength]%>
 <%end%>
 
 # TYPE lk_actuator_status gauge

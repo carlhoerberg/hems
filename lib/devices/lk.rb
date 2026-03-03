@@ -4,70 +4,26 @@ class Devices
   class LK
     using Modbus::TypeExtensions
 
-    ACTUATOR_STATUS = {
-      0 => "off",
-      1 => "on",
-      2 => "unknown",
-    }.freeze
-
     def initialize(host, port = 502, zone_names: {}, actuator_names: {})
       @modbus = Modbus::TCP.new(host, port, timeout: 30).unit(1)
       @zone_names = zone_names
       @actuator_names = actuator_names
     end
 
-    def zone_name(zone_number)
-      @zone_names[zone_number] || "Zone #{zone_number}"
-    end
-
-    def actuator_name(actuator_number)
-      @actuator_names[actuator_number] || "Actuator #{actuator_number}"
-    end
-
-    def configured_zones
-      @zone_names.keys
-    end
-
-    def configured_actuators
-      @actuator_names.keys
-    end
-
-    def number_of_zones
-      @modbus.read_input_register(50)
-    end
-
-    def actuator_status(actuator)
-      raise ArgumentError, "Actuator must be 1-12" unless (1..12).include?(actuator)
-      @modbus.read_input_register(59 + actuator)
-    end
-
-    def actuator_statuses
-      @modbus.read_input_registers(60, 12)
-    end
-
     def actuators
-      statuses = actuator_statuses
-      configured_actuators.map do |i|
-        { actuator: i, name: actuator_name(i), status: statuses[i - 1] }
+      max = @actuator_names.keys.max
+      statuses = @modbus.read_input_registers(60, max)
+      @actuator_names.map do |i, name|
+        { actuator: i, name: name, status: statuses[i - 1] }
       end
     end
 
-    def zone(zone_number)
-      raise ArgumentError, "Zone must be 1-12" unless (1..12).include?(zone_number)
-      base = zone_number * 100
-      input = @modbus.read_input_registers(base, 8)
-      {
-        actual_temperature: to_signed(input[0]) / 10.0,
-        actual_humidity: input[1] / 10.0,
-        battery: input[2],
-        signal_strength: to_signed(input[3]),
-        connected_actuators: input[7],
-      }
-    end
-
     def zones
-      configured_zones.map do |i|
-        zone(i).merge(zone: i, name: zone_name(i))
+      @zone_names.map do |i, name|
+        base = i * 100
+        value = @modbus.read_input_register(base)
+        next if value == 0
+        { zone: i, name: name, actual_temperature: to_signed(value) / 10.0 }
       rescue Modbus::Base::ResponseError
         nil
       end.compact
