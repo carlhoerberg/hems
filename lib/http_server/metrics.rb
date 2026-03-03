@@ -11,7 +11,6 @@ class HTTPServer
     @@eta = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "eta.erb")))
     @@starlink = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "starlink.erb")))
     @@shelly = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "shelly.erb")))
-    @@ups = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "ups.erb")))
     @@unifi = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "unifi.erb")))
     @@topas = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "topas.erb")))
     @@weco = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "weco.erb")))
@@ -22,7 +21,6 @@ class HTTPServer
     @@grundfos = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "grundfos.erb")))
     @@lk = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "lk.erb")))
     @@gencomm = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "gencomm.erb")))
-    @@pel103 = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "pel103.erb")))
     @@victron = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "victron.erb")))
 
     def do_GET(req, res)
@@ -39,8 +37,6 @@ class HTTPServer
           @@starlink.result_with_hash({ t:, metrics: @devices.starlink.metrics })
         when "/metrics/shelly"
           @@shelly.result_with_hash({ t:, devices: @devices.shelly.devices, device_names: @devices.shelly.device_names })
-        when "/metrics/ups"
-          @@ups.result_with_hash({ t:, ups: @devices.ups })
         when "/metrics/unifi"
           @@unifi.result_with_hash({ t:, unifi_health: @devices.unifi.health })
         when "/metrics/topas"
@@ -61,8 +57,6 @@ class HTTPServer
           @@lk.result_with_hash({ t:, lk_devices: @devices.lk })
         when "/metrics/gencomm"
           @@gencomm.result_with_hash({ t:, name: "QAS45", measurements: @devices.gencomm.measurements, accumulated: @devices.gencomm.accumulated, status: @devices.gencomm.status, dpf_status: @devices.gencomm.dpf_status, digital_outputs: @devices.gencomm.digital_outputs })
-        when "/metrics/pel103"
-          @@pel103.result_with_hash({ t:, measurements: @devices.pel103.measurements })
         when "/metrics/victron"
           @@victron.result_with_hash({ t:, m: @devices.victron.measurements })
         else
