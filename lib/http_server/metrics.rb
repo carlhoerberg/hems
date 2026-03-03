@@ -54,6 +54,7 @@ class HTTPServer
         when "/metrics/grundfos"
           @@grundfos.result_with_hash({ t:, grundfos: @devices.grundfos })
         when "/metrics/lk"
+          t = t()
           lk_data = @devices.lk.map do |name, lk|
             Thread.new { [name, lk.zones, lk.actuators] }
           end.map(&:value)
