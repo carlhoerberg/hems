@@ -26,7 +26,7 @@ class EnergyManagement
     { host: "192.168.0.137", phase: 3, amps: 9 },  # Phase 3
   ].freeze
 
-  INVERTER_CURRENT_LIMIT = 22
+  INVERTER_CURRENT_LIMIT = 23
   GENSET_CURRENT_LIMIT = 50
 
   BATTERY_KWH = 31.2
