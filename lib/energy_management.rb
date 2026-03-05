@@ -29,18 +29,27 @@ class EnergyManagement
   INVERTER_CURRENT_LIMIT = 23
   GENSET_CURRENT_LIMIT = 50
 
-  GENSET_DEMAND_START_DELAY = 30    # seconds of unmet demand before starting genset
-  GENSET_DEMAND_STOP_DELAY = 10 * 60 # seconds after last demand before stopping genset
+  GENSET_DEMAND_START_DELAY = 60      # seconds of unmet demand before starting genset
+  GENSET_DEMAND_STOP_DELAY = 15 * 60  # seconds after last demand before stopping genset
+  GENSET_MIN_RUN_TIME = 15 * 60       # minimum seconds genset must run once started
+  MIN_VOLTAGE = 210                    # minimum acceptable voltage per phase
+
+  # Shelly demand states:
+  #   :pending      - registered, waiting to be tested
+  #   :testing      - turned on, checking if voltage holds
+  #   :active       - running, voltage is fine
+  #   :needs_genset - voltage dropped, turned off, needs genset
 
   def initialize(devices)
     @devices = devices
     @stopped = false
-    @shelly_demands = {}  # { device_id => { amps:, active: false } }
+    @shelly_demands = {}  # { host => { amps:, state:, actual_amps:, current_before: } }
     @shelly_demands_mutex = Mutex.new
     @phase_current_history = []
     @genset_heaters_on = false
     @unmet_demand_since = nil         # monotonic time when unmet demand first noticed
     @genset_started_for_demand = false # true if we manually started genset for shelly demand
+    @genset_demand_started_at = nil   # monotonic time when genset was started for demand
     @last_shelly_demand_at = nil      # monotonic time of last shelly demand registration
   end
 
@@ -106,6 +115,17 @@ class EnergyManagement
     end
   end
 
+  def acload_voltages
+    (1..3).map { |phase| @devices.next3.acload.voltage(phase) }
+  rescue => e
+    puts "[ERROR] acload_voltages failed: #{e.message}"
+    [230.0, 230.0, 230.0] # assume OK on read failure
+  end
+
+  def low_voltage?
+    acload_voltages.any? { |v| v < MIN_VOLTAGE }
+  end
+
   def update_phase_current_history
     @phase_current_history << phase_current
     @phase_current_history.shift if @phase_current_history.size > 60
@@ -151,51 +171,90 @@ class EnergyManagement
   # Shelly demand management
   def register_shelly_demand(host, amps)
     @shelly_demands_mutex.synchronize do
-      @shelly_demands[host] = { amps:, active: false }
       @last_shelly_demand_at = Time.monotonic
 
-      if phase_overloaded?
-        turn_off_shelly(host)
-        return { activated: false, reason: "overloaded" }
+      # If genset is running, activate immediately
+      if genset_running?
+        puts "Genset running, activating Shelly #{host} (#{amps}A) immediately"
+        turn_on_shelly(host)
+        @shelly_demands[host] = { amps:, state: :active, actual_amps: nil, current_before: nil }
+        return { activated: true }
       end
 
-      if phase_allows?(amps)
-        puts "Activating Shelly #{host} (#{amps}A) on registration"
-        turn_on_shelly(host)
-        @shelly_demands[host][:active] = true
-        { activated: true }
-      else
-        { activated: false, reason: "no_capacity" }
-      end
+      @shelly_demands[host] = { amps:, state: :pending, actual_amps: nil, current_before: nil }
+      { activated: false, reason: "pending_voltage_test" }
     end
   end
 
   def deregister_shelly_demand(host)
     @shelly_demands_mutex.synchronize do
-      @shelly_demands.delete(host)
-      turn_off_shelly(host)
+      demand = @shelly_demands.delete(host)
+      turn_off_shelly(host) if demand && (demand[:state] == :active || demand[:state] == :testing)
     end
   end
 
   def shelly_demands_status
-    @shelly_demands_mutex.synchronize { @shelly_demands.dup }
+    @shelly_demands_mutex.synchronize do
+      @shelly_demands.transform_values do |d|
+        { amps: d[:amps], state: d[:state], actual_amps: d[:actual_amps] }
+      end
+    end
   end
 
   def manage_shelly_demands
     @shelly_demands_mutex.synchronize do
-      @shelly_demands.each do |host, demand|
-        if demand[:active]
-          if phase_overloaded?
-            puts "Phase overloaded, turning off Shelly #{host}"
-            turn_off_shelly(host)
-            demand[:active] = false
-          end
-        else
-          if phase_allows?(demand[:amps])
-            puts "Capacity available, turning on Shelly #{host} (#{demand[:amps]}A)"
+      # If genset is running, activate all pending/needs_genset demands
+      if genset_running?
+        @shelly_demands.each do |host, demand|
+          if demand[:state] == :pending || demand[:state] == :needs_genset
+            puts "Genset running, activating Shelly #{host} (#{demand[:amps]}A)"
             turn_on_shelly(host)
-            demand[:active] = true
+            demand[:state] = :active
           end
+        end
+        return
+      end
+
+      # Check testing demands: did voltage hold?
+      @shelly_demands.each do |host, demand|
+        next unless demand[:state] == :testing
+
+        voltages = acload_voltages
+        if voltages.any? { |v| v < MIN_VOLTAGE }
+          puts "Voltage test failed for Shelly #{host} (#{voltages.map { |v| v.round(1) }}V < #{MIN_VOLTAGE}V), turning off"
+          turn_off_shelly(host)
+          demand[:state] = :needs_genset
+        else
+          # Voltage held - record actual amps drawn
+          if demand[:current_before]
+            current_after = phase_current
+            actual = current_after.zip(demand[:current_before]).map { |a, b| a - b }.max
+            demand[:actual_amps] = [actual, 0].max.round(1)
+            puts "Shelly #{host} actual draw: #{demand[:actual_amps]}A (bid: #{demand[:amps]}A)"
+          end
+          demand[:state] = :active
+        end
+      end
+
+      # Monitor active demands for overload
+      @shelly_demands.each do |host, demand|
+        next unless demand[:state] == :active
+        if phase_overloaded?
+          puts "Phase overloaded, turning off Shelly #{host}"
+          turn_off_shelly(host)
+          demand[:state] = :needs_genset
+        end
+      end
+
+      # Test one pending demand at a time (only if no test already in progress)
+      unless @shelly_demands.any? { |_, d| d[:state] == :testing }
+        @shelly_demands.each do |host, demand|
+          next unless demand[:state] == :pending
+          demand[:current_before] = phase_current
+          puts "Testing Shelly #{host} (#{demand[:amps]}A) - turning on to check voltage"
+          turn_on_shelly(host)
+          demand[:state] = :testing
+          break # only test one at a time
         end
       end
     end
@@ -203,26 +262,33 @@ class EnergyManagement
 
   def manage_genset_for_demand
     @shelly_demands_mutex.synchronize do
-      has_unmet = @shelly_demands.any? { |_, d| !d[:active] }
+      # Only demands that failed voltage test need the genset
+      has_unmet = @shelly_demands.any? { |_, d| d[:state] == :needs_genset }
 
       if has_unmet
         @unmet_demand_since ||= Time.monotonic
         if !@genset_started_for_demand && !genset_running? &&
            Time.monotonic - @unmet_demand_since >= GENSET_DEMAND_START_DELAY
-          puts "Unmet shelly demand for #{GENSET_DEMAND_START_DELAY}s, starting genset"
+          puts "Unmet shelly demand for #{GENSET_DEMAND_START_DELAY}s (voltage test failed), starting genset"
           start_genset
           @genset_started_for_demand = true
+          @genset_demand_started_at = Time.monotonic
         end
       else
         @unmet_demand_since = nil
       end
 
       if @genset_started_for_demand
-        if @shelly_demands.empty? && @last_shelly_demand_at &&
-           Time.monotonic - @last_shelly_demand_at >= GENSET_DEMAND_STOP_DELAY
-          puts "No shelly demand for #{GENSET_DEMAND_STOP_DELAY / 60} minutes, stopping genset"
+        no_demands = @shelly_demands.empty? && @last_shelly_demand_at &&
+                     Time.monotonic - @last_shelly_demand_at >= GENSET_DEMAND_STOP_DELAY
+        min_run_met = @genset_demand_started_at &&
+                      Time.monotonic - @genset_demand_started_at >= GENSET_MIN_RUN_TIME
+
+        if no_demands && min_run_met
+          puts "No shelly demand for #{GENSET_DEMAND_STOP_DELAY / 60} min and genset ran #{GENSET_MIN_RUN_TIME / 60} min, stopping"
           stop_genset
           @genset_started_for_demand = false
+          @genset_demand_started_at = nil
         end
       end
     end
