@@ -13,8 +13,25 @@ class Devices
       @vebus = @transport.unit(228)
     end
 
+    VEBUS_MODE_CHARGER_ONLY = 1
+    VEBUS_MODE_INVERTER_ONLY = 2
+    VEBUS_MODE_ON = 3
+    VEBUS_MODE_OFF = 4
+
     def close
       @transport.close
+    end
+
+    def mode
+      @vebus.read_holding_register(33)
+    end
+
+    def mode=(value)
+      @vebus.write_holding_register(33, value)
+    end
+
+    def battery_soc
+      @system.read_holding_register(843)
     end
 
     def measurements
