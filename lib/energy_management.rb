@@ -46,7 +46,6 @@ class EnergyManagement
     @unmet_demand_since = nil         # monotonic time when unmet demand first noticed
     @genset_started_for_demand = false # true if we manually started genset for shelly demand
     @last_shelly_demand_at = nil      # monotonic time of last shelly demand registration
-    @victron_inverter_only = false    # true if we set Victron to inverter-only mode
     load_state
   end
 
@@ -80,6 +79,13 @@ class EnergyManagement
     @devices.gencomm.is_running?
   rescue => e
     puts "[ERROR] genset_running? check failed: #{e.message}"
+    false
+  end
+
+  def victron_inverter_only?
+    @devices.victron.mode == Devices::Victron::VEBUS_MODE_INVERTER_ONLY
+  rescue => e
+    puts "[ERROR] victron_inverter_only? check failed: #{e.message}"
     false
   end
 
@@ -216,16 +222,14 @@ class EnergyManagement
     @shelly_demands_mutex.synchronize do
       has_unmet = @shelly_demands.any? { |_, d| !d[:active] }
 
-      if has_unmet && !@victron_inverter_only &&
+      if has_unmet && !victron_inverter_only? &&
          @devices.victron.battery_soc > VICTRON_INVERTER_ONLY_MIN_SOC
         puts "Unmet shelly demand, setting Victron to inverter-only mode"
         @devices.victron.mode = Devices::Victron::VEBUS_MODE_INVERTER_ONLY
-        @victron_inverter_only = true
-      elsif @victron_inverter_only && (!has_unmet ||
+      elsif victron_inverter_only? && (!has_unmet ||
             @devices.victron.battery_soc <= VICTRON_INVERTER_ONLY_MIN_SOC)
         puts "Restoring Victron to normal mode"
         @devices.victron.mode = Devices::Victron::VEBUS_MODE_ON
-        @victron_inverter_only = false
       end
     end
   rescue => e
@@ -326,7 +330,6 @@ class EnergyManagement
         shelly_demands: @shelly_demands,
         genset_started_for_demand: @genset_started_for_demand,
         genset_heaters_on: @genset_heaters_on,
-        victron_inverter_only: @victron_inverter_only,
       }
       File.write(STATE_FILE, JSON.pretty_generate(state))
     end
@@ -341,7 +344,6 @@ class EnergyManagement
     @shelly_demands = (state[:shelly_demands] || {}).transform_keys(&:to_s)
     @genset_started_for_demand = state[:genset_started_for_demand] || false
     @genset_heaters_on = state[:genset_heaters_on] || false
-    @victron_inverter_only = state[:victron_inverter_only] || false
     puts "Loaded state from #{STATE_FILE}"
   rescue => e
     puts "[ERROR] Failed to load state: #{e.message}"
