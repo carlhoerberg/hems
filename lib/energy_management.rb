@@ -29,8 +29,8 @@ class EnergyManagement
   INVERTER_CURRENT_LIMIT = 23
   GENSET_CURRENT_LIMIT = 50
 
-  GENSET_DEMAND_START_DELAY = 30    # seconds of unmet demand before starting genset
-  GENSET_DEMAND_STOP_DELAY = 10 * 60 # seconds after last demand before stopping genset
+  GENSET_DEMAND_START_DELAY = 60    # seconds of unmet demand before starting genset
+  GENSET_DEMAND_STOP_DELAY = 15 * 60 # seconds after last demand before stopping genset
 
   STATE_FILE = File.join(ENV.fetch("STATE_DIRECTORY", "/var/lib/hems"), "energy_management.json")
 
