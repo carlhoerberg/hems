@@ -29,6 +29,8 @@ class EnergyManagement
   INVERTER_CURRENT_LIMIT = 23
   GENSET_CURRENT_LIMIT = 50
 
+  MIN_PHASE_VOLTAGE = 210 # turn off all demands if any phase drops below this
+
   GENSET_DEMAND_START_DELAY = 60    # seconds of unmet demand before starting genset
   GENSET_DEMAND_STOP_DELAY = 15 * 60 # seconds after last demand before stopping genset
 
@@ -115,6 +117,16 @@ class EnergyManagement
     end
   end
 
+  def phase_voltage
+    (1..3).map do |phase|
+      @devices.next3.acload.voltage(phase)
+    end
+  end
+
+  def low_voltage?
+    phase_voltage.any? { |v| v < MIN_PHASE_VOLTAGE }
+  end
+
   def update_phase_current_history
     @phase_current_history << phase_current
     @phase_current_history.shift if @phase_current_history.size > 60
@@ -163,6 +175,11 @@ class EnergyManagement
       @shelly_demands[host] = { amps:, active: false }
       @last_shelly_demand_at = Time.monotonic
 
+      if low_voltage?
+        turn_off_shelly(host)
+        return { activated: false, reason: "low_voltage" }
+      end
+
       if phase_overloaded?
         turn_off_shelly(host)
         return { activated: false, reason: "overloaded" }
@@ -192,6 +209,17 @@ class EnergyManagement
 
   def manage_shelly_demands
     @shelly_demands_mutex.synchronize do
+      if low_voltage?
+        @shelly_demands.each do |host, demand|
+          if demand[:active]
+            puts "Low voltage, turning off Shelly #{host}"
+            turn_off_shelly(host)
+            demand[:active] = false
+          end
+        end
+        return
+      end
+
       @shelly_demands.each do |host, demand|
         if demand[:active]
           if phase_overloaded?
