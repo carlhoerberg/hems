@@ -32,6 +32,8 @@ class EnergyManagement
   GENSET_DEMAND_START_DELAY = 30    # seconds of unmet demand before starting genset
   GENSET_DEMAND_STOP_DELAY = 10 * 60 # seconds after last demand before stopping genset
 
+  STATE_FILE = File.join(ENV.fetch("STATE_DIRECTORY", "/var/lib/hems"), "energy_management.json")
+
   def initialize(devices)
     @devices = devices
     @stopped = false
@@ -42,6 +44,7 @@ class EnergyManagement
     @unmet_demand_since = nil         # monotonic time when unmet demand first noticed
     @genset_started_for_demand = false # true if we manually started genset for shelly demand
     @last_shelly_demand_at = nil      # monotonic time of last shelly demand registration
+    load_state
   end
 
   def start
@@ -52,6 +55,7 @@ class EnergyManagement
           manage_shelly_demands
           manage_genset_for_demand
           manage_genset_heaters
+          save_state
         end
         puts "Energy management loop duration: #{duration.round(2)}s" if duration > 5
         break if @stopped
@@ -65,6 +69,7 @@ class EnergyManagement
 
   def stop
     @stopped = true
+    save_state
   end
 
   def genset_running?
@@ -287,6 +292,31 @@ class EnergyManagement
     shelly_rpc(host, "Switch.Set", { id: 0, on: false })
   rescue => e
     puts "[ERROR] Failed to turn off Shelly #{host}: #{e.message}"
+  end
+
+  def save_state
+    @shelly_demands_mutex.synchronize do
+      state = {
+        shelly_demands: @shelly_demands,
+        genset_started_for_demand: @genset_started_for_demand,
+        genset_heaters_on: @genset_heaters_on,
+      }
+      File.write(STATE_FILE, JSON.pretty_generate(state))
+    end
+  rescue => e
+    puts "[ERROR] Failed to save state: #{e.message}"
+  end
+
+  def load_state
+    return unless File.exist?(STATE_FILE)
+
+    state = JSON.parse(File.read(STATE_FILE), symbolize_names: true)
+    @shelly_demands = (state[:shelly_demands] || {}).transform_keys(&:to_s)
+    @genset_started_for_demand = state[:genset_started_for_demand] || false
+    @genset_heaters_on = state[:genset_heaters_on] || false
+    puts "Loaded state from #{STATE_FILE}"
+  rescue => e
+    puts "[ERROR] Failed to load state: #{e.message}"
   end
 
   def shelly_rpc(host, method, params = {})
