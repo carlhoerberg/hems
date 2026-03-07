@@ -26,13 +26,14 @@ class EnergyManagement
     { host: "192.168.0.137", phase: 3, amps: 9 },  # Phase 3
   ].freeze
 
-  INVERTER_CURRENT_LIMIT = 23
+  INVERTER_CURRENT_LIMIT = 30
   GENSET_CURRENT_LIMIT = 50
 
   GENSET_DEMAND_START_DELAY = 60    # seconds of unmet demand before starting genset
   GENSET_DEMAND_STOP_DELAY = 15 * 60 # seconds after last demand before stopping genset
 
   VICTRON_INVERTER_ONLY_MIN_SOC = 50 # only shed Victron charging if SoC > this
+  MIN_PHASE_VOLTAGE = 210 # turn off shelly demands if any phase drops below this
 
   STATE_FILE = File.join(ENV.fetch("STATE_DIRECTORY", "/var/lib/hems"), "energy_management.json")
 
@@ -121,6 +122,16 @@ class EnergyManagement
     end
   end
 
+  def phase_voltage
+    (1..3).map do |phase|
+      @devices.next3.acload.voltage(phase)
+    end
+  end
+
+  def low_voltage?
+    phase_voltage.any? { |v| v < MIN_PHASE_VOLTAGE }
+  end
+
   def update_phase_current_history
     @phase_current_history << phase_current
     @phase_current_history.shift if @phase_current_history.size > 60
@@ -198,6 +209,19 @@ class EnergyManagement
 
   def manage_shelly_demands
     @shelly_demands_mutex.synchronize do
+      has_active = @shelly_demands.any? { |_, d| d[:active] }
+
+      if has_active && low_voltage?
+        voltages = phase_voltage.map { |v| v.round(1) }
+        puts "Low voltage detected (#{voltages.join("V, ")}V), turning off all active Shelly demands"
+        @shelly_demands.each do |host, demand|
+          next unless demand[:active]
+          turn_off_shelly(host)
+          demand[:active] = false
+        end
+        return
+      end
+
       @shelly_demands.each do |host, demand|
         if demand[:active]
           if phase_overloaded?
