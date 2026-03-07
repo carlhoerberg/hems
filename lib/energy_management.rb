@@ -34,6 +34,8 @@ class EnergyManagement
 
   VICTRON_INVERTER_ONLY_MIN_SOC = 50 # only shed Victron charging if SoC > this
   MIN_PHASE_VOLTAGE = 210 # turn off shelly demands if any phase drops below this
+  HEATER_MAX_PHASE_CURRENT = 22 # long-term safe inverter limit per phase for heaters
+  SOLAR_EXCESS_HEATER_STOP_SOC = 95   # keep solar excess heaters on until this SoC
 
   STATE_FILE = File.join(ENV.fetch("STATE_DIRECTORY", "/var/lib/hems"), "energy_management.json")
 
@@ -43,11 +45,11 @@ class EnergyManagement
     @shelly_demands = {}  # { device_id => { amps:, active: false } }
     @shelly_demands_mutex = Mutex.new
     @phase_current_history = []
-    @genset_heaters_on = false
     @unmet_demand_since = nil         # monotonic time when unmet demand first noticed
     @genset_started_for_demand = false # true if we manually started genset for shelly demand
     @last_shelly_demand_at = nil      # monotonic time of last shelly demand registration
     load_state
+    @heaters_on = query_heaters_on
   end
 
   def start
@@ -58,7 +60,7 @@ class EnergyManagement
           manage_shelly_demands
           manage_victron_mode
           manage_genset_for_demand
-          manage_genset_heaters
+          manage_heaters
           save_state
         end
         puts "Energy management loop duration: #{duration.round(2)}s" if duration > 5
@@ -287,27 +289,128 @@ class EnergyManagement
     end
   end
 
-  def manage_genset_heaters
-    if genset_running?
-      unless @genset_heaters_on
-        puts "Genset running, turning on 2kW heaters"
-        SHELLY_HEATER_2KW.each { |heater| turn_on_2kw_heater(heater) }
-        @genset_heaters_on = true
-      end
+
+  def solar_excess?
+    @devices.next3.solar.excess?
+  rescue => e
+    puts "[ERROR] solar_excess? check failed: #{e.message}"
+    false
+  end
+
+  def phase_current_under?(limit)
+    return false if @phase_current_history.empty?
+    @phase_current_history.last.all? { |c| c < limit }
+  end
+
+  def has_shelly_demand?
+    @shelly_demands_mutex.synchronize { @shelly_demands.any? }
+  end
+
+  # Heaters in priority order (2kW shellys first, then relay heaters)
+  # Relay heaters (9kW, 6kW) only enabled when no shelly demand
+  HEATERS = [
+    *SHELLY_HEATER_2KW.map { |h| { id: h[:host], type: :shelly, host: h[:host], phase: h[:phase], amps: h[:amps] } },
+    { id: :heater_6kw, type: :relay, amps: 9 },
+    { id: :heater_9kw, type: :relay, amps: 13 },
+  ].freeze
+
+  def manage_heaters
+    genset = genset_running?
+    demand = has_shelly_demand?
+    heater_limit = genset ? HEATER_MAX_PHASE_CURRENT + GENSET_CURRENT_LIMIT : HEATER_MAX_PHASE_CURRENT
+    under_limit = phase_current_under?(heater_limit)
+
+    # When genset is running, skip slow next3 queries for solar excess and SoC
+    if genset
+      should_heat = true
     else
-      if @genset_heaters_on
-        puts "Genset stopped, turning off 2kW heaters"
-        turn_off_2kw_heaters
-        @genset_heaters_on = false
+      excess = solar_excess?
+      should_heat = excess || @heaters_on.any?
+      if should_heat
+        soc = @devices.next3.battery.soc
+        should_heat = soc >= SOLAR_EXCESS_HEATER_STOP_SOC
+      end
+    end
+
+    if !should_heat || !under_limit
+      if @heaters_on.any?
+        reason = !under_limit ? "phase current too high" :
+                 !should_heat ? "battery at #{soc}%" : "no solar excess"
+        puts "Turning off all heaters (#{reason})"
+        turn_off_all_heaters
+      end
+      return
+    end
+
+    # Turn off relay heaters if there's shelly demand
+    if demand
+      relay_on = @heaters_on.select { |id| HEATERS.find { |h| h[:id] == id && h[:type] == :relay } }
+      relay_on.each { |id| turn_off_heater_by_id(id, "shelly demand") }
+    end
+
+    # Add one heater per iteration in priority order
+    HEATERS.each do |heater|
+      next if @heaters_on.include?(heater[:id])
+      next if heater[:type] == :relay && demand
+      next unless under_limit
+
+      reason = genset ? "genset running" : "solar excess"
+      puts "#{reason} (SoC #{soc || '?'}%), turning on #{heater[:id]} (#{heater[:amps]}A)"
+      turn_on_heater(heater)
+      @heaters_on << heater[:id]
+      return # only one per iteration
+    end
+  end
+
+  def query_heaters_on
+    on = []
+    on << :heater_9kw if @devices.relays.heater_9kw?
+    on << :heater_6kw if @devices.relays.heater_6kw?
+    SHELLY_HEATER_2KW.each do |h|
+      on << h[:host] if heater_2kw_on?(h)
+    end
+    puts "Heaters currently on: #{on.any? ? on.join(', ') : 'none'}"
+    on
+  rescue => e
+    puts "[ERROR] Failed to query heater status: #{e.message}"
+    []
+  end
+
+  def turn_on_heater(heater)
+    case heater[:type]
+    when :shelly then turn_on_shelly(heater[:host])
+    when :relay
+      if heater[:id] == :heater_9kw
+        @devices.relays.heater_9kw = true
+      else
+        @devices.relays.heater_6kw = true
       end
     end
   end
 
+  def turn_off_heater_by_id(id, reason)
+    heater = HEATERS.find { |h| h[:id] == id }
+    return unless heater
+    puts "Turning off #{id} (#{reason})"
+    case heater[:type]
+    when :shelly then turn_off_shelly(heater[:host])
+    when :relay
+      if id == :heater_9kw
+        @devices.relays.heater_9kw = false
+      else
+        @devices.relays.heater_6kw = false
+      end
+    end
+    @heaters_on.delete(id)
+  end
+
+  def turn_off_all_heaters
+    @heaters_on.dup.each { |id| turn_off_heater_by_id(id, "all off") }
+  end
+
   def turn_off_heaters
     puts "Turning off heaters"
-    @devices.relays.heater_6kw = false
-    @devices.relays.heater_9kw = false
-    turn_off_2kw_heaters
+    turn_off_all_heaters
   end
 
   def turn_on_2kw_heater(heater)
@@ -353,7 +456,6 @@ class EnergyManagement
       state = {
         shelly_demands: @shelly_demands,
         genset_started_for_demand: @genset_started_for_demand,
-        genset_heaters_on: @genset_heaters_on,
       }
       File.write(STATE_FILE, JSON.pretty_generate(state))
     end
@@ -367,7 +469,6 @@ class EnergyManagement
     state = JSON.parse(File.read(STATE_FILE), symbolize_names: true)
     @shelly_demands = (state[:shelly_demands] || {}).transform_keys(&:to_s)
     @genset_started_for_demand = state[:genset_started_for_demand] || false
-    @genset_heaters_on = state[:genset_heaters_on] || false
     puts "Loaded state from #{STATE_FILE}"
   rescue => e
     puts "[ERROR] Failed to load state: #{e.message}"
