@@ -26,10 +26,10 @@ class EnergyManagement
     { host: "192.168.0.137", phase: 3, amps: 9 },  # Phase 3
   ].freeze
 
-  INVERTER_CURRENT_LIMIT = 30
+  INVERTER_CURRENT_LIMIT = 26
   GENSET_CURRENT_LIMIT = 50
 
-  GENSET_DEMAND_START_DELAY = 60    # seconds of unmet demand before starting genset
+  GENSET_DEMAND_START_DELAY = 90    # seconds of unmet demand before starting genset
   GENSET_DEMAND_STOP_DELAY = 15 * 60 # seconds after last demand before stopping genset
 
   VICTRON_INVERTER_ONLY_MIN_SOC = 50 # only shed Victron charging if SoC > this
