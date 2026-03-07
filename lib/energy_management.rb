@@ -309,66 +309,42 @@ class EnergyManagement
     genset = genset_running?
     demand = has_shelly_demand?
     heater_limit = genset ? HEATER_MAX_PHASE_CURRENT + GENSET_CURRENT_LIMIT : HEATER_MAX_PHASE_CURRENT
-    under_limit = phase_current_under?(heater_limit)
+    over_limit = !phase_current_under?(heater_limit)
 
-    # When genset is running, skip slow next3 queries for solar excess and SoC
-    if genset
-      should_heat = true
-    else
-      excess = solar_excess?
-      if excess
-        soc = @devices.next3.battery.soc
-        should_heat = soc >= SOLAR_EXCESS_HEATER_STOP_SOC
-      else
-        should_heat = false
-      end
-    end
-
-    if !should_heat || !under_limit
-      reason = !under_limit ? "phase current too high" :
-               !should_heat && soc ? "SoC #{soc}%" : "no solar excess"
-      turn_off_all_heaters(reason)
+    if over_limit
+      turn_off_all_heaters("not under current limit for heaters (#{heater_limit}A)")
+      return
+    elsif demand
+      turn_off_all_heaters("shelly demand present")
+      return
+    elsif !genset && (soc = @devices.next3.battery.soc) < SOLAR_EXCESS_HEATER_STOP_SOC
+      turn_off_all_heaters("SoC #{soc}% below #{SOLAR_EXCESS_HEATER_STOP_SOC}%")
       return
     end
 
-    turned_one_on = false
-    reason = genset ? "genset running" : "solar excess"
+    return if !genset && !solar_excess?
 
     # Priority: 2kW shelly heaters first (one per iteration)
     SHELLY_HEATER_2KW.each do |heater|
       if heater_2kw_on?(heater)
-        next
-      elsif !turned_one_on && under_limit
-        puts "#{reason} (SoC #{soc || '?'}%), turning on 2kW heater #{heater[:host]}"
+        next # already on
+      else
         turn_on_shelly(heater[:host])
-        turned_one_on = true
+        return # turn on one heater at a time and re-evaluate conditions in next loop to avoid overload
       end
     end
-    return if turned_one_on
 
     # Then relay heaters (only when no shelly demand)
-    unless demand
-      unless @devices.relays.heater_6kw?
-        puts "#{reason} (SoC #{soc || '?'}%), turning on 6kW heater"
-        @devices.relays.heater_6kw = true
-        return
-      end
+    unless @devices.relays.heater_6kw?
+      puts "Turning on 6kW heater"
+      @devices.relays.heater_6kw = true
+      return
+    end
 
-      unless @devices.relays.heater_9kw?
-        puts "#{reason} (SoC #{soc || '?'}%), turning on 9kW heater"
-        @devices.relays.heater_9kw = true
-        return
-      end
-    else
-      # Turn off relay heaters if there's shelly demand
-      if @devices.relays.heater_6kw?
-        puts "Turning off 6kW heater (shelly demand)"
-        @devices.relays.heater_6kw = false
-      end
-      if @devices.relays.heater_9kw?
-        puts "Turning off 9kW heater (shelly demand)"
-        @devices.relays.heater_9kw = false
-      end
+    unless @devices.relays.heater_9kw?
+      puts "Turning on 9kW heater"
+      @devices.relays.heater_9kw = true
+      return
     end
   end
 
@@ -402,14 +378,6 @@ class EnergyManagement
   def turn_off_2kw_heater(heater)
     puts "Turning off 2kW heater #{heater[:host]} (phase #{heater[:phase]})"
     turn_off_shelly(heater[:host])
-  end
-
-  def turn_off_2kw_heaters
-    SHELLY_HEATER_2KW.each { |heater| turn_off_2kw_heater(heater) }
-  end
-
-  def any_2kw_heater_on?
-    SHELLY_HEATER_2KW.any? { |heater| heater_2kw_on?(heater) }
   end
 
   def heater_2kw_on?(heater)
