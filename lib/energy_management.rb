@@ -301,20 +301,20 @@ class EnergyManagement
     @phase_current_history.last.all? { |c| c < limit }
   end
 
-  def has_shelly_demand?
-    @shelly_demands_mutex.synchronize { @shelly_demands.any? }
+  def has_unmet_shelly_demand?
+    @shelly_demands_mutex.synchronize { @shelly_demands.any? { |_, d| !d[:active] } }
   end
 
   def manage_heaters
     genset = genset_running?
-    demand = has_shelly_demand?
+    demand = has_unmet_shelly_demand?
     heater_limit = genset ? HEATER_MAX_PHASE_CURRENT + GENSET_CURRENT_LIMIT : HEATER_MAX_PHASE_CURRENT
     over_limit = !phase_current_under?(heater_limit)
 
     if over_limit
       turn_off_all_heaters("not under current limit for heaters (#{heater_limit}A)")
       return
-    elsif @shelly_demands_mutex.synchronize { @shelly_demands.any? { |_, d| !d[:active] } }
+    elsif demand
       turn_off_all_heaters("unmet shelly demand")
       return
     elsif !genset && (soc = @devices.next3.battery.soc) < SOLAR_EXCESS_HEATER_STOP_SOC
