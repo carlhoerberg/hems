@@ -10,6 +10,7 @@ class Devices
         "voltage" => "shelly_voltage",
         "apower" => "shelly_apower",
         ["aenergy", "total"] => ["shelly_aenergy_total", :counter],
+        "output" => "shelly_output",
       },
       /^light:\d+$/ => {
         "current" => "shelly_current",
@@ -53,6 +54,7 @@ class Devices
       },
       /^input:\d+$/ => {
         ["counts", "xtotal"] => ["shelly_count", :counter],
+        "state" => "shelly_input",
       },
     }
 
