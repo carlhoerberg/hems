@@ -141,7 +141,12 @@ class Devices
 
       unknown = params.keys - ["ts", "sys", "wifi", "cloud"]
       unknown.reject! { |k| COMPONENT_METRICS.any? { |pattern, _| pattern.match?(k) } }
-      puts "Unknown shelly params: #{device_id} #{unknown}" if unknown.any?
+      @logged_unknown_params ||= []
+      unknown -= @logged_unknown_params
+      if unknown.any?
+        @logged_unknown_params.concat(unknown)
+        puts "Unknown shelly params: #{device_id} #{unknown}"
+      end
     end
 
     def notify_event(event, src)
