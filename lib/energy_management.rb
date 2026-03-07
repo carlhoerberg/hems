@@ -49,7 +49,6 @@ class EnergyManagement
     @genset_started_for_demand = false # true if we manually started genset for shelly demand
     @last_shelly_demand_at = nil      # monotonic time of last shelly demand registration
     load_state
-    @heaters_on = query_heaters_on
   end
 
   def start
@@ -306,14 +305,6 @@ class EnergyManagement
     @shelly_demands_mutex.synchronize { @shelly_demands.any? }
   end
 
-  # Heaters in priority order (2kW shellys first, then relay heaters)
-  # Relay heaters (9kW, 6kW) only enabled when no shelly demand
-  HEATERS = [
-    *SHELLY_HEATER_2KW.map { |h| { id: h[:host], type: :shelly, host: h[:host], phase: h[:phase], amps: h[:amps] } },
-    { id: :heater_6kw, type: :relay, amps: 9 },
-    { id: :heater_9kw, type: :relay, amps: 13 },
-  ].freeze
-
   def manage_heaters
     genset = genset_running?
     demand = has_shelly_demand?
@@ -325,87 +316,77 @@ class EnergyManagement
       should_heat = true
     else
       excess = solar_excess?
-      should_heat = excess || @heaters_on.any?
-      if should_heat
+      if excess
         soc = @devices.next3.battery.soc
         should_heat = soc >= SOLAR_EXCESS_HEATER_STOP_SOC
+      else
+        should_heat = false
       end
     end
 
     if !should_heat || !under_limit
-      if @heaters_on.any?
-        reason = !under_limit ? "phase current too high" :
-                 !should_heat ? "battery at #{soc}%" : "no solar excess"
-        puts "Turning off all heaters (#{reason})"
-        turn_off_all_heaters
-      end
+      reason = !under_limit ? "phase current too high" :
+               !should_heat && soc ? "SoC #{soc}%" : "no solar excess"
+      turn_off_all_heaters(reason)
       return
     end
 
-    # Turn off relay heaters if there's shelly demand
-    if demand
-      relay_on = @heaters_on.select { |id| HEATERS.find { |h| h[:id] == id && h[:type] == :relay } }
-      relay_on.each { |id| turn_off_heater_by_id(id, "shelly demand") }
-    end
+    turned_one_on = false
+    reason = genset ? "genset running" : "solar excess"
 
-    # Add one heater per iteration in priority order
-    HEATERS.each do |heater|
-      next if @heaters_on.include?(heater[:id])
-      next if heater[:type] == :relay && demand
-      next unless under_limit
-
-      reason = genset ? "genset running" : "solar excess"
-      puts "#{reason} (SoC #{soc || '?'}%), turning on #{heater[:id]} (#{heater[:amps]}A)"
-      turn_on_heater(heater)
-      @heaters_on << heater[:id]
-      return # only one per iteration
-    end
-  end
-
-  def query_heaters_on
-    on = []
-    on << :heater_9kw if @devices.relays.heater_9kw?
-    on << :heater_6kw if @devices.relays.heater_6kw?
-    SHELLY_HEATER_2KW.each do |h|
-      on << h[:host] if heater_2kw_on?(h)
-    end
-    puts "Heaters currently on: #{on.any? ? on.join(', ') : 'none'}"
-    on
-  rescue => e
-    puts "[ERROR] Failed to query heater status: #{e.message}"
-    []
-  end
-
-  def turn_on_heater(heater)
-    case heater[:type]
-    when :shelly then turn_on_shelly(heater[:host])
-    when :relay
-      if heater[:id] == :heater_9kw
-        @devices.relays.heater_9kw = true
-      else
-        @devices.relays.heater_6kw = true
+    # Priority: 2kW shelly heaters first (one per iteration)
+    SHELLY_HEATER_2KW.each do |heater|
+      if heater_2kw_on?(heater)
+        next
+      elsif !turned_one_on && under_limit
+        puts "#{reason} (SoC #{soc || '?'}%), turning on 2kW heater #{heater[:host]}"
+        turn_on_shelly(heater[:host])
+        turned_one_on = true
       end
     end
-  end
+    return if turned_one_on
 
-  def turn_off_heater_by_id(id, reason)
-    heater = HEATERS.find { |h| h[:id] == id }
-    return unless heater
-    puts "Turning off #{id} (#{reason})"
-    case heater[:type]
-    when :shelly then turn_off_shelly(heater[:host])
-    when :relay
-      if id == :heater_9kw
-        @devices.relays.heater_9kw = false
-      else
+    # Then relay heaters (only when no shelly demand)
+    unless demand
+      unless @devices.relays.heater_6kw?
+        puts "#{reason} (SoC #{soc || '?'}%), turning on 6kW heater"
+        @devices.relays.heater_6kw = true
+        return
+      end
+
+      unless @devices.relays.heater_9kw?
+        puts "#{reason} (SoC #{soc || '?'}%), turning on 9kW heater"
+        @devices.relays.heater_9kw = true
+        return
+      end
+    else
+      # Turn off relay heaters if there's shelly demand
+      if @devices.relays.heater_6kw?
+        puts "Turning off 6kW heater (shelly demand)"
         @devices.relays.heater_6kw = false
       end
+      if @devices.relays.heater_9kw?
+        puts "Turning off 9kW heater (shelly demand)"
+        @devices.relays.heater_9kw = false
+      end
     end
-    @heaters_on.delete(id)
   end
 
-  def turn_off_all_heaters
-    @heaters_on.dup.each { |id| turn_off_heater_by_id(id, "all off") }
+  def turn_off_all_heaters(reason = nil)
+    if @devices.relays.heater_9kw?
+      puts "Turning off 9kW heater#{reason ? " (#{reason})" : ""}"
+      @devices.relays.heater_9kw = false
+    end
+    if @devices.relays.heater_6kw?
+      puts "Turning off 6kW heater#{reason ? " (#{reason})" : ""}"
+      @devices.relays.heater_6kw = false
+    end
+    SHELLY_HEATER_2KW.each do |heater|
+      if heater_2kw_on?(heater)
+        puts "Turning off 2kW heater #{heater[:host]}#{reason ? " (#{reason})" : ""}"
+        turn_off_shelly(heater[:host])
+      end
+    end
   end
 
   def turn_off_heaters
