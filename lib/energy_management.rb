@@ -29,7 +29,7 @@ class EnergyManagement
   INVERTER_CURRENT_LIMIT = 26
   GENSET_CURRENT_LIMIT = 50
 
-  GENSET_DEMAND_START_DELAY = 90    # seconds of unmet demand before starting genset
+  GENSET_DEMAND_START_DELAY = 180    # seconds of unmet demand before starting genset
   GENSET_DEMAND_STOP_DELAY = 15 * 60 # seconds after last demand before stopping genset
 
   VICTRON_INVERTER_ONLY_MIN_SOC = 50 # only shed Victron charging if SoC > this
