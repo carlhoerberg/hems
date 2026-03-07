@@ -314,8 +314,8 @@ class EnergyManagement
     if over_limit
       turn_off_all_heaters("not under current limit for heaters (#{heater_limit}A)")
       return
-    elsif demand
-      turn_off_all_heaters("shelly demand present")
+    elsif @shelly_demands_mutex.synchronize { @shelly_demands.any? { |_, d| !d[:active] } }
+      turn_off_all_heaters("unmet shelly demand")
       return
     elsif !genset && (soc = @devices.next3.battery.soc) < SOLAR_EXCESS_HEATER_STOP_SOC
       turn_off_all_heaters("SoC #{soc}% below #{SOLAR_EXCESS_HEATER_STOP_SOC}%")
