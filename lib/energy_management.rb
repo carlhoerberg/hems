@@ -178,6 +178,7 @@ class EnergyManagement
   # Shelly demand management
   def register_shelly_demand(host, amps)
     @shelly_demands_mutex.synchronize do
+      puts "Registering Shelly demand: #{host} (#{amps}A)"
       @shelly_demands[host] = { amps:, active: false }
       @last_shelly_demand_at = Time.monotonic
 
@@ -199,6 +200,7 @@ class EnergyManagement
 
   def deregister_shelly_demand(host)
     @shelly_demands_mutex.synchronize do
+      puts "Deregistering Shelly demand: #{host}"
       @shelly_demands.delete(host)
       turn_off_shelly(host)
     end
@@ -389,12 +391,14 @@ class EnergyManagement
   end
 
   def turn_on_shelly(host)
+    puts "Turning on Shelly #{host}"
     shelly_rpc(host, "Switch.Set", { id: 0, on: true })
   rescue => e
     puts "[ERROR] Failed to turn on Shelly #{host}: #{e.message}"
   end
 
   def turn_off_shelly(host)
+    puts "Turning off Shelly #{host}"
     shelly_rpc(host, "Switch.Set", { id: 0, on: false })
   rescue => e
     puts "[ERROR] Failed to turn off Shelly #{host}: #{e.message}"
