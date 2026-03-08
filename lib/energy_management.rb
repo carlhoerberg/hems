@@ -42,10 +42,9 @@ class EnergyManagement
   def initialize(devices)
     @devices = devices
     @stopped = false
-    @shelly_demands = {}  # { device_id => { amps:, active: false } }
+    @shelly_demands = {}  # { device_id => { amps:, active: false, unmet_since: nil } }
     @shelly_demands_mutex = Mutex.new
     @phase_current_history = []
-    @unmet_demand_since = nil         # monotonic time when unmet demand first noticed
     @genset_started_for_demand = false # true if we manually started genset for shelly demand
     @last_shelly_demand_at = nil      # monotonic time of last shelly demand registration
     load_state
@@ -179,11 +178,12 @@ class EnergyManagement
   def register_shelly_demand(host, amps)
     @shelly_demands_mutex.synchronize do
       puts "Registering Shelly demand: #{host} (#{amps}A)"
-      @shelly_demands[host] = { amps:, active: false }
+      @shelly_demands[host] = { amps:, active: false, unmet_since: nil }
       @last_shelly_demand_at = Time.monotonic
 
       if phase_overloaded?
         turn_off_shelly(host)
+        @shelly_demands[host][:unmet_since] = Time.monotonic
         return { activated: false, reason: "overloaded" }
       end
 
@@ -193,6 +193,7 @@ class EnergyManagement
         @shelly_demands[host][:active] = true
         { activated: true }
       else
+        @shelly_demands[host][:unmet_since] = Time.monotonic
         { activated: false, reason: "no_capacity" }
       end
     end
@@ -221,6 +222,7 @@ class EnergyManagement
           next unless demand[:active]
           turn_off_shelly(host)
           demand[:active] = false
+          demand[:unmet_since] = Time.monotonic
         end
         return
       end
@@ -231,12 +233,14 @@ class EnergyManagement
             puts "Phase overloaded, turning off Shelly #{host}"
             turn_off_shelly(host)
             demand[:active] = false
+            demand[:unmet_since] = Time.monotonic
           end
         else
           if phase_allows?(demand[:amps])
             puts "Capacity available, turning on Shelly #{host} (#{demand[:amps]}A)"
             turn_on_shelly(host)
             demand[:active] = true
+            demand[:unmet_since] = nil
           end
         end
       end
@@ -265,18 +269,15 @@ class EnergyManagement
 
   def manage_genset_for_demand
     @shelly_demands_mutex.synchronize do
-      has_unmet = @shelly_demands.any? { |_, d| !d[:active] }
+      now = Time.monotonic
+      demand_ready = @shelly_demands.any? do |_, d|
+        d[:unmet_since] && now - d[:unmet_since] >= GENSET_DEMAND_START_DELAY
+      end
 
-      if has_unmet
-        @unmet_demand_since ||= Time.monotonic
-        if !@genset_started_for_demand && !genset_running? &&
-           Time.monotonic - @unmet_demand_since >= GENSET_DEMAND_START_DELAY
-          puts "Unmet shelly demand for #{GENSET_DEMAND_START_DELAY}s, starting genset"
-          start_genset
-          @genset_started_for_demand = true
-        end
-      else
-        @unmet_demand_since = nil
+      if demand_ready && !@genset_started_for_demand && !genset_running?
+        puts "Shelly demand unmet for #{GENSET_DEMAND_START_DELAY}s, starting genset"
+        start_genset
+        @genset_started_for_demand = true
       end
 
       if @genset_started_for_demand
