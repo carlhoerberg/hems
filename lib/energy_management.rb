@@ -47,7 +47,7 @@ class EnergyManagement
     @phase_current_history = []
     @genset_started_for_demand = false # true if we manually started genset for shelly demand
     @last_shelly_demand_at = nil      # monotonic time of last shelly demand registration
-    @last_engine_state = nil
+    @ac_source_enabled = @devices.next3.acsource.enabled?
     load_state
   end
 
@@ -55,7 +55,7 @@ class EnergyManagement
     until @stopped
       begin
         duration = Time.measure do
-          monitor_engine_state
+          manage_ac_source
           update_phase_current_history
           manage_shelly_demands
           manage_victron_mode
@@ -78,14 +78,37 @@ class EnergyManagement
     save_state
   end
 
-  def monitor_engine_state
-    state = @devices.gencomm.engine_operating_state
-    if state != @last_engine_state
-      puts "Engine state changed: #{@last_engine_state || "unknown"} -> #{state}"
-      @last_engine_state = state
+# Enable AC source only when genset mains breaker is closed (supplying power).
+  # Disable during warmup/cooldown (gen LED on but mains breaker off).
+  # Fail-safe: re-enable when genset is fully off (both LEDs off).
+  def manage_ac_source
+    mains_breaker = @devices.gencomm.mains_breaker_led
+    gen = @devices.gencomm.gen_led
+
+    if mains_breaker
+      # Genset breaker closed, power available
+      unless @ac_source_enabled
+        puts "Mains breaker LED on, enabling AC source"
+        @devices.next3.acsource.enable
+        @ac_source_enabled = true
+      end
+    elsif gen
+      # Warming up or cooling down, no stable power
+      if @ac_source_enabled
+        puts "Gen LED on but mains breaker off (warmup/cooldown), disabling AC source"
+        @devices.next3.acsource.disable
+        @ac_source_enabled = false
+      end
+    else
+      # Genset fully off, fail-safe: enable AC source
+      unless @ac_source_enabled
+        puts "Genset off (both LEDs off), enabling AC source (fail-safe)"
+        @devices.next3.acsource.enable
+        @ac_source_enabled = true
+      end
     end
   rescue => e
-    puts "[ERROR] monitor_engine_state: #{e.message}"
+    puts "[ERROR] manage_ac_source: #{e.message}"
   end
 
   def genset_running?

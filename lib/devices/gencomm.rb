@@ -16,6 +16,7 @@ class Devices
     PAGE_CONTROL = 0x1000         # Page 16 - Control
     PAGE_EXTENDED2 = 0x1300       # Page 19 - Extended Instrumentation 2
     PAGE_NAMED_ALARMS = 0x9A00    # Page 154 - Named Alarm Conditions
+    PAGE_OUTPUT_STATUS = 0xBE00   # Page 190 - Unnamed Output Status
 
     # Alarm condition codes
     ALARM_CONDITIONS = {
@@ -545,6 +546,15 @@ class Devices
         i: reg[8],
         j: reg[9],
       }.freeze
+    end
+
+    # Page 190 LED status registers (0 = off, 1 = on)
+    def mains_breaker_led
+      @modbus.read_holding_register(PAGE_OUTPUT_STATUS + 13) != 0
+    end
+
+    def gen_led
+      @modbus.read_holding_register(PAGE_OUTPUT_STATUS + 16) != 0
     end
 
     def active_status_flags
