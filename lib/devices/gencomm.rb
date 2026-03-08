@@ -284,8 +284,25 @@ class Devices
       alarms.freeze
     end
 
+    ENGINE_OPERATING_STATES = {
+      0 => :stopped,
+      1 => :pre_start,
+      2 => :warming_up,
+      3 => :running,
+      4 => :cooling_down,
+      5 => :stopped,
+      6 => :post_run,
+    }.freeze
+
+    def engine_operating_state
+      ENGINE_OPERATING_STATES.fetch(
+        u16(@modbus.read_holding_register(PAGE_EXTENDED + 128)),
+        :unknown
+      )
+    end
+
     def is_running?
-      rpm > 0
+      engine_operating_state == :running
     end
 
     # Basic Instrumentation (Page 4)

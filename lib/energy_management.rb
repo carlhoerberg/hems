@@ -47,6 +47,7 @@ class EnergyManagement
     @phase_current_history = []
     @genset_started_for_demand = false # true if we manually started genset for shelly demand
     @last_shelly_demand_at = nil      # monotonic time of last shelly demand registration
+    @last_engine_state = nil
     load_state
   end
 
@@ -54,6 +55,7 @@ class EnergyManagement
     until @stopped
       begin
         duration = Time.measure do
+          monitor_engine_state
           update_phase_current_history
           manage_shelly_demands
           manage_victron_mode
@@ -74,6 +76,16 @@ class EnergyManagement
   def stop
     @stopped = true
     save_state
+  end
+
+  def monitor_engine_state
+    state = @devices.gencomm.engine_operating_state
+    if state != @last_engine_state
+      puts "Engine state changed: #{@last_engine_state || "unknown"} -> #{state}"
+      @last_engine_state = state
+    end
+  rescue => e
+    puts "[ERROR] monitor_engine_state: #{e.message}"
   end
 
   def genset_running?
