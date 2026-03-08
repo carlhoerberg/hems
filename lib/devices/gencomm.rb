@@ -295,10 +295,11 @@ class Devices
     }.freeze
 
     def engine_operating_state
-      ENGINE_OPERATING_STATES.fetch(
-        u16(@modbus.read_holding_register(PAGE_EXTENDED + 128)),
-        :unknown
-      )
+      val = u16(@modbus.read_holding_register(PAGE_EXTENDED + 128))
+      return ENGINE_OPERATING_STATES.fetch(val, :unknown) unless val.is_a?(Float)
+
+      # Register 128 unimplemented, infer from RPM
+      rpm > 0 ? :running : :stopped
     end
 
     def is_running?
