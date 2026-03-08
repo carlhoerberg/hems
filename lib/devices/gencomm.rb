@@ -531,20 +531,20 @@ class Devices
       @modbus.read_holding_register(PAGE_STATUS + 6)
     end
 
-    # Digital Outputs (Page 3, register 8) - returns hash of outputs A-J
+    # Digital Outputs (Page 190) - returns hash of outputs A-J
     def digital_outputs
-      reg = @modbus.read_holding_register(PAGE_STATUS + 8)
+      regs = @modbus.read_holding_registers(PAGE_OUTPUT_STATUS, 22)
       {
-        a: reg[0],
-        b: reg[1],
-        c: reg[2],
-        d: reg[3],
-        e: reg[4],
-        f: reg[5],
-        g: reg[6],
-        h: reg[7],
-        i: reg[8],
-        j: reg[9],
+        a: regs[0],
+        b: regs[1],
+        c: regs[7],
+        d: regs[6],
+        e: regs[2],
+        f: regs[3],
+        g: regs[4],
+        h: regs[5],
+        i: regs[20],
+        j: regs[21],
       }.freeze
     end
 
