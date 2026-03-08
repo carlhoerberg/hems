@@ -337,6 +337,10 @@ class EnergyManagement
     @shelly_demands_mutex.synchronize { @shelly_demands.any? { |_, d| !d[:active] } }
   end
 
+  def has_shelly_demand?
+    @shelly_demands_mutex.synchronize { @shelly_demands.any? }
+  end
+
   def manage_heaters
     genset = genset_running?
     demand = has_unmet_shelly_demand?
@@ -355,6 +359,7 @@ class EnergyManagement
     end
 
     return if !genset && !solar_excess?
+    return if has_shelly_demand?
 
     # Priority: 2kW shelly heaters first (one per iteration)
     SHELLY_HEATER_2KW.each do |heater|
