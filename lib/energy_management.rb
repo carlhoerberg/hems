@@ -181,12 +181,6 @@ class EnergyManagement
       @shelly_demands[host] = { amps:, active: false, unmet_since: nil }
       @last_shelly_demand_at = Time.monotonic
 
-      if phase_overloaded?
-        turn_off_shelly(host)
-        @shelly_demands[host][:unmet_since] = Time.monotonic
-        return { activated: false, reason: "overloaded" }
-      end
-
       if phase_allows?(amps)
         puts "Activating Shelly #{host} (#{amps}A) on registration"
         turn_on_shelly(host)
