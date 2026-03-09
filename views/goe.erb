@@ -1,0 +1,26 @@
+# TYPE goe_car_state gauge
+goe_car_state <%=m[:car_state]%>
+# TYPE goe_cable_amps gauge
+goe_cable_amps <%=m[:cable_amps]%>
+# TYPE goe_voltage gauge
+goe_voltage{phase="l1"} <%=m[:volt_l1]%>
+goe_voltage{phase="l2"} <%=m[:volt_l2]%>
+goe_voltage{phase="l3"} <%=m[:volt_l3]%>
+# TYPE goe_current_amps gauge
+goe_current_amps{phase="l1"} <%=m[:amp_l1]%>
+goe_current_amps{phase="l2"} <%=m[:amp_l2]%>
+goe_current_amps{phase="l3"} <%=m[:amp_l3]%>
+# TYPE goe_power_total gauge
+goe_power_total <%=m[:power_total]%>
+# TYPE goe_energy_total counter
+goe_energy_total <%=m[:energy_total]%>
+# TYPE goe_energy_charge gauge
+goe_energy_charge <%=m[:energy_charge]%>
+# TYPE goe_allow gauge
+goe_allow <%=m[:allow]%>
+# TYPE goe_ampere gauge
+goe_ampere <%=m[:ampere]%>
+# TYPE goe_ampere_max gauge
+goe_ampere_max <%=m[:ampere_max]%>
+# TYPE metrics_gather_time gauge
+metrics_gather_time{device="goe"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>

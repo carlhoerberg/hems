@@ -58,9 +58,10 @@ class EnergyManagement
           manage_ac_source
           update_phase_current_history
           manage_shelly_demands
-          manage_victron_mode
           manage_genset_for_demand
           manage_heaters
+          manage_goe_amperage
+          manage_victron_mode
           save_state
         end
         puts "Energy management loop duration: #{duration.round(2)}s" if duration > 5
@@ -400,6 +401,53 @@ class EnergyManagement
         turn_off_shelly(heater[:host])
       end
     end
+  end
+
+  # Adapt go-e charger amperage so that L1 on the inverter never exceeds INVERTER_CURRENT_LIMIT.
+  # Calculates the non-charger load on L1, then sets the charger to use whatever headroom remains.
+  def manage_goe_amperage
+    return if @goe_unavailable
+    return unless @devices.goe.car_connected?
+
+    # Only charge with solar (SoC >= 95% implies solar is producing) or genset
+    soc = @devices.weco.total[:soc] rescue @devices.next3.battery.soc
+    if has_shelly_demand? || (soc < SOLAR_EXCESS_HEATER_STOP_SOC && !genset_running?)
+      if @devices.goe.allow != 0
+        reason = has_shelly_demand? ? "shelly demand" : "SoC #{soc.round}% < #{SOLAR_EXCESS_HEATER_STOP_SOC}% and no genset"
+        puts "go-e: pausing charging (#{reason})"
+        @devices.goe.allow = false
+      end
+      return
+    end
+
+    l1_current = @devices.next3.acload.current(1)
+    current_setting = @devices.goe.ampere
+    limit = per_phase_capacity
+
+    other_load = l1_current - current_setting
+    target = (limit - other_load).floor
+    target = target.clamp(0, Devices::GoE::MAX_AMPS)
+
+    if target < Devices::GoE::MIN_AMPS
+      if @devices.goe.allow != 0
+        puts "go-e: L1 headroom too low (#{(limit - other_load).round(1)}A), pausing charging"
+        @devices.goe.allow = false
+      end
+    else
+      if @devices.goe.allow == 0
+        puts "go-e: L1 headroom available (#{target}A), resuming charging at #{target}A"
+        @devices.goe.ampere = target
+        @devices.goe.allow = true
+      elsif current_setting != target
+        puts "go-e: adjusting amperage #{current_setting}A -> #{target}A (L1: #{l1_current.round(1)}A, other: #{other_load.round(1)}A)"
+        @devices.goe.ampere = target
+      end
+    end
+  rescue SocketError, SystemCallError, IOError => e
+    @goe_unavailable = true
+    puts "[ERROR] go-e charger unavailable: #{e.message}"
+  rescue => e
+    puts "[ERROR] manage_goe_amperage: #{e.message}"
   end
 
   def turn_off_heaters
