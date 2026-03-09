@@ -18,7 +18,6 @@ class Devices
     REG_AMP_L3       = 118  # u32: current L3 in 0.1A
     REG_POWER_TOTAL  = 120  # u32: total power in 0.01kW
     REG_ENERGY_TOTAL = 128  # u32: total energy in 0.1kWh
-    REG_ENERGY_CHARGE = 132 # u32: energy this charge in deka-watt-seconds
     REG_POWER_L1     = 146  # u32: power L1 in 0.1kW
     REG_POWER_L2     = 148  # u32: power L2 in 0.1kW
     REG_POWER_L3     = 150  # u32: power L3 in 0.1kW
@@ -83,11 +82,6 @@ class Devices
       @modbus.read_input_registers(REG_ENERGY_TOTAL, 2).to_u32 / 10.0
     end
 
-    # Energy this charging session in Wh
-    def energy_charge
-      @modbus.read_input_registers(REG_ENERGY_CHARGE, 2).to_u32 * 10.0 / 3600.0
-    end
-
     # Allow/disallow charging
     def allow
       @modbus.read_holding_register(REG_ALLOW)
@@ -114,8 +108,8 @@ class Devices
     end
 
     def measurements
-      # Registers 100-133: car_state, cable, volts, amps, power, energy (34 regs, 1 request)
-      inp = @modbus.read_input_registers(REG_CAR_STATE, 34)
+      # Registers 100-129: car_state, cable, volts, amps, power, energy_total (30 regs, 1 request)
+      inp = @modbus.read_input_registers(REG_CAR_STATE, 30)
       # Registers 200-211: allow through ampere_max (12 regs, 1 request)
       hold = @modbus.read_holding_registers(REG_ALLOW, 12)
       # Register 299: volatile ampere setting (1 request)
@@ -131,7 +125,6 @@ class Devices
         amp_l3: [inp[18], inp[19]].to_u32 / 10.0,
         power_total: [inp[20], inp[21]].to_u32 / 100.0,
         energy_total: [inp[28], inp[29]].to_u32 / 10.0,
-        energy_charge: [inp[32], inp[33]].to_u32 * 10.0 / 3600.0,
         allow: hold[0],
         ampere_max: hold[11],
         ampere: amp_setting,
