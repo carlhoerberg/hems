@@ -14,8 +14,9 @@ class HTTPServer
     def do_POST(req, res)
       form = URI.decode_www_form(req.body).to_h
       case form["action"]
-      when "start_genset" then @em.start_genset
-      when "stop_genset" then @em.stop_genset
+      when "aux_manual_on" then @em.set_aux_mode(1)
+      when "aux_manual_off" then @em.set_aux_mode(0)
+      when "aux_auto" then @em.set_aux_mode(2)
       else raise "no action selected"
       end
       res.status = 303

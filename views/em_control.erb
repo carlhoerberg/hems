@@ -6,8 +6,9 @@
     <h1>Energy Management control</h1>
     <p>Aux1 mode: <%= case em.aux1_operating_mode when 0 then "Manual Off" when 1 then "Manual On" when 2 then "Auto" else "Unknown (#{em.aux1_operating_mode})" end %></p>
     <form method="post">
-      <button name="action" value="start_genset" <%=em.genset_auto_started? ? "" : "disabled"%>>Start genset</button>
-      <button name="action" value="stop_genset" <%=em.genset_auto_started? ? "disabled" : ""%>>Stop genset</button>
+      <button name="action" value="aux_manual_on" <%= "disabled" if em.aux1_operating_mode == 1 %>>Aux manual on</button>
+      <button name="action" value="aux_manual_off" <%= "disabled" if em.aux1_operating_mode == 0 %>>Aux manual off</button>
+      <button name="action" value="aux_auto" <%= "disabled" if em.aux1_operating_mode == 2 %>>Aux auto</button>
     </form>
   </body>
 </html>

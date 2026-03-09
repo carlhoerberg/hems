@@ -138,20 +138,11 @@ class EnergyManagement
     @devices.next3.aux1.operating_mode
   end
 
-  def genset_auto_started?
-    aux1_operating_mode == 2
-  end
-
-  # Manually start genset by setting aux1 to Manual On
-  def start_genset
-    puts "Starting genset (aux1 manual on)"
-    @devices.next3.aux1.operating_mode = 1
-  end
-
-  # Stop genset by returning aux1 to Auto mode
-  def stop_genset
-    puts "Stopping genset (aux1 back to auto)"
-    @devices.next3.aux1.operating_mode = 2
+  # Set aux1 relay operating mode on the Next3.
+  # 0 = Manual Off, 1 = Manual On, 2 = Auto
+  def set_aux_mode(mode)
+    puts "Setting aux1 operating mode to #{mode}"
+    @devices.next3.aux1.operating_mode = mode
   end
 
   # Per-phase current capacity: inverter 22A, genset adds 50A
@@ -313,7 +304,7 @@ class EnergyManagement
 
       if demand_ready && !@genset_started_for_demand && !genset_running?
         puts "Shelly demand unmet for #{GENSET_DEMAND_START_DELAY}s, starting genset"
-        start_genset
+        set_aux_mode(1)
         @genset_started_for_demand = true
       end
 
@@ -321,7 +312,7 @@ class EnergyManagement
         if @shelly_demands.empty? && @last_shelly_demand_at &&
            Time.monotonic - @last_shelly_demand_at >= GENSET_DEMAND_STOP_DELAY
           puts "No shelly demand for #{GENSET_DEMAND_STOP_DELAY / 60} minutes, stopping genset"
-          stop_genset
+          set_aux_mode(2)
           @genset_started_for_demand = false
         end
       end
