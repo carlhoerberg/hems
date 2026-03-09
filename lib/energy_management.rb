@@ -20,10 +20,15 @@ class EnergyManagement
   DEFAULT_GENSET_ACTIVATION_SOC = 20
   DEFAULT_GENSET_DEACTIVATION_SOC = 95
 
-  # 2kW single-phase Shelly heaters (9A each)
-  SHELLY_HEATER_2KW = [
-    { host: "192.168.0.190", phase: 2, amps: 9 },  # Phase 2
-    { host: "192.168.0.137", phase: 3, amps: 9 },  # Phase 3
+  HEATER_PHASE_LIMIT = 22 # max amps per phase for heater best-fit
+
+  # All heaters with per-phase amp draw
+  # phase_amps: { phase_number => amps_on_that_phase }
+  HEATERS = [
+    { id: :shelly_2kw_p2, host: "192.168.0.190", phase_amps: { 2 => 9 } },
+    { id: :shelly_2kw_p3, host: "192.168.0.137", phase_amps: { 3 => 9 } },
+    { id: :heater_6kw, phase_amps: { 1 => 9, 2 => 9, 3 => 9 } },
+    { id: :heater_9kw, phase_amps: { 1 => 13, 2 => 13, 3 => 13 } },
   ].freeze
 
   INVERTER_CURRENT_LIMIT = 26
@@ -339,58 +344,73 @@ class EnergyManagement
     demand = has_unmet_shelly_demand?
 
     if low_voltage?
-      turn_off_all_heaters("voltage sag detected (#{phase_voltage.map { |v| v.round(1) }.join("V, ")}V)")
+      turn_off_one_heater("voltage sag detected (#{phase_voltage.map { |v| v.round(1) }.join("V, ")}V)")
       return
     elsif demand
-      turn_off_all_heaters("unmet shelly demand")
+      turn_off_one_heater("unmet shelly demand")
       return
     elsif !genset && (soc = battery_soc) < SOLAR_EXCESS_HEATER_STOP_SOC
-      turn_off_all_heaters("SoC #{soc}% below #{SOLAR_EXCESS_HEATER_STOP_SOC}%")
+      turn_off_one_heater("SoC #{soc}% below #{SOLAR_EXCESS_HEATER_STOP_SOC}%")
       return
     end
 
     return if !genset && !solar_excess?
     return if has_shelly_demand?
 
-    # Priority: 2kW shelly heaters first (one per iteration)
-    SHELLY_HEATER_2KW.each do |heater|
-      if heater_2kw_on?(heater)
-        next # already on
-      else
-        turn_on_shelly(heater[:host])
-        return # turn on one heater at a time and re-evaluate conditions in next loop to avoid overload
+    currents = phase_current
+
+    # Turn on heaters in order if they fit under HEATER_PHASE_LIMIT (one per iteration)
+    HEATERS.each do |heater|
+      next if heater_on?(heater)
+      if heater_fits?(heater, currents)
+        turn_on_heater(heater)
+        return
       end
-    end
-
-    # Then relay heaters (only when no shelly demand)
-    unless @devices.relays.heater_6kw?
-      puts "Turning on 6kW heater"
-      @devices.relays.heater_6kw = true
-      return
-    end
-
-    unless @devices.relays.heater_9kw?
-      puts "Turning on 9kW heater"
-      @devices.relays.heater_9kw = true
-      return
     end
   end
 
-  def turn_off_all_heaters(reason = nil)
-    if @devices.relays.heater_9kw?
-      puts "Turning off 9kW heater#{reason ? " (#{reason})" : ""}"
-      @devices.relays.heater_9kw = false
+  def heater_on?(heater)
+    if heater[:host]
+      heater_shelly_on?(heater[:host])
+    else
+      @devices.relays.send(:"#{heater[:id]}?")
     end
-    if @devices.relays.heater_6kw?
-      puts "Turning off 6kW heater#{reason ? " (#{reason})" : ""}"
-      @devices.relays.heater_6kw = false
+  end
+
+  # Check if turning on this heater would keep all its phases under HEATER_PHASE_LIMIT
+  def heater_fits?(heater, currents)
+    heater[:phase_amps].all? { |phase, amps| currents[phase - 1] + amps < HEATER_PHASE_LIMIT }
+  end
+
+  def turn_on_heater(heater)
+    puts "Turning on #{heater[:id]} heater"
+    if heater[:host]
+      turn_on_shelly(heater[:host])
+    else
+      @devices.relays.send(:"#{heater[:id]}=", true)
     end
-    SHELLY_HEATER_2KW.each do |heater|
-      if heater_2kw_on?(heater)
-        puts "Turning off 2kW heater #{heater[:host]}#{reason ? " (#{reason})" : ""}"
-        turn_off_shelly(heater[:host])
+  end
+
+  def turn_off_heater(heater, reason = nil)
+    msg = "Turning off #{heater[:id]} heater"
+    msg += " (#{reason})" if reason
+    puts msg
+    if heater[:host]
+      turn_off_shelly(heater[:host])
+    else
+      @devices.relays.send(:"#{heater[:id]}=", false)
+    end
+  end
+
+  # Turn off one heater in reverse order (9kW first, then 6kW, then 2kW shellys)
+  def turn_off_one_heater(reason = nil)
+    HEATERS.reverse_each do |heater|
+      if heater_on?(heater)
+        turn_off_heater(heater, reason)
+        return true
       end
     end
+    false
   end
 
   # Adapt go-e charger amperage so that L1 on the inverter never exceeds INVERTER_CURRENT_LIMIT.
@@ -440,26 +460,11 @@ class EnergyManagement
     puts "[ERROR] manage_goe_amperage: #{e.message}"
   end
 
-  def turn_off_heaters
-    puts "Turning off heaters"
-    turn_off_all_heaters
-  end
-
-  def turn_on_2kw_heater(heater)
-    puts "Turning on 2kW heater #{heater[:host]} (phase #{heater[:phase]})"
-    turn_on_shelly(heater[:host])
-  end
-
-  def turn_off_2kw_heater(heater)
-    puts "Turning off 2kW heater #{heater[:host]} (phase #{heater[:phase]})"
-    turn_off_shelly(heater[:host])
-  end
-
-  def heater_2kw_on?(heater)
-    response = shelly_rpc(heater[:host], "Switch.GetStatus", { id: 0 })
+  def heater_shelly_on?(host)
+    response = shelly_rpc(host, "Switch.GetStatus", { id: 0 })
     JSON.parse(response.body)["output"]
   rescue => e
-    puts "[ERROR] Failed to get 2kW heater status #{heater[:host]}: #{e.message}"
+    puts "[ERROR] Failed to get Shelly heater status #{host}: #{e.message}"
     false
   end
 
