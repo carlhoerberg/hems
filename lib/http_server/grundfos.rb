@@ -58,6 +58,10 @@ class HTTPServer
         @grundfos.max_flow_limit_enabled = false
       when "Set flow limit"
         @grundfos.max_flow_limit = form["max_flow_limit"].to_f
+      when "Enable Direct Control"
+        @grundfos.direct_control = true
+      when "Disable Direct Control"
+        @grundfos.direct_control = false
       end
       res.status = 303
       res["location"] = req.path

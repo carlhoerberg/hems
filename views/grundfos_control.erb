@@ -140,7 +140,15 @@
     <table>
       <tr><td>Kp</td><td><%=pi_controller[:kp]%></td></tr>
       <tr><td>Ti</td><td><%=pi_controller[:ti]%> s</td></tr>
-      <tr><td>Direct control</td><td><%=pi_controller[:direct_control]%></td></tr>
+      <tr>
+        <td>Direct control</td>
+        <td>
+          <%=pi_controller[:direct_control]%>
+          <form method="post" style="display:inline">
+            <input type="submit" name="action" value="<%=pi_controller[:direct_control] ? 'Disable Direct Control' : 'Enable Direct Control'%>">
+          </form>
+        </td>
+      </tr>
     </table>
   </body>
 </html>
