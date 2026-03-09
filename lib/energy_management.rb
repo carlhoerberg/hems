@@ -177,24 +177,13 @@ class EnergyManagement
 
   # Check if any phase is currently overloaded
   def phase_overloaded?
+    return false if @phase_current_history.empty?
     capacity = per_phase_capacity
-    phase_current.any? { |c| c >= capacity }
+    @phase_current_history.last.any? { |c| c >= capacity }
   end
 
-  # Check if adding amps would overload any phase
-  def phase_allows?(amps)
-    capacity = per_phase_capacity
-    phase_current.max + amps < capacity
-  end
-
-  # Returns true if the current on any phase has been over the limit for 25s in a row,
-  # during the last 5 minutes
-  def high_phase_current?
-    not phase_current_capacity?(0)
-  end
-
-  # Can the requested current be added without overload? Look at the current draw
-  # for the past 5 minutes
+  # Can the requested current be added without overload? Checks that no phase
+  # has been over the limit for 5 consecutive samples in the history.
   def phase_current_capacity?(requested_current)
     return false if @phase_current_history.size < 5
 
@@ -219,7 +208,7 @@ class EnergyManagement
       @shelly_demands[host] = { amps:, active: false, unmet_since: nil }
       @last_shelly_demand_at = Time.monotonic
 
-      if phase_allows?(amps)
+      if phase_current_capacity?(amps)
         puts "Activating Shelly #{host} (#{amps}A) on registration"
         turn_on_shelly(host)
         @shelly_demands[host][:active] = true
@@ -268,7 +257,7 @@ class EnergyManagement
             demand[:unmet_since] = Time.monotonic
           end
         else
-          if phase_allows?(demand[:amps])
+          if phase_current_capacity?(demand[:amps])
             puts "Capacity available, turning on Shelly #{host} (#{demand[:amps]}A)"
             turn_on_shelly(host)
             demand[:active] = true
@@ -357,7 +346,8 @@ class EnergyManagement
     return if !genset && !solar_excess?
     return if has_shelly_demand?
 
-    currents = phase_current
+    return if @phase_current_history.empty?
+    currents = @phase_current_history.last
 
     # Turn on heaters in order if they fit under HEATER_PHASE_LIMIT (one per iteration)
     HEATERS.each do |heater|
