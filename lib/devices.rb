@@ -14,9 +14,10 @@ require_relative "./devices/grundfos"
 require_relative "./devices/lk"
 require_relative "./devices/gencomm"
 require_relative "./devices/victron"
+require_relative "./devices/goe"
 
 class Devices
-  attr_reader :next3, :sdmo, :eta, :starlink, :shelly, :relays, :unifi, :topas, :weco, :ecowitt, :envistar, :casa, :grundfos, :lk, :gencomm, :victron
+  attr_reader :next3, :sdmo, :eta, :starlink, :shelly, :relays, :unifi, :topas, :weco, :ecowitt, :envistar, :casa, :grundfos, :lk, :gencomm, :victron, :goe
 
   def initialize
     @next3 = Next3.new
@@ -68,5 +69,6 @@ class Devices
     }
     @gencomm = GenComm.new("192.168.0.10", unit: 1)
     @victron = Victron.new("192.168.0.202")
+    @goe = GoE.new("go-echarger_274452.local")
   end
 end
