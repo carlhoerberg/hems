@@ -112,6 +112,13 @@ class EnergyManagement
     puts "[ERROR] manage_ac_source: #{e.message}"
   end
 
+  def battery_soc
+    @devices.weco.avg_soc
+  rescue => e
+    puts "[WARN] Weco SoC unavailable (#{e.message}), falling back to Next3"
+    @devices.next3.battery.soc
+  end
+
   def genset_running?
     @devices.gencomm.is_running?
   rescue => e
@@ -354,7 +361,7 @@ class EnergyManagement
     elsif demand
       turn_off_all_heaters("unmet shelly demand")
       return
-    elsif !genset && (soc = @devices.next3.battery.soc) < SOLAR_EXCESS_HEATER_STOP_SOC
+    elsif !genset && (soc = battery_soc) < SOLAR_EXCESS_HEATER_STOP_SOC
       turn_off_all_heaters("SoC #{soc}% below #{SOLAR_EXCESS_HEATER_STOP_SOC}%")
       return
     end
@@ -410,7 +417,7 @@ class EnergyManagement
     return unless @devices.goe.car_connected?
 
     # Only charge with solar (SoC >= 95% implies solar is producing) or genset
-    soc = @devices.weco.total[:soc] rescue @devices.next3.battery.soc
+    soc = battery_soc
     if has_shelly_demand? || (soc < SOLAR_EXCESS_HEATER_STOP_SOC && !genset_running?)
       if @devices.goe.allow != 0
         reason = has_shelly_demand? ? "shelly demand" : "SoC #{soc.round}% < #{SOLAR_EXCESS_HEATER_STOP_SOC}% and no genset"
@@ -521,7 +528,7 @@ class EnergyManagement
   end
 
   # Manage genset start/stop thresholds via Next3 aux1 relay
-  def genset_threshold_management(soc = @devices.next3.battery.soc)
+  def genset_threshold_management(soc = battery_soc)
     return if Time.monotonic - @last_threshold_check < 60
     @last_threshold_check = Time.monotonic
 

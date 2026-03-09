@@ -27,6 +27,12 @@ class Devices
       end
     end
 
+    def avg_soc
+      lock do
+        read_holding_register(206) / 2.5
+      end
+    end
+
     def charge_limit
       lock do
         read_holding_register(203) / 10.0
