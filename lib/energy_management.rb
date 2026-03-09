@@ -79,30 +79,30 @@ class EnergyManagement
   end
 
 # Enable AC source only when genset mains breaker is closed (supplying power).
-  # Disable during warmup/cooldown (gen LED on but mains breaker off).
-  # Fail-safe: re-enable when genset is fully off (both LEDs off).
+  # Disable during warmup/cooldown (fuel relay on but mains breaker off).
+  # Fail-safe: re-enable when genset is fully off (both relays off).
   def manage_ac_source
-    mains_breaker = @devices.gencomm.mains_breaker_led
-    gen = @devices.gencomm.gen_led
+    fuel = @devices.gencomm.fuel_relay
+    mains_breaker = @devices.gencomm.mains_breaker_relay
 
-    if mains_breaker
-      # Genset breaker closed, power available
+    if fuel && mains_breaker
+      # Genset running, mains breaker closed, power available
       unless @ac_source_enabled
-        puts "Mains breaker LED on, enabling AC source"
+        puts "Fuel and mains breaker relays on, enabling AC source"
         @devices.next3.acsource.enable
         @ac_source_enabled = true
       end
-    elsif gen
+    elsif fuel
       # Warming up or cooling down, no stable power
       if @ac_source_enabled
-        puts "Gen LED on but mains breaker off (warmup/cooldown), disabling AC source"
+        puts "Fuel relay on but mains breaker off (warmup/cooldown), disabling AC source"
         @devices.next3.acsource.disable
         @ac_source_enabled = false
       end
     else
       # Genset fully off, fail-safe: enable AC source
       unless @ac_source_enabled
-        puts "Genset off (both LEDs off), enabling AC source (fail-safe)"
+        puts "Genset off (fuel relay off), enabling AC source (fail-safe)"
         @devices.next3.acsource.enable
         @ac_source_enabled = true
       end

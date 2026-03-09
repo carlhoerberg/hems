@@ -310,7 +310,7 @@ class Devices
     end
 
     def is_running?
-      mains_breaker_led
+      mains_breaker_relay
     end
 
     # Basic Instrumentation (Page 4)
@@ -583,13 +583,13 @@ class Devices
       }.freeze
     end
 
-    # Page 190 LED status registers (0 = off, 1 = on)
-    def mains_breaker_led
-      @modbus.read_holding_register(PAGE_OUTPUT_STATUS + 13) != 0
+    # Page 190 digital output status registers (0 = off, 1 = on)
+    def fuel_relay
+      @modbus.read_holding_register(PAGE_OUTPUT_STATUS + 0) != 0
     end
 
-    def gen_led
-      @modbus.read_holding_register(PAGE_OUTPUT_STATUS + 16) != 0
+    def mains_breaker_relay
+      @modbus.read_holding_register(PAGE_OUTPUT_STATUS + 6) != 0
     end
 
     def active_status_flags
