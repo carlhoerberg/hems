@@ -17,7 +17,8 @@ class HTTPServer
                                            named_alarms: @gencomm.named_alarms,
                                            alarm_conditions: @gencomm.alarm_conditions,
                                            accumulated: @gencomm.accumulated,
-                                           output_status: @gencomm.output_status })
+                                           output_status: @gencomm.output_status,
+                                           serial_number: @gencomm.serial_number })
     end
 
     def do_POST(req, res)

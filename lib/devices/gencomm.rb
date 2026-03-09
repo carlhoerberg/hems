@@ -183,6 +183,12 @@ class Devices
       @modbus.write_holding_registers(PAGE_ACCUMULATED, [high, low])
     end
 
+    # Device identification (Page 3)
+    def serial_number
+      regs = @modbus.read_holding_registers(PAGE_STATUS + 2, 2)
+      u32(regs)
+    end
+
     # Status (Page 3)
     def control_mode
       @modbus.read_holding_register(PAGE_STATUS + 4)
