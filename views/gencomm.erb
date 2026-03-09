@@ -61,6 +61,10 @@ genset_ash_load{name="<%=name%>"} <%=measurements[:ash_load]%>
 genset_dpf_regen_status{name="<%=name%>"} <%=measurements[:dpf_regen_status]%>
 # TYPE genset_dptc_filter_status gauge
 genset_dptc_filter_status{name="<%=name%>"} <%=dpf_status[:dptc_filter_status]%>
+# TYPE genset_aftertreatment_status_severity gauge
+genset_aftertreatment_status_severity{name="<%=name%>"} <%=dpf_status[:aftertreatment_status_severity]%>
+# TYPE genset_aftertreatment_status_reason gauge
+genset_aftertreatment_status_reason{name="<%=name%>"} <%=dpf_status[:aftertreatment_status_reason]%>
 # TYPE genset_dpf_soot_mass gauge
 genset_dpf_soot_mass{name="<%=name%>"} <%=measurements[:dpf_soot_mass]%>
 # TYPE genset_air_mass_flow_rate gauge
