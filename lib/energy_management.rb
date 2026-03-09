@@ -34,7 +34,6 @@ class EnergyManagement
 
   VICTRON_INVERTER_ONLY_MIN_SOC = 50 # only shed Victron charging if SoC > this
   MIN_PHASE_VOLTAGE = 210 # turn off shelly demands if any phase drops below this
-  HEATER_MAX_PHASE_CURRENT = 22 # long-term safe inverter limit per phase for heaters
   SOLAR_EXCESS_HEATER_STOP_SOC = 95   # keep solar excess heaters on until this SoC
 
   STATE_FILE = File.join(ENV.fetch("STATE_DIRECTORY", "/var/lib/hems"), "energy_management.json")
@@ -327,11 +326,6 @@ class EnergyManagement
     false
   end
 
-  def phase_current_under?(limit)
-    return false if @phase_current_history.empty?
-    @phase_current_history.last.all? { |c| c < limit }
-  end
-
   def has_unmet_shelly_demand?
     @shelly_demands_mutex.synchronize { @shelly_demands.any? { |_, d| !d[:active] } }
   end
@@ -343,11 +337,9 @@ class EnergyManagement
   def manage_heaters
     genset = genset_running?
     demand = has_unmet_shelly_demand?
-    heater_limit = genset ? HEATER_MAX_PHASE_CURRENT + GENSET_CURRENT_LIMIT : HEATER_MAX_PHASE_CURRENT
-    over_limit = !phase_current_under?(heater_limit)
 
-    if over_limit
-      turn_off_all_heaters("not under current limit for heaters (#{heater_limit}A)")
+    if low_voltage?
+      turn_off_all_heaters("voltage sag detected (#{phase_voltage.map { |v| v.round(1) }.join("V, ")}V)")
       return
     elsif demand
       turn_off_all_heaters("unmet shelly demand")
