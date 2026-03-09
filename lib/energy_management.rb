@@ -160,14 +160,8 @@ class EnergyManagement
     end
   end
 
-  def phase_voltage
-    (1..3).map do |phase|
-      @devices.next3.acload.voltage(phase)
-    end
-  end
-
   def low_voltage?
-    phase_voltage.any? { |v| v < MIN_PHASE_VOLTAGE }
+    (1..3).any? { |phase| @devices.next3.acload.voltage(phase) < MIN_PHASE_VOLTAGE }
   end
 
   def update_phase_current_history
@@ -237,8 +231,7 @@ class EnergyManagement
       has_active = @shelly_demands.any? { |_, d| d[:active] }
 
       if has_active && low_voltage?
-        voltages = phase_voltage.map { |v| v.round(1) }
-        puts "Low voltage detected (#{voltages.join("V, ")}V), turning off all active Shelly demands"
+        puts "Low voltage detected, turning off all active Shelly demands"
         @shelly_demands.each do |host, demand|
           next unless demand[:active]
           turn_off_shelly(host)
@@ -333,7 +326,7 @@ class EnergyManagement
     demand = has_unmet_shelly_demand?
 
     if low_voltage?
-      turn_off_one_heater("voltage sag detected (#{phase_voltage.map { |v| v.round(1) }.join("V, ")}V)")
+      turn_off_one_heater("voltage sag")
       return
     elsif demand
       turn_off_one_heater("unmet shelly demand")
