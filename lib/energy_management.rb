@@ -520,8 +520,8 @@ class EnergyManagement
   def shelly_rpc(host, method, params = {})
     uri = URI("http://#{host}/rpc")
     http = Net::HTTP.new(uri.host, uri.port)
-    http.open_timeout = 2
-    http.read_timeout = 3
+    http.open_timeout = 3
+    http.read_timeout = 2
     request = Net::HTTP::Post.new(uri.path, { "Content-Type" => "application/json" })
     request.body = { id: 0, method:, params: }.to_json
     http.request(request)
