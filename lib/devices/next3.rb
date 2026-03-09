@@ -310,6 +310,10 @@ class Devices
         @unit.read_holding_registers(5102, 2).to_u32
       end
 
+      def warning_noised_adc_channels
+        @unit.read_holding_registers(5156, 2).to_u32
+      end
+
       def adc_noise
         @unit.read_holding_registers(5162, 2).to_f32
       end
