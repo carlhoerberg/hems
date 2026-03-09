@@ -492,8 +492,8 @@ class EnergyManagement
     uri = URI("http://#{host}/rpc/#{method}")
     uri.query = URI.encode_www_form(params) unless params.empty?
     http = Net::HTTP.new(uri.host, uri.port)
-    http.open_timeout = 3
-    http.read_timeout = 2
+    http.open_timeout = 1
+    http.read_timeout = 1
     http.request(Net::HTTP::Get.new(uri))
   end
 
