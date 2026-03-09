@@ -465,7 +465,7 @@ class EnergyManagement
 
   def heater_2kw_on?(heater)
     response = shelly_rpc(heater[:host], "Switch.GetStatus", { id: 0 })
-    JSON.parse(response.body)["result"]["output"]
+    JSON.parse(response.body)["output"]
   rescue => e
     puts "[ERROR] Failed to get 2kW heater status #{heater[:host]}: #{e.message}"
     false
