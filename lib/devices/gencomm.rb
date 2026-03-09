@@ -548,6 +548,35 @@ class Devices
       }.freeze
     end
 
+    # Full Page 190 output status - digital outputs and LEDs
+    def output_status
+      regs = @modbus.read_holding_registers(PAGE_OUTPUT_STATUS, 22)
+      {
+        digital_output_a_fuel: regs[0],
+        digital_output_b_crank: regs[1],
+        digital_output_e: regs[2],
+        digital_output_f: regs[3],
+        digital_output_g: regs[4],
+        digital_output_h: regs[5],
+        digital_output_d_gen: regs[6],
+        digital_output_c_mains: regs[7],
+        stop_led: regs[8],
+        manual_led: regs[9],
+        test_led: regs[10],
+        auto_led: regs[11],
+        mains_led: regs[12],
+        mains_breaker_led: regs[13],
+        gen_breaker_led: regs[14],
+        gen_led: regs[15],
+        user_led_1: regs[16],
+        user_led_2: regs[17],
+        user_led_3: regs[18],
+        user_led_4: regs[19],
+        digital_output_i: regs[20],
+        digital_output_j: regs[21],
+      }.freeze
+    end
+
     # Page 190 LED status registers (0 = off, 1 = on)
     def mains_breaker_led
       @modbus.read_holding_register(PAGE_OUTPUT_STATUS + 13) != 0

@@ -91,6 +91,15 @@
         </tr>
       <%end%>
     </table>
+    <h2>Output Status (Page 190)</h2>
+    <table>
+      <%output_status.each do |key, value|%>
+        <tr>
+          <td><%=key%></td>
+          <td><%=value%></td>
+        </tr>
+      <%end%>
+    </table>
     <h2>Measurements</h2>
     <table>
       <%measurements.each do |key, value|%>

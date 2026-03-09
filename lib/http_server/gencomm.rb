@@ -16,7 +16,8 @@ class HTTPServer
                                            measurements: @gencomm.measurements,
                                            named_alarms: @gencomm.named_alarms,
                                            alarm_conditions: @gencomm.alarm_conditions,
-                                           accumulated: @gencomm.accumulated })
+                                           accumulated: @gencomm.accumulated,
+                                           output_status: @gencomm.output_status })
     end
 
     def do_POST(req, res)
