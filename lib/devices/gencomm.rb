@@ -304,7 +304,7 @@ class Devices
     end
 
     def is_running?
-      engine_operating_state == :running
+      mains_breaker_led
     end
 
     # Basic Instrumentation (Page 4)
