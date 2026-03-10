@@ -1,6 +1,8 @@
 require_relative "./devices"
+require_relative "./solar_forecast"
 require "net/http"
 require "json"
+require "time"
 
 class Time
   # Monotonic seconds since boot
@@ -19,6 +21,10 @@ end
 class EnergyManagement
   DEFAULT_GENSET_ACTIVATION_SOC = 20
   DEFAULT_GENSET_DEACTIVATION_SOC = 95
+
+  BATTERY_CAPACITY_KWH = 31.8
+  BASE_LOAD_KW = 1.5
+  MIN_SOLAR_PRODUCTION_WH = 200 # minimum Wh in a period to count as "solar producing"
 
   HEATER_PHASE_LIMIT = 22 # max amps per phase for heater best-fit
 
@@ -52,6 +58,9 @@ class EnergyManagement
     @genset_started_for_demand = false # true if we manually started genset for shelly demand
     @last_shelly_demand_at = nil      # monotonic time of last shelly demand registration
     @ac_source_enabled = @devices.next3.acsource.enabled?
+    @solar_forecast = SolarForecast.new
+    @solar_forecast_cache = nil
+    @solar_forecast_fetched_at = nil
     load_state
   end
 
@@ -503,7 +512,7 @@ class EnergyManagement
     @last_threshold_check = Time.monotonic
 
     current_deactivation = @devices.next3.aux1.soc_deactivation_threshold
-    target_deactivation = DEFAULT_GENSET_DEACTIVATION_SOC
+    target_deactivation = solar_aware_deactivation_soc(soc)
 
     # If weco module SoC drift > 5%, increase deactivation threshold to 99%
     # to allow batteries to balance
@@ -517,6 +526,45 @@ class EnergyManagement
       puts "Adjusting genset deactivation threshold: #{current_deactivation}% -> #{target_deactivation}%"
       @devices.next3.aux1.soc_deactivation_threshold = target_deactivation
     end
+  end
+
+  def solar_aware_deactivation_soc(current_soc)
+    forecast = fetch_solar_forecast
+    return DEFAULT_GENSET_DEACTIVATION_SOC unless forecast&.any?
+
+    now = Time.now
+    first_solar_time = nil
+    forecast.each do |time_str, wh|
+      period_time = Time.parse(time_str)
+      next if period_time < now
+      if wh >= MIN_SOLAR_PRODUCTION_WH
+        first_solar_time = period_time
+        break
+      end
+    end
+
+    return DEFAULT_GENSET_DEACTIVATION_SOC unless first_solar_time
+
+    hours_until_solar = (first_solar_time - now) / 3600.0
+    return current_soc if hours_until_solar <= 0
+
+    energy_needed_kwh = hours_until_solar * BASE_LOAD_KW
+    soc_needed = (energy_needed_kwh / BATTERY_CAPACITY_KWH) * 100
+    target_soc = (current_soc + soc_needed).ceil
+
+    target_soc.clamp(DEFAULT_GENSET_ACTIVATION_SOC, DEFAULT_GENSET_DEACTIVATION_SOC)
+  end
+
+  def fetch_solar_forecast
+    if @solar_forecast_cache.nil? || @solar_forecast_fetched_at.nil? ||
+       Time.now - @solar_forecast_fetched_at > 3600
+      @solar_forecast_cache = @solar_forecast.estimate_watt_hours
+      @solar_forecast_fetched_at = Time.now
+    end
+    @solar_forecast_cache
+  rescue => e
+    puts "[WARN] Solar forecast unavailable: #{e.message}"
+    @solar_forecast_cache
   end
 
   def weco_module_soc_diff
