@@ -82,7 +82,24 @@ aux1_is_connected <%=next3.aux1.is_connected ? 1 : 0%>
 # TYPE converter_errors gauge
 converter_errors <%=next3.converter.errors%>
 # TYPE converter_warning_noised_adc_channels gauge
-converter_warning_noised_adc_channels <%=next3.converter.warning_noised_adc_channels%>
+<%noised = next3.converter.warning_noised_adc_channels
+{
+  0 => "Inverter voltage L1", 1 => "Inverter voltage L2", 2 => "Inverter voltage L3",
+  3 => "Inverter current L1", 4 => "Inverter current L2", 5 => "Inverter current L3",
+  6 => "PV2 inductor current", 7 => "Main power supply voltage", 8 => "Isolated PS voltage",
+  9 => "AC out voltage L1", 10 => "AC out voltage L2", 11 => "AC out voltage L3",
+  12 => "PV1 voltage", 13 => "DC link low voltage", 14 => "DC link high voltage",
+  15 => "Battery voltage", 16 => "Battery capacitor voltage", 17 => "External PS current",
+  18 => "Earth current", 19 => "PV2 voltage", 20 => "PV1 inductor current",
+  21 => "Battery negative earth voltage", 22 => "PV1 positive earth voltage", 23 => "PV2 positive earth voltage",
+  24 => "Transformer temperature", 25 => "Battery temperature",
+  26 => "Solar 1 temperature", 27 => "Solar 2 temperature",
+  28 => "Cooler plate 1 temperature", 29 => "Cooler plate 2 temperature",
+  30 => "Battery power temperature"
+}.each do |bit, name|
+  next if noised[bit] == 0%>
+converter_warning_noised_adc_channels{channel="<%=name%>"} 1
+<%end%>
 # TYPE converter_adc_noise gauge
 converter_adc_noise <%=next3.converter.adc_noise%>
 # TYPE battery_contributor_temp gauge
