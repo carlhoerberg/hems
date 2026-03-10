@@ -23,7 +23,7 @@ class EnergyManagement
   DEFAULT_GENSET_DEACTIVATION_SOC = 95
 
   BATTERY_CAPACITY_KWH = 31.8
-  BASE_LOAD_KW = 1.5
+  NOMINAL_VOLTAGE = 230
   MIN_SOLAR_PRODUCTION_WH = 200 # minimum Wh in a period to count as "solar producing"
 
   HEATER_PHASE_LIMIT = 22 # max amps per phase for heater best-fit
@@ -548,11 +548,18 @@ class EnergyManagement
     return DEFAULT_GENSET_DEACTIVATION_SOC unless first_solar_time
 
     hours_until_solar = (first_solar_time - now) / 3600.0
-    energy_needed_kwh = hours_until_solar * BASE_LOAD_KW
+    energy_needed_kwh = hours_until_solar * average_load_kw
     soc_needed = (energy_needed_kwh / BATTERY_CAPACITY_KWH) * 100
     target_soc = (current_soc + soc_needed).ceil
 
     target_soc.clamp(DEFAULT_GENSET_ACTIVATION_SOC, DEFAULT_GENSET_DEACTIVATION_SOC)
+  end
+
+  def average_load_kw
+    return 1.5 if @phase_current_history.empty?
+
+    total_amps = @phase_current_history.sum { |phases| phases.sum } / @phase_current_history.size.to_f
+    total_amps * NOMINAL_VOLTAGE / 1000.0
   end
 
   def fetch_solar_forecast
