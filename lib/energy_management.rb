@@ -548,8 +548,6 @@ class EnergyManagement
     return DEFAULT_GENSET_DEACTIVATION_SOC unless first_solar_time
 
     hours_until_solar = (first_solar_time - now) / 3600.0
-    return current_soc if hours_until_solar <= 0
-
     energy_needed_kwh = hours_until_solar * BASE_LOAD_KW
     soc_needed = (energy_needed_kwh / BATTERY_CAPACITY_KWH) * 100
     target_soc = (current_soc + soc_needed).ceil
