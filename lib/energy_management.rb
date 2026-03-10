@@ -515,6 +515,9 @@ class EnergyManagement
 
     current_deactivation = @devices.next3.aux1.soc_deactivation_threshold
     target_deactivation = solar_aware_deactivation_soc(soc)
+    if target_deactivation != DEFAULT_GENSET_DEACTIVATION_SOC
+      puts "Solar-aware genset deactivation SoC: #{target_deactivation}% (load: #{average_load_kw.round(2)} kW)"
+    end
 
     # If weco module SoC drift > 5%, increase deactivation threshold to 99%
     # to allow batteries to balance
