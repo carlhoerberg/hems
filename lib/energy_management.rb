@@ -61,6 +61,7 @@ class EnergyManagement
     @solar_forecast = SolarForecast.new
     @solar_forecast_cache = nil
     @solar_forecast_fetched_at = nil
+    @last_threshold_check = 0
     load_state
   end
 
@@ -75,6 +76,7 @@ class EnergyManagement
           manage_heaters
           manage_goe_amperage
           manage_victron_mode
+          genset_threshold_management
           save_state
         end
         puts "Energy management loop duration: #{duration.round(2)}s" if duration > 5
