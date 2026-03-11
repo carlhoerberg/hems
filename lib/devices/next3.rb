@@ -163,6 +163,29 @@ class Devices
         WARNINGS_BITS.filter_map { |bit, name| name if value[bit] == 1 }
       end
 
+      ERRORS_BITS = {
+        9 => "Overfrequency", 10 => "Underfrequency",
+        11 => "Overvoltage", 12 => "Undervoltage",
+        13 => "Synchronization loss", 14 => "Outside of envelope",
+        15 => "Islanding detected", 16 => "Phase error",
+        17 => "Excessive dc voltage", 18 => "Earthing error",
+        19 => "Error relay failure 1", 20 => "Synchronization failed",
+        21 => "Error relay failure 2", 22 => "Error relay failure 3",
+        23 => "Error relay failure 4", 24 => "Error relay failure 5",
+        25 => "Error relay failure 6", 26 => "Too large current at relay open",
+        27 => "Overtemperature"
+      }
+
+      def errors(phase)
+        raise ArgumentError.new("Phase 1, 2 or 3") unless [1,2,3].include? phase
+        @unit.read_holding_registers(1506 + 300 * phase, 2).to_u32
+      end
+
+      def active_errors(phase)
+        value = errors(phase)
+        ERRORS_BITS.filter_map { |bit, name| name if value[bit] == 1 }
+      end
+
       def enabled?
         @unit.read_holding_register(1207) != 0
       end
