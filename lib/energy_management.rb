@@ -47,6 +47,12 @@ class EnergyManagement
   MIN_PHASE_VOLTAGE = 210 # turn off shelly demands if any phase drops below this
   SOLAR_EXCESS_HEATER_STOP_SOC = 95   # keep solar excess heaters on until this SoC
 
+  # Shelly units with demand switching — poll input to catch missed register/deregister actions
+  SHELLY_DEMAND_UNITS = [
+    { host: "192.168.0.160", name: "Huvuddiskmaskinen", amps: 14.5 },
+    { host: "192.168.0.174", name: "Glasdiskmaskinen", amps: 9 },
+  ].freeze
+
   STATE_FILE = File.join(ENV.fetch("STATE_DIRECTORY", "/var/lib/hems"), "energy_management.json")
 
   def initialize(devices)
@@ -69,6 +75,7 @@ class EnergyManagement
         duration = Time.measure do
           manage_ac_source
           update_phase_current_history
+          poll_shelly_demand_inputs
           manage_shelly_demands
           manage_genset_for_demand
           manage_heaters
@@ -201,6 +208,24 @@ class EnergyManagement
       end
     end
     true
+  end
+
+  # Poll known Shelly demand units' input state to catch missed register/deregister actions
+  def poll_shelly_demand_inputs
+    SHELLY_DEMAND_UNITS.each do |unit|
+      input_on = shelly_input_on?(unit[:host])
+      next if input_on.nil? # unreachable, skip
+
+      has_demand = @shelly_demands_mutex.synchronize { @shelly_demands.key?(unit[:host]) }
+
+      if input_on && !has_demand
+        puts "Shelly #{unit[:name]} (#{unit[:host]}) input is on but no demand registered, registering"
+        register_shelly_demand(unit[:host], unit[:amps])
+      elsif !input_on && has_demand
+        puts "Shelly #{unit[:name]} (#{unit[:host]}) input is off but demand registered, deregistering"
+        deregister_shelly_demand(unit[:host])
+      end
+    end
   end
 
   # Shelly demand management
@@ -462,6 +487,14 @@ class EnergyManagement
     JSON.parse(response.body)["output"]
   rescue => e
     puts "[ERROR] Failed to get Shelly heater status #{host}: #{e.message}"
+    nil
+  end
+
+  def shelly_input_on?(host)
+    response = shelly_rpc(host, "Input.GetStatus", { id: 0 })
+    JSON.parse(response.body)["state"]
+  rescue => e
+    puts "[WARN] Failed to poll Shelly input #{host}: #{e.message}"
     nil
   end
 
