@@ -89,7 +89,6 @@ class EnergyManagement
 
   def stop
     @stopped = true
-    save_state
   end
 
 # Enable AC source only when genset mains breaker is closed (supplying power).
