@@ -449,6 +449,15 @@ class Devices
         NOISED_ADC_BITS.filter_map { |bit, name| name if value[bit] == 1 }
       end
 
+      def error_noised_adc_channels
+        @unit.read_holding_registers(5158, 2).to_u32
+      end
+
+      def active_noised_adc_error_channels
+        value = error_noised_adc_channels
+        NOISED_ADC_BITS.filter_map { |bit, name| name if value[bit] == 1 }
+      end
+
       def adc_noise
         @unit.read_holding_registers(5162, 2).to_f32
       end
@@ -473,6 +482,13 @@ class Devices
 
       def is_connected
         @unit.read_holding_register(@base) != 0
+      end
+
+      # 0 = Safe state opened, 1 = Safe state closed,
+      # 2 = Rel. man. opened, 3 = Rel. man. closed,
+      # 4 = Rel. auto. opened, 5 = Rel. auto. closed
+      def position
+        @unit.read_holding_registers(@base + 1, 2).to_u32
       end
 
       # Operating mode: 0 = Manual Off, 1 = Manual On, 2 = Auto

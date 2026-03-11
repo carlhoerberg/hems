@@ -94,6 +94,8 @@ solar_limitation{array="<%=array%>"} <%=next3.solar.limitation(array)%>
 
 # TYPE aux1_is_connected gauge
 aux1_is_connected <%=next3.aux1.is_connected ? 1 : 0%>
+# TYPE aux1_position gauge
+aux1_position <%=next3.aux1.position%>
 
 # TYPE converter_error gauge
 <%next3.converter.active_errors.each do |name|%>
@@ -102,6 +104,10 @@ converter_error{reason="<%=name%>"} 1
 # TYPE converter_adc_noise_warning gauge
 <%next3.converter.active_noised_adc_channels.each do |name|%>
 converter_adc_noise_warning{channel="<%=name%>"} 1
+<%end%>
+# TYPE converter_adc_noise_error gauge
+<%next3.converter.active_noised_adc_error_channels.each do |name|%>
+converter_adc_noise_error{channel="<%=name%>"} 1
 <%end%>
 # TYPE converter_adc_noise gauge
 converter_adc_noise <%=next3.converter.adc_noise%>
