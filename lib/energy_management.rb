@@ -59,8 +59,6 @@ class EnergyManagement
     @last_shelly_demand_at = nil      # monotonic time of last shelly demand registration
     @ac_source_enabled = @devices.next3.acsource.enabled?
     @solar_forecast = SolarForecast.new
-    @solar_forecast_cache = nil
-    @solar_forecast_fetched_at = nil
     @last_threshold_check = 0
     load_state
   end
@@ -534,7 +532,7 @@ class EnergyManagement
   end
 
   def solar_aware_deactivation_soc(current_soc)
-    forecast = fetch_solar_forecast
+    forecast = @solar_forecast.estimate_watt_hours
     return DEFAULT_GENSET_DEACTIVATION_SOC unless forecast&.any?
 
     now = Time.now
@@ -556,6 +554,9 @@ class EnergyManagement
     target_soc = (current_soc + soc_needed).ceil
 
     target_soc.clamp(DEFAULT_GENSET_ACTIVATION_SOC, DEFAULT_GENSET_DEACTIVATION_SOC)
+  rescue => e
+    puts "[WARN] Solar forecast unavailable: #{e.message}"
+    DEFAULT_GENSET_DEACTIVATION_SOC
   end
 
   def average_load_kw
@@ -565,17 +566,6 @@ class EnergyManagement
     total_amps * NOMINAL_VOLTAGE / 1000.0
   end
 
-  def fetch_solar_forecast
-    if @solar_forecast_cache.nil? || @solar_forecast_fetched_at.nil? ||
-       Time.now - @solar_forecast_fetched_at > 3600
-      @solar_forecast_cache = @solar_forecast.estimate_watt_hours
-      @solar_forecast_fetched_at = Time.now
-    end
-    @solar_forecast_cache
-  rescue => e
-    puts "[WARN] Solar forecast unavailable: #{e.message}"
-    @solar_forecast_cache
-  end
 
   def weco_module_soc_diff
     min_soc = nil
