@@ -258,7 +258,12 @@ class EnergyManagement
             demand[:unmet_since] = Time.monotonic
           end
         else
-          if phase_current_capacity?(demand[:amps])
+          # Verify unmet demands are still real by polling the Shelly switch state.
+          # If the switch is off, the demand is stale (deregister request was likely lost).
+          if demand[:unmet_since] && !shelly_switch_on?(host)
+            puts "Shelly #{host} switch is off, removing stale demand"
+            @shelly_demands.delete(host)
+          elsif phase_current_capacity?(demand[:amps])
             puts "Capacity available, turning on Shelly #{host} (#{demand[:amps]}A)"
             turn_on_shelly(host)
             demand[:active] = true
@@ -458,6 +463,14 @@ class EnergyManagement
   rescue => e
     puts "[ERROR] Failed to get Shelly heater status #{host}: #{e.message}"
     nil
+  end
+
+  def shelly_switch_on?(host)
+    response = shelly_rpc(host, "Switch.GetStatus", { id: 0 })
+    JSON.parse(response.body)["output"]
+  rescue => e
+    puts "[WARN] Failed to poll Shelly #{host}: #{e.message}"
+    true # assume still active if unreachable
   end
 
   def turn_on_shelly(host)
