@@ -517,14 +517,14 @@ class EnergyManagement
     target_deactivation = solar_aware_deactivation_soc(soc)
     if target_deactivation != DEFAULT_GENSET_DEACTIVATION_SOC
       puts "Solar-aware genset deactivation SoC: #{target_deactivation}% (load: #{average_load_kw.round(2)} kW)"
-    end
-
-    # If weco module SoC drift > 5%, increase deactivation threshold to 99%
-    # to allow batteries to balance
-    soc_diff = weco_module_soc_diff
-    if soc_diff > 5
-      target_deactivation = 99
-      puts "Battery module SoC drift #{soc_diff.round(1)}% > 5%, setting genset deactivation to 99%"
+    else
+      # If weco module SoC drift, increase deactivation threshold to 99%
+      # to allow batteries to balance
+      soc_diff = weco_module_soc_diff
+      if soc_diff > 10
+        target_deactivation = 99
+        puts "Battery module SoC drift #{soc_diff.round(1)}% > 10%, setting genset deactivation to 99%"
+      end
     end
 
     if current_deactivation != target_deactivation
