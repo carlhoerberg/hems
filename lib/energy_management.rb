@@ -352,7 +352,8 @@ class EnergyManagement
 
     # Turn on heaters in order if they fit under HEATER_PHASE_LIMIT (one per iteration)
     HEATERS.each do |heater|
-      next if heater_on?(heater)
+      state = heater_on?(heater)
+      next if state || state.nil? # skip if on or unreachable
       if heater_fits?(heater, currents)
         turn_on_heater(heater)
         return
@@ -456,7 +457,7 @@ class EnergyManagement
     JSON.parse(response.body)["output"]
   rescue => e
     puts "[ERROR] Failed to get Shelly heater status #{host}: #{e.message}"
-    false
+    nil
   end
 
   def turn_on_shelly(host)
