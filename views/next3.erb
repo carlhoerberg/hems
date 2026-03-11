@@ -20,10 +20,14 @@ battery_bms_recommended_charging_current <%=next3.battery.bms_recommended_chargi
 battery_bms_recommended_discharging_current <%=next3.battery.bms_recommended_discharging_current%>
 # TYPE battery_voltage gauge
 battery_voltage <%=next3.battery.voltage%>
-# TYPE battery_warnings gauge
-battery_warnings <%=next3.battery.warnings%>
-# TYPE battery_errors gauge
-battery_errors <%=next3.battery.errors%>
+# TYPE battery_warning gauge
+<%next3.battery.active_warnings.each do |name|%>
+battery_warning{reason="<%=name%>"} 1
+<%end%>
+# TYPE battery_error gauge
+<%next3.battery.active_errors.each do |name|%>
+battery_error{reason="<%=name%>"} 1
+<%end%>
 
 # TYPE acload_frequency gauge
 acload_frequency <%=next3.acload.frequency%>
@@ -36,14 +40,15 @@ acsource_frequency <%=next3.acsource.frequency%>
 # TYPE acload_reactive_power gauge
 # TYPE acload_apparent_power gauge
 # TYPE acload_total_consumed_energy counter
-# TYPE acload_warnings gauge
-# TYPE acload_errors gauge
+# TYPE acload_warning gauge
+# TYPE acload_error gauge
 # TYPE acsource_voltage gauge
 # TYPE acsource_current gauge
 # TYPE acsource_active_power gauge
 # TYPE acsource_reactive_power gauge
 # TYPE acsource_apparent_power gauge
 # TYPE acsource_total_consumed_energy counter
+# TYPE acsource_warning gauge
 <%[1, 2, 3].each do |l|%>
 acload_current{L="<%=l%>"} <%=next3.acload.current(l)%>
 acload_voltage{L="<%=l%>"} <%=next3.acload.voltage(l)%>
@@ -51,14 +56,21 @@ acload_active_power{L="<%=l%>"} <%=next3.acload.active_power(l)%>
 acload_reactive_power{L="<%=l%>"} <%=next3.acload.reactive_power(l)%>
 acload_apparent_power{L="<%=l%>"} <%=next3.acload.apparent_power(l)%>
 acload_total_consumed_energy{L="<%=l%>"} <%=next3.acload.total_consumed_energy(l)%>
-acload_warnings{L="<%=l%>"} <%=next3.acload.warnings(l)%>
-acload_errors{L="<%=l%>"} <%=next3.acload.errors(l)%>
+<%next3.acload.active_warnings(l).each do |name|%>
+acload_warning{L="<%=l%>",reason="<%=name%>"} 1
+<%end%>
+<%next3.acload.active_errors(l).each do |name|%>
+acload_error{L="<%=l%>",reason="<%=name%>"} 1
+<%end%>
 acsource_voltage{L="<%=l%>"} <%=next3.acsource.voltage(l)%>
 acsource_current{L="<%=l%>"} <%=next3.acsource.current(l)%>
 acsource_active_power{L="<%=l%>"} <%=next3.acsource.active_power(l)%>
 acsource_reactive_power{L="<%=l%>"} <%=next3.acsource.reactive_power(l)%>
 acsource_apparent_power{L="<%=l%>"} <%=next3.acsource.apparent_power(l)%>
 acsource_total_consumed_energy{L="<%=l%>"} <%=next3.acsource.total_consumed_energy(l)%>
+<%next3.acsource.active_warnings(l).each do |name|%>
+acsource_warning{L="<%=l%>",reason="<%=name%>"} 1
+<%end%>
 <%end%>
 
 # TYPE solar_power gauge
@@ -79,26 +91,13 @@ solar_limitation{array="<%=array%>"} <%=next3.solar.limitation(array)%>
 # TYPE aux1_is_connected gauge
 aux1_is_connected <%=next3.aux1.is_connected ? 1 : 0%>
 
-# TYPE converter_errors gauge
-converter_errors <%=next3.converter.errors%>
-# TYPE converter_warning_noised_adc_channels gauge
-<%noised = next3.converter.warning_noised_adc_channels
-{
-  0 => "Inverter voltage L1", 1 => "Inverter voltage L2", 2 => "Inverter voltage L3",
-  3 => "Inverter current L1", 4 => "Inverter current L2", 5 => "Inverter current L3",
-  6 => "PV2 inductor current", 7 => "Main power supply voltage", 8 => "Isolated PS voltage",
-  9 => "AC out voltage L1", 10 => "AC out voltage L2", 11 => "AC out voltage L3",
-  12 => "PV1 voltage", 13 => "DC link low voltage", 14 => "DC link high voltage",
-  15 => "Battery voltage", 16 => "Battery capacitor voltage", 17 => "External PS current",
-  18 => "Earth current", 19 => "PV2 voltage", 20 => "PV1 inductor current",
-  21 => "Battery negative earth voltage", 22 => "PV1 positive earth voltage", 23 => "PV2 positive earth voltage",
-  24 => "Transformer temperature", 25 => "Battery temperature",
-  26 => "Solar 1 temperature", 27 => "Solar 2 temperature",
-  28 => "Cooler plate 1 temperature", 29 => "Cooler plate 2 temperature",
-  30 => "Battery power temperature"
-}.each do |bit, name|
-  next if noised[bit] == 0%>
-converter_warning_noised_adc_channels{channel="<%=name%>"} 1
+# TYPE converter_error gauge
+<%next3.converter.active_errors.each do |name|%>
+converter_error{reason="<%=name%>"} 1
+<%end%>
+# TYPE converter_adc_noise_warning gauge
+<%next3.converter.active_noised_adc_channels.each do |name|%>
+converter_adc_noise_warning{channel="<%=name%>"} 1
 <%end%>
 # TYPE converter_adc_noise gauge
 converter_adc_noise <%=next3.converter.adc_noise%>

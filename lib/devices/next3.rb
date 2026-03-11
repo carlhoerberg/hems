@@ -99,6 +99,45 @@ class Devices
       def warnings
         @unit.read_holding_registers(304, 2).to_u32
       end
+
+      WARNINGS_BITS = {
+        0 => "Overvoltage", 1 => "Undervoltage",
+        2 => "Charging overcurrent", 3 => "Discharging overcurrent",
+        4 => "Charging overtemperature", 5 => "Discharging overtemperature",
+        6 => "Charging undertemperature", 7 => "Discharging undertemperature",
+        8 => "Contactor", 9 => "Short circuit",
+        10 => "BMS internal", 11 => "Cell imbalance",
+        12 => "SMA general", 13 => "Charging recommended",
+        14 => "Discharging recommended", 15 => "Full charging recommended",
+        16 => "Abnormal measured temperature", 17 => "Soon disconnected"
+      }
+
+      ERRORS_BITS = {
+        0 => "Overvoltage", 1 => "Undervoltage",
+        2 => "Charging overcurrent", 3 => "Discharging overcurrent",
+        4 => "Charging overtemperature", 5 => "Discharging overtemperature",
+        6 => "Charging undertemperature", 7 => "Discharging undertemperature",
+        8 => "Contactor", 9 => "Short circuit",
+        10 => "BMS internal", 11 => "Cell imbalance",
+        12 => "SMA general", 13 => "Battery damaged",
+        14 => "Communication lost", 15 => "Emergency stop",
+        16 => "Charging not allowed", 17 => "Discharging not allowed",
+        18 => "SOC below end of discharge", 19 => "Abnormal measured voltage"
+      }
+
+      def active_warnings
+        active_bits(warnings, WARNINGS_BITS)
+      end
+
+      def active_errors
+        active_bits(errors, ERRORS_BITS)
+      end
+
+      private
+
+      def active_bits(value, mapping)
+        mapping.filter_map { |bit, name| name if value[bit] == 1 }
+      end
     end
 
     class AcSource
@@ -106,9 +145,22 @@ class Devices
         @unit = next3.unit(7)
       end
 
+      WARNINGS_BITS = {
+        0 => "Active power response to overfrequency", 1 => "Active power response to underfrequency",
+        2 => "Reactive power response to voltage", 3 => "Undervoltage ride through",
+        4 => "Overvoltage ride through", 5 => "Power limited by increase gradient",
+        6 => "Ceasing active power", 7 => "Reduced active power on setpoint",
+        8 => "Active power response to overvoltage", 9 => "Overtemperature"
+      }
+
       def warnings(phase)
         raise ArgumentError.new("Phase 1, 2 or 3") unless [1,2,3].include? phase
         @unit.read_holding_registers(1504 + 300 * phase, 2).to_u32
+      end
+
+      def active_warnings(phase)
+        value = warnings(phase)
+        WARNINGS_BITS.filter_map { |bit, name| name if value[bit] == 1 }
       end
 
       def enabled?
@@ -238,6 +290,24 @@ class Devices
         raise ArgumentError.new("Phase 1, 2 or 3") unless [1,2,3].include? phase
         @unit.read_holding_registers(3004 + (phase - 1) * 300, 2).to_u32
       end
+
+      WARNINGS_BITS = { 0 => "Overload", 1 => "Overtemperature" }
+
+      ERRORS_BITS = {
+        0 => "Overload", 1 => "Device fault", 2 => "Communication error",
+        3 => "Earthing error", 4 => "Backfeed power error", 5 => "AC source error",
+        30 => "Other error"
+      }
+
+      def active_warnings(phase)
+        value = warnings(phase)
+        WARNINGS_BITS.filter_map { |bit, name| name if value[bit] == 1 }
+      end
+
+      def active_errors(phase)
+        value = errors(phase)
+        ERRORS_BITS.filter_map { |bit, name| name if value[bit] == 1 }
+      end
     end
 
     # Each solar MPPT has two arrays, 1 and 2
@@ -310,8 +380,50 @@ class Devices
         @unit.read_holding_registers(5102, 2).to_u32
       end
 
+      ERRORS_BITS = {
+        0 => "Fans failure", 1 => "Internal temperature sensor failure",
+        2 => "Abnormal voltage on acLoad port", 3 => "AcLoad port broken connexion",
+        4 => "Battery port broken connexion", 5 => "Battery contactor failure",
+        6 => "Inverter1 overcurrent", 7 => "Inverter2 overcurrent", 8 => "Inverter3 overcurrent",
+        9 => "Inverter1 failure", 10 => "Inverter2 failure", 11 => "Inverter3 failure",
+        12 => "Inverters disconnected by residual current", 13 => "Solars disconnected by residual current",
+        14 => "Residual current critical failure",
+        15 => "Internal power supply failure", 16 => "Internal power supply overvoltage", 17 => "Internal power supply undervoltage",
+        18 => "Battery capacitors preload failed",
+        19 => "Battery overvoltage", 20 => "Battery undervoltage",
+        21 => "Internal dclink overvoltage", 22 => "Internal dclink undervoltage", 23 => "Internal dclink voltage unbalanced",
+        24 => "Internal dcdc converter failure", 25 => "Communication error",
+        26 => "Battery temperature sensor short circuit", 27 => "Battery fault",
+        28 => "Inverters disconnected by solar", 29 => "Internal ADC noised"
+      }
+
+      NOISED_ADC_BITS = {
+        0 => "Inverter voltage L1", 1 => "Inverter voltage L2", 2 => "Inverter voltage L3",
+        3 => "Inverter current L1", 4 => "Inverter current L2", 5 => "Inverter current L3",
+        6 => "PV2 inductor current", 7 => "Main power supply voltage", 8 => "Isolated PS voltage",
+        9 => "AC out voltage L1", 10 => "AC out voltage L2", 11 => "AC out voltage L3",
+        12 => "PV1 voltage", 13 => "DC link low voltage", 14 => "DC link high voltage",
+        15 => "Battery voltage", 16 => "Battery capacitor voltage", 17 => "External PS current",
+        18 => "Earth current", 19 => "PV2 voltage", 20 => "PV1 inductor current",
+        21 => "Battery negative earth voltage", 22 => "PV1 positive earth voltage", 23 => "PV2 positive earth voltage",
+        24 => "Transformer temperature", 25 => "Battery temperature",
+        26 => "Solar 1 temperature", 27 => "Solar 2 temperature",
+        28 => "Cooler plate 1 temperature", 29 => "Cooler plate 2 temperature",
+        30 => "Battery power temperature"
+      }
+
+      def active_errors
+        value = errors
+        ERRORS_BITS.filter_map { |bit, name| name if value[bit] == 1 }
+      end
+
       def warning_noised_adc_channels
         @unit.read_holding_registers(5156, 2).to_u32
+      end
+
+      def active_noised_adc_channels
+        value = warning_noised_adc_channels
+        NOISED_ADC_BITS.filter_map { |bit, name| name if value[bit] == 1 }
       end
 
       def adc_noise
