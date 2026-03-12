@@ -194,7 +194,14 @@ class EnergyManagement
   # Can the requested current be added without overload? Checks that no phase
   # has been over the limit for 5 consecutive samples in the history.
   def phase_current_capacity?(requested_current)
-    return false if @phase_current_history.size < 5
+    no_capacity_reason(requested_current).nil?
+  end
+
+  # Returns nil if capacity is available, or a reason string if not.
+  def no_capacity_reason(requested_current)
+    if @phase_current_history.size < 5
+      return "insufficient history (#{@phase_current_history.size}/5 samples)"
+    end
 
     (0..2).each do |phase|
       streak = 0
@@ -204,10 +211,13 @@ class EnergyManagement
         else
           streak = 0
         end
-        return false if streak >= 5
+        if streak >= 5
+          headroom = (INVERTER_CURRENT_LIMIT - phases[phase]).round(1)
+          return "L#{phase + 1} over limit (#{headroom}A headroom, need #{requested_current}A)"
+        end
       end
     end
-    true
+    nil
   end
 
   # Poll known Shelly demand units' input state to catch missed register/deregister actions
@@ -235,14 +245,16 @@ class EnergyManagement
       @shelly_demands[host] = { amps:, active: false, unmet_since: nil }
       @last_shelly_demand_at = Time.monotonic
 
-      if phase_current_capacity?(amps)
+      reason = no_capacity_reason(amps)
+      if reason.nil?
         puts "Activating Shelly #{host} (#{amps}A) on registration"
         turn_on_shelly(host)
         @shelly_demands[host][:active] = true
         { activated: true }
       else
+        puts "Cannot activate Shelly #{host} (#{amps}A): #{reason}"
         @shelly_demands[host][:unmet_since] = Time.monotonic
-        { activated: false, reason: "no_capacity" }
+        { activated: false, reason: }
       end
     end
   end
@@ -286,28 +298,33 @@ class EnergyManagement
           if demand[:unmet_since] && shelly_input_on?(host) == false
             puts "Shelly #{host} input is off, removing stale demand"
             @shelly_demands.delete(host)
-          elsif phase_current_capacity?(demand[:amps])
+          elsif (reason = no_capacity_reason(demand[:amps])).nil?
             puts "Capacity available, turning on Shelly #{host} (#{demand[:amps]}A)"
             turn_on_shelly(host)
             demand[:active] = true
             demand[:unmet_since] = nil
+          else
+            puts "Shelly #{host} demand unmet: #{reason}" if demand[:unmet_since].nil?
+            demand[:unmet_since] ||= Time.monotonic
           end
         end
       end
     end
   end
 
-  # Shed Victron charging load when there's unmet shelly demand and SoC is sufficient.
-  # Restore normal mode when all demands are met or SoC drops too low.
+  # Shed Victron charging load when there's unmet shelly demand due to phase overload
+  # and SoC is sufficient. Restore normal mode when all demands are met or SoC drops too low.
   def manage_victron_mode
     @shelly_demands_mutex.synchronize do
-      has_unmet = @shelly_demands.any? { |_, d| !d[:active] }
+      has_capacity_unmet = @shelly_demands.any? do |_, d|
+        !d[:active] && no_capacity_reason(d[:amps])&.include?("over limit")
+      end
 
-      if has_unmet && !victron_inverter_only? &&
+      if has_capacity_unmet && !victron_inverter_only? &&
          @devices.victron.battery_soc > VICTRON_INVERTER_ONLY_MIN_SOC
-        puts "Unmet shelly demand, setting Victron to inverter-only mode"
+        puts "Unmet shelly demand (phase over limit), setting Victron to inverter-only mode"
         @devices.victron.mode = Devices::Victron::VEBUS_MODE_INVERTER_ONLY
-      elsif victron_inverter_only? && (!has_unmet ||
+      elsif victron_inverter_only? && (!has_capacity_unmet ||
             @devices.victron.battery_soc <= VICTRON_INVERTER_ONLY_MIN_SOC)
         puts "Restoring Victron to normal mode"
         @devices.victron.mode = Devices::Victron::VEBUS_MODE_ON
@@ -482,9 +499,14 @@ class EnergyManagement
 
   def heater_shelly_on?(host)
     response = shelly_rpc(host, "Switch.GetStatus", { id: 0 })
+    @heater_shelly_errors&.delete(host)
     JSON.parse(response.body)["output"]
   rescue => e
-    puts "[ERROR] Failed to get Shelly heater status #{host}: #{e.message}"
+    @heater_shelly_errors ||= {}
+    unless @heater_shelly_errors[host]
+      puts "[WARN] Shelly heater #{host} unreachable: #{e.message}"
+      @heater_shelly_errors[host] = true
+    end
     nil
   end
 
