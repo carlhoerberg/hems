@@ -31,8 +31,8 @@ class EnergyManagement
   # All heaters with per-phase amp draw
   # phase_amps: { phase_number => amps_on_that_phase }
   HEATERS = [
-    { id: :shelly_2kw_p2, host: "192.168.0.190", phase_amps: { 2 => 9 } },
-    { id: :shelly_2kw_p3, host: "192.168.0.137", phase_amps: { 3 => 9 } },
+    # { id: :shelly_2kw_p2, host: "192.168.0.190", phase_amps: { 2 => 9 } },
+    # { id: :shelly_2kw_p3, host: "192.168.0.137", phase_amps: { 3 => 9 } },
     { id: :heater_6kw, phase_amps: { 1 => 9, 2 => 9, 3 => 9 } },
     { id: :heater_9kw, phase_amps: { 1 => 13, 2 => 13, 3 => 13 } },
   ].freeze
@@ -551,8 +551,8 @@ class EnergyManagement
     uri = URI("http://#{host}/rpc/#{method}")
     uri.query = URI.encode_www_form(params) unless params.empty?
     http = Net::HTTP.new(uri.host, uri.port)
-    http.open_timeout = 1
-    http.read_timeout = 1
+    http.open_timeout = 3
+    http.read_timeout = 3
     http.request(Net::HTTP::Get.new(uri))
   end
 
