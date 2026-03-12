@@ -199,22 +199,14 @@ class EnergyManagement
 
   # Returns nil if capacity is available, or a reason string if not.
   def no_capacity_reason(requested_current)
-    if @phase_current_history.size < 5
-      return "insufficient history (#{@phase_current_history.size}/5 samples)"
-    end
+    return "no current data" if @phase_current_history.empty?
 
+    limit = per_phase_capacity
+    currents = @phase_current_history.last
     (0..2).each do |phase|
-      streak = 0
-      @phase_current_history.each do |phases|
-        if INVERTER_CURRENT_LIMIT - phases[phase] - requested_current < 0
-          streak += 1
-        else
-          streak = 0
-        end
-        if streak >= 5
-          headroom = (INVERTER_CURRENT_LIMIT - phases[phase]).round(1)
-          return "L#{phase + 1} over limit (#{headroom}A headroom, need #{requested_current}A)"
-        end
+      headroom = limit - currents[phase]
+      if headroom < requested_current
+        return "L#{phase + 1} over limit (#{headroom.round(1)}A headroom, need #{requested_current}A)"
       end
     end
     nil
