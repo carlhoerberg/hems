@@ -106,7 +106,6 @@ class Devices
         names[key] = val["name"]
       end
       @device_names[device_id] = names
-      puts "Shelly: #{device_id} (#{ip}) names=#{names}" unless names.empty?
     rescue => e
       @device_names[device_id] = {}
       warn "Shelly: failed to fetch names for #{device_id} (#{ip}): #{e.inspect}"
