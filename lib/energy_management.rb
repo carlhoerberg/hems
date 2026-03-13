@@ -581,35 +581,36 @@ class EnergyManagement
   end
 
   # Calculate genset deactivation SoC so that battery stays above activation threshold
-  # through the end of the solar day, accounting for both solar production and load.
+  # at every hour through the end of the solar day, accounting for both solar production and load.
   def solar_aware_deactivation_soc(current_soc)
     forecast = @solar_forecast.estimate_watt_hours
     return DEFAULT_GENSET_DEACTIVATION_SOC unless forecast&.any?
 
     now = Time.now
-    load_kw = average_load_kw
-    last_solar_time = nil
-    total_solar_kwh = 0.0
-
     today = now.to_date
+    load_kw = average_load_kw
+    prev_time = now
+    cumulative_kwh = 0.0
+    worst_deficit_kwh = 0.0
+
     forecast.each do |time_str, wh|
       period_time = Time.parse(time_str)
       next if period_time < now
       break if period_time.to_date != today
-      total_solar_kwh += wh / 1000.0
-      last_solar_time = period_time
+
+      hours = (period_time - prev_time) / 3600.0
+      cumulative_kwh += wh / 1000.0 - (hours * load_kw)
+      worst_deficit_kwh = cumulative_kwh if cumulative_kwh < worst_deficit_kwh
+      prev_time = period_time
     end
 
-    return DEFAULT_GENSET_DEACTIVATION_SOC unless last_solar_time
+    return DEFAULT_GENSET_DEACTIVATION_SOC if prev_time == now
 
-    hours_until_end_of_solar = (last_solar_time - now) / 3600.0
-    total_load_kwh = hours_until_end_of_solar * load_kw
-    net_deficit_kwh = total_load_kwh - total_solar_kwh
-    deficit_soc = (net_deficit_kwh / BATTERY_CAPACITY_KWH) * 100
-    target_soc = (DEFAULT_GENSET_ACTIVATION_SOC + deficit_soc).ceil
+    worst_deficit_soc = (-worst_deficit_kwh / BATTERY_CAPACITY_KWH) * 100
+    target_soc = (DEFAULT_GENSET_ACTIVATION_SOC + worst_deficit_soc).ceil
     target_soc = target_soc.clamp(50, DEFAULT_GENSET_DEACTIVATION_SOC)
 
-    @solar_deactivation_detail = "solar=#{total_solar_kwh.round(1)}kWh load=#{total_load_kwh.round(1)}kWh (#{load_kw.round(1)}kW x #{hours_until_end_of_solar.round(1)}h) deficit=#{net_deficit_kwh.round(1)}kWh"
+    @solar_deactivation_detail = "load=#{load_kw.round(1)}kW worst_deficit=#{(-worst_deficit_kwh).round(1)}kWh"
 
     target_soc
   rescue => e
