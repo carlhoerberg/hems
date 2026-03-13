@@ -563,9 +563,7 @@ class EnergyManagement
 
     current_deactivation = @devices.next3.aux1.soc_deactivation_threshold
     target_deactivation = solar_aware_deactivation_soc(soc)
-    if target_deactivation != DEFAULT_GENSET_DEACTIVATION_SOC
-      puts "Solar-aware genset deactivation SoC: #{target_deactivation}% (load: #{average_load_kw.round(2)} kW)"
-    else
+    if target_deactivation == DEFAULT_GENSET_DEACTIVATION_SOC
       # If weco module SoC drift, increase deactivation threshold to 99%
       # to allow batteries to balance
       soc_diff = weco_module_soc_diff
@@ -576,34 +574,44 @@ class EnergyManagement
     end
 
     if current_deactivation != target_deactivation
-      puts "Adjusting genset deactivation threshold: #{current_deactivation}% -> #{target_deactivation}%"
+      detail = @solar_deactivation_detail ? " (#{@solar_deactivation_detail})" : ""
+      puts "Adjusting genset deactivation threshold: #{current_deactivation}% -> #{target_deactivation}%#{detail}"
       @devices.next3.aux1.soc_deactivation_threshold = target_deactivation
     end
   end
 
+  # Calculate genset deactivation SoC so that battery stays above activation threshold
+  # through the end of the solar day, accounting for both solar production and load.
   def solar_aware_deactivation_soc(current_soc)
     forecast = @solar_forecast.estimate_watt_hours
     return DEFAULT_GENSET_DEACTIVATION_SOC unless forecast&.any?
 
     now = Time.now
-    first_solar_time = nil
+    load_kw = average_load_kw
+    last_solar_time = nil
+    total_solar_kwh = 0.0
+
+    today = now.to_date
     forecast.each do |time_str, wh|
       period_time = Time.parse(time_str)
       next if period_time < now
-      if wh >= MIN_SOLAR_PRODUCTION_WH
-        first_solar_time = period_time
-        break
-      end
+      break if period_time.to_date != today
+      total_solar_kwh += wh / 1000.0
+      last_solar_time = period_time
     end
 
-    return DEFAULT_GENSET_DEACTIVATION_SOC unless first_solar_time
+    return DEFAULT_GENSET_DEACTIVATION_SOC unless last_solar_time
 
-    hours_until_solar = (first_solar_time - now) / 3600.0
-    energy_needed_kwh = hours_until_solar * average_load_kw
-    soc_needed = (energy_needed_kwh / BATTERY_CAPACITY_KWH) * 100
-    target_soc = (current_soc + soc_needed).ceil
+    hours_until_end_of_solar = (last_solar_time - now) / 3600.0
+    total_load_kwh = hours_until_end_of_solar * load_kw
+    net_deficit_kwh = total_load_kwh - total_solar_kwh
+    deficit_soc = (net_deficit_kwh / BATTERY_CAPACITY_KWH) * 100
+    target_soc = (DEFAULT_GENSET_ACTIVATION_SOC + deficit_soc).ceil
+    target_soc = target_soc.clamp(50, DEFAULT_GENSET_DEACTIVATION_SOC)
 
-    target_soc.clamp(DEFAULT_GENSET_ACTIVATION_SOC, DEFAULT_GENSET_DEACTIVATION_SOC)
+    @solar_deactivation_detail = "solar=#{total_solar_kwh.round(1)}kWh load=#{total_load_kwh.round(1)}kWh (#{load_kw.round(1)}kW x #{hours_until_end_of_solar.round(1)}h) deficit=#{net_deficit_kwh.round(1)}kWh"
+
+    target_soc
   rescue => e
     puts "[WARN] Solar forecast unavailable: #{e.message}"
     DEFAULT_GENSET_DEACTIVATION_SOC
