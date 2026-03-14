@@ -547,13 +547,11 @@ class EnergyManagement
     puts "[ERROR] Failed to load state: #{e.message}"
   end
 
-  def shelly_rpc(host, method, params = {})
-    uri = URI("http://#{host}/rpc/#{method}")
-    uri.query = URI.encode_www_form(params) unless params.empty?
-    http = Net::HTTP.new(uri.host, uri.port)
+  def shelly_rpc(host, method, params)
+    http = Net::HTTP.new(host)
     http.open_timeout = 3
     http.read_timeout = 3
-    http.request(Net::HTTP::Get.new(uri))
+    http.get("/rpc/#{method}?#{URI.encode_www_form(params)}")
   end
 
   # Manage genset start/stop thresholds via Next3 aux1 relay
