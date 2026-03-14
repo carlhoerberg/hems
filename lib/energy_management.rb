@@ -66,6 +66,7 @@ class EnergyManagement
     @ac_source_enabled = @devices.next3.acsource.enabled?
     @solar_forecast = SolarForecast.new
     @last_threshold_check = 0
+    @last_solar_actual_update = 0
     load_state
   end
 
@@ -82,6 +83,7 @@ class EnergyManagement
           manage_goe_amperage
           manage_victron_mode
           genset_threshold_management
+          update_solar_actual
           save_state
         end
         puts "Energy management loop duration: #{duration.round(2)}s" if duration > 5
@@ -623,6 +625,19 @@ class EnergyManagement
     total_amps * NOMINAL_VOLTAGE / 1000.0
   end
 
+
+  def update_solar_actual
+    return if Time.monotonic - @last_solar_actual_update < SolarForecast::CACHE_TTL
+
+    today_wh = @devices.next3.solar.total_day_energy
+    return if today_wh < 1000
+
+    @solar_forecast.actual = today_wh / 1000.0
+    @last_solar_actual_update = Time.monotonic
+    puts "Updated solar forecast actual: #{(today_wh / 1000.0).round(2)}kWh"
+  rescue => e
+    puts "[WARN] Failed to update solar forecast actual: #{e.message}"
+  end
 
   def weco_module_soc_diff
     min_soc = nil
