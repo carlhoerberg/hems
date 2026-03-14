@@ -82,8 +82,8 @@ class EnergyManagement
           manage_heaters
           manage_goe_amperage
           manage_victron_mode
-          genset_threshold_management
           update_solar_actual
+          genset_threshold_management
           save_state
         end
         puts "Energy management loop duration: #{duration.round(2)}s" if duration > 5
