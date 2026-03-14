@@ -562,7 +562,7 @@ class EnergyManagement
     @last_threshold_check = Time.monotonic
 
     current_deactivation = @devices.next3.aux1.soc_deactivation_threshold
-    target_deactivation = solar_aware_deactivation_soc(soc)
+    target_deactivation = genset_running? ? solar_aware_deactivation_soc(soc) : DEFAULT_GENSET_DEACTIVATION_SOC
     if target_deactivation == DEFAULT_GENSET_DEACTIVATION_SOC
       # If weco module SoC drift, increase deactivation threshold to 99%
       # to allow batteries to balance
@@ -619,7 +619,7 @@ class EnergyManagement
   end
 
   def average_load_kw
-    return 1.5 if @phase_current_history.empty?
+    return 3.0 if @phase_current_history.empty?
 
     total_amps = @phase_current_history.sum { |phases| phases.sum } / @phase_current_history.size.to_f
     total_amps * NOMINAL_VOLTAGE / 1000.0
