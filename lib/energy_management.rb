@@ -558,7 +558,7 @@ class EnergyManagement
 
   # Manage genset start/stop thresholds via Next3 aux1 relay
   def genset_threshold_management(soc = battery_soc)
-    return if Time.monotonic - @last_threshold_check < 60
+    return if Time.monotonic - @last_threshold_check < 300
     @last_threshold_check = Time.monotonic
 
     current_deactivation = @devices.next3.aux1.soc_deactivation_threshold
@@ -627,7 +627,7 @@ class EnergyManagement
 
 
   def update_solar_actual
-    return if Time.monotonic - @last_solar_actual_update < SolarForecast::CACHE_TTL
+    return if Time.monotonic - @last_solar_actual_update < 300
 
     today_wh = @devices.next3.solar.total_day_energy
     return if today_wh < 1000
