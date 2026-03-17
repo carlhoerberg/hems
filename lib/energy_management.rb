@@ -410,7 +410,8 @@ class EnergyManagement
 
   # Check if turning on this heater would keep all its phases under HEATER_PHASE_LIMIT
   def heater_fits?(heater, currents)
-    heater[:phase_amps].all? { |phase, amps| currents[phase - 1] + amps < HEATER_PHASE_LIMIT }
+    limit = genset_running? ? HEATER_PHASE_LIMIT + GENSET_CURRENT_LIMIT : HEATER_PHASE_LIMIT
+    heater[:phase_amps].all? { |phase, amps| currents[phase - 1] + amps < limit }
   end
 
   def turn_on_heater(heater)
