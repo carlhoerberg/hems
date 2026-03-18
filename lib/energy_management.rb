@@ -49,7 +49,7 @@ class EnergyManagement
 
   # Shelly units with demand switching — poll input to catch missed register/deregister actions
   SHELLY_DEMAND_UNITS = [
-    { host: "192.168.0.160", name: "Huvuddiskmaskinen", amps: 14.5 },
+    { host: "192.168.0.160", name: "Huvuddiskmaskinen", amps: 16 },
     { host: "192.168.0.174", name: "Glasdiskmaskinen", amps: 9 },
   ].freeze
 
