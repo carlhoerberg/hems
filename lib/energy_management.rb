@@ -44,7 +44,7 @@ class EnergyManagement
   GENSET_DEMAND_STOP_DELAY = 15 * 60 # seconds after last demand before stopping genset
 
   VICTRON_INVERTER_ONLY_MIN_SOC = 50 # only shed Victron charging if SoC > this
-  MIN_PHASE_VOLTAGE = 210 # turn off shelly demands if any phase drops below this
+  MIN_PHASE_VOLTAGE = 220 # turn off shelly demands if any phase drops below this
   SOLAR_EXCESS_HEATER_STOP_SOC = 95   # keep solar excess heaters on until this SoC
 
   # Shelly units with demand switching — poll input to catch missed register/deregister actions
