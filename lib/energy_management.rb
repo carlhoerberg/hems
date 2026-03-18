@@ -37,7 +37,7 @@ class EnergyManagement
     { id: :heater_9kw, phase_amps: { 1 => 13, 2 => 13, 3 => 13 } },
   ].freeze
 
-  INVERTER_CURRENT_LIMIT = 26
+  INVERTER_CURRENT_LIMIT = 25
   GENSET_CURRENT_LIMIT = 50
 
   GENSET_DEMAND_START_DELAY = 180    # seconds of unmet demand before starting genset
