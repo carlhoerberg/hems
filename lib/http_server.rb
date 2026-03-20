@@ -9,7 +9,7 @@ class HTTPServer
   end
 
   def start
-    @workers = 8.times.map do
+    @workers = 16.times.map do
       Thread.new do
         loop do
           client = @queue.pop || break
