@@ -1,5 +1,4 @@
 require "socket"
-require "net/protocol"
 require_relative "../modbus"
 
 # https://modbus.org/docs/Modbus_Application_Protocol_V1_1b.pdf
@@ -34,7 +33,7 @@ module Modbus
           raise ProtocolException, "Invalid protocol (#{rprotocol})" if rprotocol != Protocol
           check_exception!(function)
           yield
-        rescue SocketError, SystemCallError, IOError, Timeout::Error => ex
+        rescue SocketError, SystemCallError, IOError, Timeout::Error, IO::TimeoutError => ex
           close
           retry if (try += 1) < 2
           raise ex
@@ -45,16 +44,12 @@ module Modbus
       end
     end
 
-    def read(count, timeout = @timeout)
-      if IO.select([@socket], nil, nil, timeout)
-        @socket.read(count) || raise(EOFError.new)
-      else
-        raise Net::ReadTimeout.new(@socket)
-      end
+    def read(count)
+      @socket.read(count) || raise(EOFError.new)
     end
 
     def socket
-      @socket ||= Socket.tcp(@host, @port, connect_timeout: @timeout)
+      @socket ||= Socket.tcp(@host, @port, connect_timeout: @timeout).tap { _1.timeout = @timeout }
     end
   end
 end
