@@ -16,7 +16,7 @@ class Devices
       @acsource = AcSource.new next3.unit(7)
       @solar = Solar.new next3.unit(14)
       @solar2 = Solar.new next3.unit(15)
-      @aux1 = Aux.new next3.unit(14), 1
+      @aux1 = Aux.new next3.unit(15), 1
       @converter = Converter.new next3.unit(14)
       @battery_contributor = BatteryContributor.new next3.unit(14)
     end
