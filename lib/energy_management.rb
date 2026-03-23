@@ -369,7 +369,6 @@ class EnergyManagement
   end
 
   def manage_heaters
-    genset = genset_running?
     demand = has_unmet_shelly_demand?
 
     if low_voltage?
@@ -378,12 +377,12 @@ class EnergyManagement
     elsif demand
       turn_off_one_heater("unmet shelly demand")
       return
-    elsif !genset && (soc = battery_soc) < SOLAR_EXCESS_HEATER_STOP_SOC
+    elsif (soc = battery_soc) < SOLAR_EXCESS_HEATER_STOP_SOC
       turn_off_one_heater("SoC #{soc}% below #{SOLAR_EXCESS_HEATER_STOP_SOC}%")
       return
     end
 
-    return if !genset && !solar_excess?
+    return unless solar_excess?
     return if has_shelly_demand?
 
     return if @phase_current_history.empty?
