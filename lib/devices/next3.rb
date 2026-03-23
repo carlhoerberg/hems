@@ -4,24 +4,26 @@ class Devices
   class Next3
     using Modbus::TypeExtensions
 
-    attr_reader :acload, :battery, :acsource, :solar, :aux1, :converter, :battery_contributor
+    attr_reader :acload, :battery, :battery2, :acsource, :solar, :solar2, :aux1, :converter, :battery_contributor
 
     def initialize
       host = ENV.fetch("NEXT3_HOST", "studer-next")
       port = ENV.fetch("NEXT3_PORT", 502).to_i
       next3 = Modbus::TCP.new(host, port)
-      @acload = AcLoad.new next3
-      @battery = Battery.new next3
-      @acsource = AcSource.new next3
-      @solar = Solar.new next3
-      @aux1 = Aux.new next3, 1
-      @converter = Converter.new next3
-      @battery_contributor = BatteryContributor.new next3
+      @acload = AcLoad.new next3.unit(1)
+      @battery = Battery.new next3.unit(2)
+      @battery2 = Battery.new next3.unit(3)
+      @acsource = AcSource.new next3.unit(7)
+      @solar = Solar.new next3.unit(14)
+      @solar2 = Solar.new next3.unit(15)
+      @aux1 = Aux.new next3.unit(14), 1
+      @converter = Converter.new next3.unit(14)
+      @battery_contributor = BatteryContributor.new next3.unit(14)
     end
 
     class Battery
-      def initialize(next3)
-        @unit = next3.unit(2)
+      def initialize(unit)
+        @unit = unit
       end
 
       def soc
@@ -141,8 +143,8 @@ class Devices
     end
 
     class AcSource
-      def initialize(next3)
-        @unit = next3.unit(7)
+      def initialize(unit)
+        @unit = unit
       end
 
       WARNINGS_BITS = {
@@ -252,8 +254,8 @@ class Devices
     end
 
     class AcLoad
-      def initialize(next3)
-        @unit = next3.unit(1)
+      def initialize(unit)
+        @unit = unit
       end
 
       def frequency
@@ -335,8 +337,8 @@ class Devices
 
     # Each solar MPPT has two arrays, 1 and 2
     class Solar
-      def initialize(next3)
-        @unit = next3.unit(14)
+      def initialize(unit)
+        @unit = unit
       end
 
       def power(array)
@@ -395,8 +397,8 @@ class Devices
     end
 
     class Converter
-      def initialize(next3)
-        @unit = next3.unit(14)
+      def initialize(unit)
+        @unit = unit
       end
 
       def errors
@@ -464,8 +466,8 @@ class Devices
     end
 
     class BatteryContributor
-      def initialize(next3)
-        @unit = next3.unit(14)
+      def initialize(unit)
+        @unit = unit
       end
 
       def temp
@@ -474,9 +476,9 @@ class Devices
     end
 
     class Aux
-      def initialize(next3, id)
+      def initialize(unit, id)
         raise ArgumentError.new("Aux ID must be 1-2") unless (1..2).include? id
-        @unit = next3.unit(14)
+        @unit = unit
         @base = 8100 + 300 * (id - 1)
       end
 

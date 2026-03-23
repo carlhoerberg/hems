@@ -1,32 +1,49 @@
 # TYPE battery_soc gauge
-battery_soc <%=next3.battery.soc%>
+battery_soc{pack="1"} <%=next3.battery.soc%>
+battery_soc{pack="2"} <%=next3.battery2.soc%>
 # TYPE battery_temperature gauge
-battery_temperature <%=next3.battery.temp%>
+battery_temperature{pack="1"} <%=next3.battery.temp%>
+battery_temperature{pack="2"} <%=next3.battery2.temp%>
 # TYPE battery_cycles counter
-battery_cycles <%=next3.battery.cycles%>
+battery_cycles{pack="1"} <%=next3.battery.cycles%>
+battery_cycles{pack="2"} <%=next3.battery2.cycles%>
 # TYPE battery_state_of_health gauge
-battery_state_of_health <%=next3.battery.state_of_health%>
+battery_state_of_health{pack="1"} <%=next3.battery.state_of_health%>
+battery_state_of_health{pack="2"} <%=next3.battery2.state_of_health%>
 # TYPE battery_charging_current gauge
-battery_charging_current <%=next3.battery.charging_current%>
+battery_charging_current{pack="1"} <%=next3.battery.charging_current%>
+battery_charging_current{pack="2"} <%=next3.battery2.charging_current%>
 # TYPE battery_charging_power gauge
-battery_charging_power <%=next3.battery.charging_power%>
+battery_charging_power{pack="1"} <%=next3.battery.charging_power%>
+battery_charging_power{pack="2"} <%=next3.battery2.charging_power%>
 # TYPE battery_total_charging_energy counter
-battery_total_charging_energy <%=next3.battery.total_charging_energy%>
+battery_total_charging_energy{pack="1"} <%=next3.battery.total_charging_energy%>
+battery_total_charging_energy{pack="2"} <%=next3.battery2.total_charging_energy%>
 # TYPE battery_total_discharging_energy counter
-battery_total_discharging_energy <%=next3.battery.total_discharging_energy%>
+battery_total_discharging_energy{pack="1"} <%=next3.battery.total_discharging_energy%>
+battery_total_discharging_energy{pack="2"} <%=next3.battery2.total_discharging_energy%>
 # TYPE battery_bms_recommended_charging_current gauge
-battery_bms_recommended_charging_current <%=next3.battery.bms_recommended_charging_current%>
-# TYPE battery_bms_recommended_charging_current gauge
-battery_bms_recommended_discharging_current <%=next3.battery.bms_recommended_discharging_current%>
+battery_bms_recommended_charging_current{pack="1"} <%=next3.battery.bms_recommended_charging_current%>
+battery_bms_recommended_charging_current{pack="2"} <%=next3.battery2.bms_recommended_charging_current%>
+# TYPE battery_bms_recommended_discharging_current gauge
+battery_bms_recommended_discharging_current{pack="1"} <%=next3.battery.bms_recommended_discharging_current%>
+battery_bms_recommended_discharging_current{pack="2"} <%=next3.battery2.bms_recommended_discharging_current%>
 # TYPE battery_voltage gauge
-battery_voltage <%=next3.battery.voltage%>
+battery_voltage{pack="1"} <%=next3.battery.voltage%>
+battery_voltage{pack="2"} <%=next3.battery2.voltage%>
 # TYPE battery_warning gauge
 <%next3.battery.active_warnings.each do |name|%>
-battery_warning{reason="<%=name%>"} 1
+battery_warning{pack="1",reason="<%=name%>"} 1
+<%end%>
+<%next3.battery2.active_warnings.each do |name|%>
+battery_warning{pack="2",reason="<%=name%>"} 1
 <%end%>
 # TYPE battery_error gauge
 <%next3.battery.active_errors.each do |name|%>
-battery_error{reason="<%=name%>"} 1
+battery_error{pack="1",reason="<%=name%>"} 1
+<%end%>
+<%next3.battery2.active_errors.each do |name|%>
+battery_error{pack="2",reason="<%=name%>"} 1
 <%end%>
 
 # TYPE acload_frequency gauge
@@ -84,12 +101,20 @@ acsource_error{L="<%=l%>",reason="<%=name%>"} 1
 # TYPE solar_day_sunshine counter
 # TYPE solar_limitation gauge
 <%[1, 2].each do |array|%>
-solar_power{array="<%=array%>"} <%=next3.solar.power(array)%>
-solar_voltage{array="<%=array%>"} <%=next3.solar.voltage(array)%>
-solar_current{array="<%=array%>"} <%=next3.solar.current(array)%>
-solar_total_energy{array="<%=array%>"} <%=next3.solar.total_energy(array)%>
-solar_day_sunshine{array="<%=array%>"} <%=next3.solar.day_sunshine(array)%>
-solar_limitation{array="<%=array%>"} <%=next3.solar.limitation(array)%>
+solar_power{mppt="1",array="<%=array%>"} <%=next3.solar.power(array)%>
+solar_voltage{mppt="1",array="<%=array%>"} <%=next3.solar.voltage(array)%>
+solar_current{mppt="1",array="<%=array%>"} <%=next3.solar.current(array)%>
+solar_total_energy{mppt="1",array="<%=array%>"} <%=next3.solar.total_energy(array)%>
+solar_day_sunshine{mppt="1",array="<%=array%>"} <%=next3.solar.day_sunshine(array)%>
+solar_limitation{mppt="1",array="<%=array%>"} <%=next3.solar.limitation(array)%>
+<%end%>
+<%[1, 2].each do |array|%>
+solar_power{mppt="2",array="<%=array%>"} <%=next3.solar2.power(array)%>
+solar_voltage{mppt="2",array="<%=array%>"} <%=next3.solar2.voltage(array)%>
+solar_current{mppt="2",array="<%=array%>"} <%=next3.solar2.current(array)%>
+solar_total_energy{mppt="2",array="<%=array%>"} <%=next3.solar2.total_energy(array)%>
+solar_day_sunshine{mppt="2",array="<%=array%>"} <%=next3.solar2.day_sunshine(array)%>
+solar_limitation{mppt="2",array="<%=array%>"} <%=next3.solar2.limitation(array)%>
 <%end%>
 
 # TYPE aux1_is_connected gauge
