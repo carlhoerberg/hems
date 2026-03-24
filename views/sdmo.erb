@@ -30,7 +30,11 @@ genset_hours{name="K20C5"} <%=measurements[:hours]%>
 # TYPE genset_binary_output gauge
 genset_binary_output{name="K20C5"} <%=measurements[:binary_output]%>
 # TYPE genset_status gauge
-genset_status{name="K20C5"} <%=status%>
+<%status.each do |name, value|%>
+<%if value%>
+genset_status{name="K20C5",reason="<%=name%>"} 1
+<%end%>
+<%end%>
 
 # TYPE metrics_gather_time gauge
 metrics_gather_time{device="sdmo"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>

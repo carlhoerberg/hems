@@ -31,7 +31,7 @@ class HTTPServer
         when "/metrics/next3"
           @@next3.result_with_hash({ t:, next3: @devices.next3 })
         when "/metrics/sdmo"
-          @@sdmo.result_with_hash({ t:, measurements: @devices.sdmo.measurements, status: @devices.sdmo.status_integer })
+          @@sdmo.result_with_hash({ t:, measurements: @devices.sdmo.measurements, status: @devices.sdmo.status })
         when "/metrics/eta"
           @@eta.result_with_hash({ t:, eta: @devices.eta })
         when "/metrics/starlink"
