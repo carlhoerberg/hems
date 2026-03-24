@@ -90,10 +90,6 @@ class Devices
         @unit.read_holding_registers(429, 2).to_f32
       end
 
-      def contributor_temp
-        @unit.read_holding_registers(9904, 2).to_f32
-      end
-
       def status
         @unit.read_holding_registers(300, 2).to_u32
       end
@@ -466,6 +462,10 @@ class Devices
 
       def adc_noise
         @unit.read_holding_registers(5162, 2).to_f32
+      end
+
+      def contributor_temp
+        @unit.read_holding_registers(9904, 2).to_f32
       end
     end
 

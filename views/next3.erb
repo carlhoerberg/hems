@@ -149,8 +149,8 @@ converter_adc_noise_error{unit="2",channel="<%=name%>"} 1
 converter_adc_noise{unit="1"} <%=next3.converter.adc_noise%>
 converter_adc_noise{unit="2"} <%=next3.converter2.adc_noise%>
 # TYPE battery_contributor_temp gauge
-battery_contributor_temp{pack="1"} <%=next3.battery.contributor_temp%>
-battery_contributor_temp{pack="2"} <%=next3.battery2.contributor_temp%>
+battery_contributor_temp{unit="1"} <%=next3.converter.contributor_temp%>
+battery_contributor_temp{unit="2"} <%=next3.converter2.contributor_temp%>
 
 # TYPE metrics_gather_time gauge
 metrics_gather_time{device="next3"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>
