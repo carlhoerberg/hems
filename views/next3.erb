@@ -117,13 +117,6 @@ solar_day_sunshine{mppt="2",array="<%=array%>"} <%=next3.solar2.day_sunshine(arr
 solar_limitation{mppt="2",array="<%=array%>"} <%=next3.solar2.limitation(array)%>
 <%end%>
 
-# TYPE aux1_is_connected gauge
-aux1_is_connected <%=next3.aux1.is_connected ? 1 : 0%>
-# TYPE aux1_position gauge
-aux1_position <%=next3.aux1.position%>
-# TYPE aux1_soc_deactivation_threshold gauge
-aux1_soc_deactivation_threshold <%=next3.aux1.soc_deactivation_threshold%>
-
 # TYPE converter_error gauge
 <%next3.converter.active_errors.each do |name|%>
 converter_error{unit="1",reason="<%=name%>"} 1
