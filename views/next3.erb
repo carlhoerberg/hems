@@ -126,20 +126,31 @@ aux1_soc_deactivation_threshold <%=next3.aux1.soc_deactivation_threshold%>
 
 # TYPE converter_error gauge
 <%next3.converter.active_errors.each do |name|%>
-converter_error{reason="<%=name%>"} 1
+converter_error{unit="1",reason="<%=name%>"} 1
+<%end%>
+<%next3.converter2.active_errors.each do |name|%>
+converter_error{unit="2",reason="<%=name%>"} 1
 <%end%>
 # TYPE converter_adc_noise_warning gauge
 <%next3.converter.active_noised_adc_channels.each do |name|%>
-converter_adc_noise_warning{channel="<%=name%>"} 1
+converter_adc_noise_warning{unit="1",channel="<%=name%>"} 1
+<%end%>
+<%next3.converter2.active_noised_adc_channels.each do |name|%>
+converter_adc_noise_warning{unit="2",channel="<%=name%>"} 1
 <%end%>
 # TYPE converter_adc_noise_error gauge
 <%next3.converter.active_noised_adc_error_channels.each do |name|%>
-converter_adc_noise_error{channel="<%=name%>"} 1
+converter_adc_noise_error{unit="1",channel="<%=name%>"} 1
+<%end%>
+<%next3.converter2.active_noised_adc_error_channels.each do |name|%>
+converter_adc_noise_error{unit="2",channel="<%=name%>"} 1
 <%end%>
 # TYPE converter_adc_noise gauge
-converter_adc_noise <%=next3.converter.adc_noise%>
+converter_adc_noise{unit="1"} <%=next3.converter.adc_noise%>
+converter_adc_noise{unit="2"} <%=next3.converter2.adc_noise%>
 # TYPE battery_contributor_temp gauge
-battery_contributor_temp <%=next3.battery_contributor.temp%>
+battery_contributor_temp{pack="1"} <%=next3.battery.contributor_temp%>
+battery_contributor_temp{pack="2"} <%=next3.battery2.contributor_temp%>
 
 # TYPE metrics_gather_time gauge
 metrics_gather_time{device="next3"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>

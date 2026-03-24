@@ -4,7 +4,7 @@ class Devices
   class Next3
     using Modbus::TypeExtensions
 
-    attr_reader :acload, :battery, :battery2, :acsource, :solar, :solar2, :aux1, :converter, :battery_contributor
+    attr_reader :acload, :battery, :battery2, :acsource, :solar, :solar2, :aux1, :converter, :converter2
 
     def initialize
       host = ENV.fetch("NEXT3_HOST", "studer-next")
@@ -18,7 +18,7 @@ class Devices
       @solar2 = Solar.new next3.unit(15)
       @aux1 = Aux.new next3.unit(15), 1
       @converter = Converter.new next3.unit(14)
-      @battery_contributor = BatteryContributor.new next3.unit(14)
+      @converter2 = Converter.new next3.unit(15)
     end
 
     class Battery
@@ -88,6 +88,10 @@ class Devices
 
       def bms_recommended_discharging_current
         @unit.read_holding_registers(429, 2).to_f32
+      end
+
+      def contributor_temp
+        @unit.read_holding_registers(9904, 2).to_f32
       end
 
       def status
@@ -462,16 +466,6 @@ class Devices
 
       def adc_noise
         @unit.read_holding_registers(5162, 2).to_f32
-      end
-    end
-
-    class BatteryContributor
-      def initialize(unit)
-        @unit = unit
-      end
-
-      def temp
-        @unit.read_holding_registers(9904, 2).to_f32
       end
     end
 
