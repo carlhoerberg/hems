@@ -260,9 +260,7 @@ class Devices
           condition = ALARM_CONDITIONS[code]
           next unless condition
 
-          name = NAMED_ALARMS_73XX[[register, nibble]]
-          next unless name
-
+          name = NAMED_ALARMS_73XX[[register, nibble]] || "reg#{register}_nibble#{nibble}"
           alarms[name] = condition
         end
       end
@@ -282,9 +280,7 @@ class Devices
           condition = ALARM_CONDITIONS[code]
           next unless condition
 
-          name = NAMED_ALARMS_73XX[[register, nibble]]
-          next unless name
-
+          name = NAMED_ALARMS_73XX[[register, nibble]] || "reg#{register}_nibble#{nibble}"
           alarms[name] = condition
         end
       end
