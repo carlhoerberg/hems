@@ -40,6 +40,8 @@ class EnergyManagement
   INVERTER_CURRENT_LIMIT = 25
   GENSET_CURRENT_LIMIT = 50
 
+  ACTIVE_GENSET = :gencomm  # :gencomm or :sdmo
+
   GENSET_DEMAND_START_DELAY = 180    # seconds of unmet demand before starting genset
   GENSET_DEMAND_STOP_DELAY = 15 * 60 # seconds after last demand before stopping genset
 
@@ -64,6 +66,7 @@ class EnergyManagement
     @genset_started_for_demand = false # true if we manually started genset for shelly demand
     @last_shelly_demand_at = nil      # monotonic time of last shelly demand registration
     @ac_source_enabled = @devices.next3.acsource.enabled?
+    @sdmo_cooling_down = false
     @solar_forecast = SolarForecast.new
     @last_threshold_check = 0
     @last_solar_actual_update = 0
@@ -104,29 +107,75 @@ class EnergyManagement
   # Disable during warmup/cooldown (fuel relay on but mains breaker off).
   # Fail-safe: re-enable when genset is fully off (both relays off).
   def manage_ac_source
-    fuel = @devices.gencomm.fuel_relay
-    mains_breaker = @devices.gencomm.mains_breaker_relay
+    if ACTIVE_GENSET == :gencomm
+      fuel = genset.fuel_relay
+      mains_breaker = genset.mains_breaker_relay
 
-    if fuel && mains_breaker
-      # Genset running, mains breaker closed, power available
-      unless @ac_source_enabled
-        puts "Fuel and mains breaker relays on, enabling AC source"
-        @devices.next3.acsource.enable
-        @ac_source_enabled = true
-      end
-    elsif fuel
-      # Warming up or cooling down, no stable power
-      if @ac_source_enabled
-        puts "Fuel relay on but mains breaker off (warmup/cooldown), disabling AC source"
-        @devices.next3.acsource.disable
-        @ac_source_enabled = false
+      if fuel && mains_breaker
+        # Genset running, mains breaker closed, power available
+        unless @ac_source_enabled
+          puts "Fuel and mains breaker relays on, enabling AC source"
+          @devices.next3.acsource.enable
+          @ac_source_enabled = true
+        end
+      elsif fuel
+        # Warming up or cooling down, no stable power
+        if @ac_source_enabled
+          puts "Fuel relay on but mains breaker off (warmup/cooldown), disabling AC source"
+          @devices.next3.acsource.disable
+          @ac_source_enabled = false
+        end
+      else
+        # Genset fully off, fail-safe: enable AC source
+        unless @ac_source_enabled
+          puts "Genset off (fuel relay off), enabling AC source (fail-safe)"
+          @devices.next3.acsource.enable
+          @ac_source_enabled = true
+        end
       end
     else
-      # Genset fully off, fail-safe: enable AC source
-      unless @ac_source_enabled
-        puts "Genset off (fuel relay off), enabling AC source (fail-safe)"
-        @devices.next3.acsource.enable
-        @ac_source_enabled = true
+      # SDMO in manual mode: start/stop based on aux relay binary_input
+      # binary_input bit 1: 1 = start request (aux relay closed), 0 = stop request (aux relay open)
+      if @sdmo_cooling_down
+        temp = genset.coolant_temperature
+        if temp <= 80
+          puts "SDMO coolant #{temp}°C <= 80°C, stopping genset"
+          genset.stop
+          @sdmo_cooling_down = false
+          unless @ac_source_enabled
+            puts "SDMO stopped, enabling AC source (fail-safe)"
+            @devices.next3.acsource.enable
+            @ac_source_enabled = true
+          end
+        end
+      else
+        start_request = genset.binary_input[1] == 1
+        if start_request
+          unless genset.is_running?
+            puts "SDMO aux relay closed, starting genset"
+            genset.start
+          end
+          if genset.is_running? && !@ac_source_enabled
+            puts "SDMO running, enabling AC source"
+            @devices.next3.acsource.enable
+            @ac_source_enabled = true
+          end
+        elsif genset.is_running?
+          # Aux just opened while running: disable AC source and begin cooldown
+          if @ac_source_enabled
+            puts "SDMO start request cleared, disabling AC source for cooldown"
+            @devices.next3.acsource.disable
+            @ac_source_enabled = false
+          end
+          @sdmo_cooling_down = true
+        else
+          # Aux open, not running: fail-safe enable AC source
+          unless @ac_source_enabled
+            puts "SDMO genset off, enabling AC source (fail-safe)"
+            @devices.next3.acsource.enable
+            @ac_source_enabled = true
+          end
+        end
       end
     end
   rescue => e
@@ -141,7 +190,7 @@ class EnergyManagement
   end
 
   def genset_running?
-    @devices.gencomm.is_running?
+    genset.is_running?
   rescue => e
     puts "[ERROR] genset_running? check failed: #{e.message}"
     false
@@ -547,6 +596,10 @@ class EnergyManagement
     puts "Loaded state from #{STATE_FILE}"
   rescue => e
     puts "[ERROR] Failed to load state: #{e.message}"
+  end
+
+  def genset
+    @devices.public_send(ACTIVE_GENSET)
   end
 
   def shelly_rpc(host, method, params)

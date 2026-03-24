@@ -53,6 +53,10 @@ class Devices
       @modbus.read_discrete_input(0x0027)
     end
 
+    def binary_input
+      @modbus.read_input_register(26)
+    end
+
     def frequency
       @modbus.read_input_register(23) / 10.0
     end
