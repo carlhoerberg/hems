@@ -4,12 +4,6 @@ battery_soc{pack="2"} <%=next3.battery2.soc%>
 # TYPE battery_temperature gauge
 battery_temperature{pack="1"} <%=next3.battery.temp%>
 battery_temperature{pack="2"} <%=next3.battery2.temp%>
-# TYPE battery_cycles counter
-battery_cycles{pack="1"} <%=next3.battery.cycles%>
-battery_cycles{pack="2"} <%=next3.battery2.cycles%>
-# TYPE battery_state_of_health gauge
-battery_state_of_health{pack="1"} <%=next3.battery.state_of_health%>
-battery_state_of_health{pack="2"} <%=next3.battery2.state_of_health%>
 # TYPE battery_charging_current gauge
 battery_charging_current{pack="1"} <%=next3.battery.charging_current%>
 battery_charging_current{pack="2"} <%=next3.battery2.charging_current%>
@@ -98,14 +92,12 @@ acsource_error{L="<%=l%>",reason="<%=name%>"} 1
 # TYPE solar_total_energy counter
 # TYPE solar_voltage gauge
 # TYPE solar_current gauge
-# TYPE solar_day_sunshine counter
 # TYPE solar_limitation gauge
 <%[1, 2].each do |array|%>
 solar_power{mppt="1",array="<%=array%>"} <%=next3.solar.power(array)%>
 solar_voltage{mppt="1",array="<%=array%>"} <%=next3.solar.voltage(array)%>
 solar_current{mppt="1",array="<%=array%>"} <%=next3.solar.current(array)%>
 solar_total_energy{mppt="1",array="<%=array%>"} <%=next3.solar.total_energy(array)%>
-solar_day_sunshine{mppt="1",array="<%=array%>"} <%=next3.solar.day_sunshine(array)%>
 solar_limitation{mppt="1",array="<%=array%>"} <%=next3.solar.limitation(array)%>
 <%end%>
 <%[1, 2].each do |array|%>
@@ -113,7 +105,6 @@ solar_power{mppt="2",array="<%=array%>"} <%=next3.solar2.power(array)%>
 solar_voltage{mppt="2",array="<%=array%>"} <%=next3.solar2.voltage(array)%>
 solar_current{mppt="2",array="<%=array%>"} <%=next3.solar2.current(array)%>
 solar_total_energy{mppt="2",array="<%=array%>"} <%=next3.solar2.total_energy(array)%>
-solar_day_sunshine{mppt="2",array="<%=array%>"} <%=next3.solar2.day_sunshine(array)%>
 solar_limitation{mppt="2",array="<%=array%>"} <%=next3.solar2.limitation(array)%>
 <%end%>
 
