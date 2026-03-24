@@ -151,16 +151,16 @@ class EnergyManagement
       else
         start_request = genset.binary_input[1] == 1
         if start_request
-          unless genset.is_running?
+          unless genset.ready_to_load?
             puts "SDMO aux relay closed, starting genset"
             genset.start
           end
-          if genset.is_running? && !@ac_source_enabled
+          if genset.ready_to_load? && !@ac_source_enabled
             puts "SDMO running, enabling AC source"
             @devices.next3.acsource.enable
             @ac_source_enabled = true
           end
-        elsif genset.is_running?
+        elsif genset.ready_to_load?
           # Aux just opened while running: disable AC source and begin cooldown
           if @ac_source_enabled
             puts "SDMO start request cleared, disabling AC source for cooldown"
@@ -190,7 +190,7 @@ class EnergyManagement
   end
 
   def genset_running?
-    genset.is_running?
+    ACTIVE_GENSET == :sdmo ? genset.ready_to_load? : genset.is_running?
   rescue => e
     puts "[ERROR] genset_running? check failed: #{e.message}"
     false
