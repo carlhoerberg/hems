@@ -28,7 +28,10 @@ class Devices
     @relays = Relays.new
     @unifi = Unifi.new
     @topas = Topas.new
-    @weco = Weco.new
+    @weco = {
+      "1" => Weco.new("/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A10NRNHW-if00-port0"),
+      "2" => Weco.new("/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_B003C43Z-if00-port0"),
+    }
     @ecowitt = Ecowitt.new
     @envistar = Envistar.new
     @casa = Casa.new

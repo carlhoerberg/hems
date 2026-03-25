@@ -183,7 +183,8 @@ class EnergyManagement
   end
 
   def battery_soc
-    @devices.weco.avg_soc
+    socs = @devices.weco.values.map(&:avg_soc)
+    socs.sum / socs.size
   rescue => e
     puts "[WARN] Weco SoC unavailable (#{e.message}), falling back to Next3"
     @devices.next3.battery.soc
@@ -693,12 +694,9 @@ class EnergyManagement
   end
 
   def weco_module_soc_diff
-    min_soc = nil
-    max_soc = nil
-    @devices.weco.modules.each do |mod|
-      min_soc = mod[:soc_value] if min_soc.nil? || mod[:soc_value] < min_soc
-      max_soc = mod[:soc_value] if max_soc.nil? || mod[:soc_value] > max_soc
-    end
-    max_soc - min_soc
+    @devices.weco.values.map do |pack|
+      socs = pack.modules.map { |m| m[:soc_value] }
+      socs.max - socs.min
+    end.max
   end
 end

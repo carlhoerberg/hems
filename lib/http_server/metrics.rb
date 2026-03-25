@@ -43,7 +43,8 @@ class HTTPServer
         when "/metrics/topas"
           @@topas.result_with_hash({ t:, measurements: @devices.topas.measurements, status: @devices.topas.status })
         when "/metrics/weco"
-          @@weco.result_with_hash({ t:, modules: @devices.weco.modules, total: @devices.weco.total })
+          packs = @devices.weco.transform_values { |w| { modules: w.modules, total: w.total } }
+          @@weco.result_with_hash({ t:, packs: })
         when "/metrics/relays"
           @@relays.result_with_hash({ t:, status: @devices.relays.status })
         when "/metrics/ecowitt"
