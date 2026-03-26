@@ -72,6 +72,6 @@ class Devices
     }
     @gencomm = GenComm.new("192.168.0.10", unit: 1)
     @victron = Victron.new("192.168.0.202")
-    @goe = GoE.new("go-echarger_274452.local")
+    @goe = GoE.new("go-echarger_274452")
   end
 end
