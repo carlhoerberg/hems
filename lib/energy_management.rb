@@ -500,17 +500,6 @@ class EnergyManagement
     return if @goe_unavailable
     return unless @devices.goe.car_connected?
 
-    # Only charge with solar (SoC >= 95% implies solar is producing) or genset
-    soc = battery_soc
-    if has_shelly_demand? || (soc < SOLAR_EXCESS_HEATER_STOP_SOC && !genset_running?)
-      if @devices.goe.allow != 0
-        reason = has_shelly_demand? ? "shelly demand" : "SoC #{soc.round}% < #{SOLAR_EXCESS_HEATER_STOP_SOC}% and no genset"
-        puts "go-e: pausing charging (#{reason})"
-        @devices.goe.allow = false
-      end
-      return
-    end
-
     l1_current = @devices.next3.acload.current(1)
     current_setting = @devices.goe.ampere
     limit = per_phase_capacity
