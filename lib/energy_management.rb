@@ -572,6 +572,7 @@ class EnergyManagement
       state = {
         shelly_demands: @shelly_demands,
         genset_started_for_demand: @genset_started_for_demand,
+        goe_paused: @goe_paused,
       }
       File.write(STATE_FILE, JSON.pretty_generate(state))
     end
@@ -585,6 +586,7 @@ class EnergyManagement
     state = JSON.parse(File.read(STATE_FILE), symbolize_names: true)
     @shelly_demands = (state[:shelly_demands] || {}).transform_keys(&:to_s)
     @genset_started_for_demand = state[:genset_started_for_demand] || false
+    @goe_paused = state[:goe_paused] || false
     puts "Loaded state from #{STATE_FILE}"
   rescue => e
     puts "[ERROR] Failed to load state: #{e.message}"
