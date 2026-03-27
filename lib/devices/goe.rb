@@ -29,7 +29,7 @@ class Devices
     REG_AMPERE_VOLATILE = 299 # u16: current amps (volatile, 6-16A, for energy control)
 
     MIN_AMPS = 6
-    MAX_AMPS = 8
+    MAX_AMPS = 16
 
     def initialize(host, port = 502)
       @modbus = Modbus::TCP.new(host, port).unit(1)

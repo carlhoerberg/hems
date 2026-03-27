@@ -506,7 +506,9 @@ class EnergyManagement
 
     other_load = l1_current - charger_current
     target = (limit - other_load).floor
-    target = target.clamp(0, Devices::GoE::MAX_AMPS)
+
+    max_amps = genset_running? ? 8 : Devices::GoE::MAX_AMPS # avoid GCB tripping when genset is running by capping at 8A
+    target = target.clamp(0, max_amps)
 
     if target < Devices::GoE::MIN_AMPS
       if @devices.goe.allow?
