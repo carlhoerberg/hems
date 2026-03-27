@@ -520,7 +520,7 @@ class EnergyManagement
         @devices.goe.ampere = target
         @devices.goe.allow = true
         @goe_paused = false
-      elsif current_setting != target
+      elsif @devices.goe.ampere != target
         puts "go-e: adjusting amperage #{current_setting}A -> #{target}A (L1: #{l1_current.round(1)}A, other: #{other_load.round(1)}A)"
         @devices.goe.ampere = target
       end
