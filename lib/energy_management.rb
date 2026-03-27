@@ -508,18 +508,17 @@ class EnergyManagement
     target = (limit - other_load).floor
     target = target.clamp(0, Devices::GoE::MAX_AMPS)
 
+      allowed = @devices.goe.allow
     if target < Devices::GoE::MIN_AMPS
-      unless @goe_paused
+      unless allowed
         puts "go-e: L1 headroom too low (#{(limit - other_load).round(1)}A), pausing charging"
         @devices.goe.allow = false
-        @goe_paused = true
       end
     else
-      if @goe_paused
+      if !allowed
         puts "go-e: L1 headroom available (#{target}A), resuming charging at #{target}A"
-        @devices.goe.ampere = target
         @devices.goe.allow = true
-        @goe_paused = false
+        @devices.goe.ampere = target
       elsif (current_setting = @devices.goe.ampere) != target
         puts "go-e: adjusting amperage #{current_setting}A -> #{target}A (L1: #{l1_current.round(1)}A, other: #{other_load.round(1)}A)"
         @devices.goe.ampere = target
