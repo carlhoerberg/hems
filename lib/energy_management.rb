@@ -103,7 +103,7 @@ class EnergyManagement
     @stopped = true
   end
 
-# Enable AC source only when genset mains breaker is closed (supplying power).
+  # Enable AC source only when genset mains breaker is closed (supplying power).
   # Disable during warmup/cooldown (fuel relay on but mains breaker off).
   # Fail-safe: re-enable when genset is fully off (both relays off).
   def manage_ac_source
@@ -154,6 +154,7 @@ class EnergyManagement
           unless genset.ready_to_load?
             puts "SDMO aux relay closed, starting genset"
             genset.start
+            @devices.goe.ampere = 8 # SDMO GCB trips by high DC current from charging
           end
           if genset.ready_to_load? && !@ac_source_enabled
             puts "SDMO running, enabling AC source"
