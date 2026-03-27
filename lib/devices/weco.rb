@@ -51,6 +51,12 @@ class Devices
       end
     end
 
+    def master
+      lock do
+        master_status
+      end
+    end
+
     def modules
       lock do
         Array.new(6) do |i|
