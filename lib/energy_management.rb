@@ -76,26 +76,20 @@ class EnergyManagement
   def start
     until @stopped
       begin
-        timings = {}
         duration = Time.measure do
-          %i[
-            manage_ac_source
-            update_phase_current_history
-            poll_shelly_demand_inputs
-            manage_shelly_demands
-            manage_genset_for_demand
-            manage_heaters
-            manage_goe_amperage
-            manage_victron_mode
-            update_solar_actual
-            genset_threshold_management
-            save_state
-          ].each { |step| timings[step] = Time.measure { send(step) } }
+          manage_ac_source
+          update_phase_current_history
+          poll_shelly_demand_inputs
+          manage_shelly_demands
+          manage_genset_for_demand
+          manage_heaters
+          manage_goe_amperage
+          manage_victron_mode
+          update_solar_actual
+          genset_threshold_management
+          save_state
         end
-        if duration > 5
-          slow = timings.select { |_, t| t > 0.5 }.map { |k, t| "#{k}=#{t.round(2)}s" }.join(" ")
-          puts "Energy management loop duration: #{duration.round(2)}s#{slow.empty? ? "" : " [#{slow}]"}"
-        end
+        puts "Energy management loop duration: #{duration.round(2)}s" if duration > 5
         break if @stopped
         sleep [5 - duration, 0].max
       rescue => e
