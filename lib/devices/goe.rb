@@ -83,7 +83,7 @@ class Devices
     end
 
     # Allow/disallow charging
-    def allow
+    def allow?
       @modbus.read_holding_register(REG_ALLOW) == 1
     end
 
