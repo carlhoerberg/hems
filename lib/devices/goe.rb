@@ -13,6 +13,7 @@ class Devices
     REG_VOLT_L1      = 108  # u32: voltage L1 in volts
     REG_VOLT_L2      = 110  # u32: voltage L2 in volts
     REG_VOLT_L3      = 112  # u32: voltage L3 in volts
+    REG_VOLT_N       = 144  # u32: voltage N in volts
     REG_AMP_L1       = 114  # u32: current L1 in 0.1A
     REG_AMP_L2       = 116  # u32: current L2 in 0.1A
     REG_AMP_L3       = 118  # u32: current L3 in 0.1A
@@ -108,8 +109,8 @@ class Devices
     end
 
     def measurements
-      # Registers 100-129: car_state, cable, volts, amps, power, energy_total (30 regs, 1 request)
-      inp = @modbus.read_input_registers(REG_CAR_STATE, 30)
+      # Registers 100-145: car_state, cable, volts, amps, power, energy_total, volt_n (46 regs, 1 request)
+      inp = @modbus.read_input_registers(REG_CAR_STATE, 46)
       # Registers 200-211: allow through ampere_max (12 regs, 1 request)
       hold = @modbus.read_holding_registers(REG_ALLOW, 12)
       # Register 299: volatile ampere setting (1 request)
@@ -120,6 +121,7 @@ class Devices
         volt_l1: [inp[8], inp[9]].to_u32,
         volt_l2: [inp[10], inp[11]].to_u32,
         volt_l3: [inp[12], inp[13]].to_u32,
+        volt_n: [inp[44], inp[45]].to_u32,
         amp_l1: [inp[14], inp[15]].to_u32 / 10.0,
         amp_l2: [inp[16], inp[17]].to_u32 / 10.0,
         amp_l3: [inp[18], inp[19]].to_u32 / 10.0,
