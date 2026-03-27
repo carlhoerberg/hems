@@ -22,7 +22,6 @@ module Modbus
     Protocol = 0
 
     def request(request, &)
-      try = 0
       transaction = 0 # the waveshare relay have trouble with transactions, rand(2**16)
       @lock.synchronize do
         begin
@@ -35,7 +34,6 @@ module Modbus
           yield
         rescue SocketError, SystemCallError, IOError, Timeout::Error, IO::TimeoutError => ex
           close
-          retry if (try += 1) < 2
           raise ex
         rescue ProtocolException => ex
           close
