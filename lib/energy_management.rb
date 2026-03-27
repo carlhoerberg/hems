@@ -68,12 +68,11 @@ class EnergyManagement
     @ac_source_enabled = @devices.next3.acsource.enabled?
     @sdmo_cooling_down = false
     @solar_forecast = SolarForecast.new
-    @last_threshold_check = 0
-    @last_solar_actual_update = 0
     load_state
   end
 
   def start
+    start_periodic_tasks
     until @stopped
       begin
         timings = {}
@@ -87,8 +86,6 @@ class EnergyManagement
             manage_heaters
             manage_goe_amperage
             manage_victron_mode
-            update_solar_actual
-            genset_threshold_management
             save_state
           ].each { |step| timings[step] = Time.measure { send(step) } }
         end
@@ -107,6 +104,19 @@ class EnergyManagement
 
   def stop
     @stopped = true
+  end
+
+  def start_periodic_tasks
+    Thread.new do
+      loop do
+        sleep 300
+        break if @stopped
+        update_solar_actual
+        genset_threshold_management
+      rescue => e
+        puts "[ERROR] periodic tasks: #{e.message}"
+      end
+    end
   end
 
 # Enable AC source only when genset mains breaker is closed (supplying power).
@@ -611,9 +621,6 @@ class EnergyManagement
 
   # Manage genset start/stop thresholds via Next3 aux1 relay
   def genset_threshold_management(soc = battery_soc)
-    return if Time.monotonic - @last_threshold_check < 300
-    @last_threshold_check = Time.monotonic
-
     current_deactivation = @devices.next3.aux1.soc_deactivation_threshold
     target_deactivation = genset_running? ? solar_aware_deactivation_soc(soc) : DEFAULT_GENSET_DEACTIVATION_SOC
     if target_deactivation == DEFAULT_GENSET_DEACTIVATION_SOC
@@ -680,13 +687,10 @@ class EnergyManagement
 
 
   def update_solar_actual
-    return if Time.monotonic - @last_solar_actual_update < 300
-
     today_wh = @devices.next3.solar.total_day_energy
     return if today_wh < 1000
 
     @solar_forecast.actual = today_wh / 1000.0
-    @last_solar_actual_update = Time.monotonic
     puts "Updated solar forecast actual: #{(today_wh / 1000.0).round(2)}kWh"
   rescue => e
     puts "[WARN] Failed to update solar forecast actual: #{e.message}"
