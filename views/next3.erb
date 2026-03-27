@@ -74,11 +74,6 @@ acload_warning{L="<%=l%>",reason="<%=name%>"} 1
 <%next3.acload.active_errors(l).each do |name|%>
 acload_error{L="<%=l%>",reason="<%=name%>"} 1
 <%end%>
-acsource_voltage{L="<%=l%>"} <%=next3.acsource.voltage(l)%>
-acsource_current{L="<%=l%>"} <%=next3.acsource.current(l)%>
-acsource_active_power{L="<%=l%>"} <%=next3.acsource.active_power(l)%>
-acsource_reactive_power{L="<%=l%>"} <%=next3.acsource.reactive_power(l)%>
-acsource_apparent_power{L="<%=l%>"} <%=next3.acsource.apparent_power(l)%>
 acsource_total_consumed_energy{L="<%=l%>"} <%=next3.acsource.total_consumed_energy(l)%>
 <%next3.acsource.active_warnings(l).each do |name|%>
 acsource_warning{L="<%=l%>",reason="<%=name%>"} 1
