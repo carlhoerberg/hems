@@ -500,11 +500,11 @@ class EnergyManagement
     return if @goe_unavailable
     return unless @devices.goe.car_connected?
 
-    l1_current = @devices.next3.acload.current(1)
-    current_setting = @devices.goe.ampere
+    l1_current = @phase_current_history.last[0]
+    charger_current = @devices.goe.amp_l1
     limit = per_phase_capacity
 
-    other_load = l1_current - current_setting
+    other_load = l1_current - charger_current
     target = (limit - other_load).floor
     target = target.clamp(0, Devices::GoE::MAX_AMPS)
 
