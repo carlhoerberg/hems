@@ -43,6 +43,7 @@ battery_error{pack="2",reason="<%=name%>"} 1
 # TYPE acload_frequency gauge
 acload_frequency <%=next3.acload.frequency%>
 # TYPE acsource_frequency gauge
+acsource_frequency <%=next3.acsource.frequency%>
 
 # TYPE acload_current gauge
 # TYPE acload_voltage gauge
@@ -63,9 +64,7 @@ acload_frequency <%=next3.acload.frequency%>
 <%[1, 2, 3].each do |l|%>
 acload_current{L="<%=l%>"} <%=next3.acload.current(l)%>
 acload_voltage{L="<%=l%>"} <%=next3.acload.voltage(l)%>
-acload_active_power{L="<%=l%>"} <%=next3.acload.active_power(l)%>
 acload_reactive_power{L="<%=l%>"} <%=next3.acload.reactive_power(l)%>
-acload_apparent_power{L="<%=l%>"} <%=next3.acload.apparent_power(l)%>
 acload_total_consumed_energy{L="<%=l%>"} <%=next3.acload.total_consumed_energy(l)%>
 <%next3.acload.active_warnings(l).each do |name|%>
 acload_warning{L="<%=l%>",reason="<%=name%>"} 1
