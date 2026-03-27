@@ -154,7 +154,7 @@ class EnergyManagement
           unless genset.ready_to_load?
             puts "SDMO aux relay closed, starting genset"
             genset.start
-            @devices.goe.ampere = 8 # SDMO GCB trips by high DC current from charging
+            @devices.goe.ampere = 6 # SDMO GCB trips by high DC current from charging
           end
           if genset.ready_to_load? && !@ac_source_enabled
             puts "SDMO running, enabling AC source"
@@ -499,7 +499,6 @@ class EnergyManagement
   # Calculates the non-charger load on L1, then sets the charger to use whatever headroom remains.
   def manage_goe_amperage
     return if @goe_unavailable
-    return unless @devices.goe.car_connected?
 
     l1_current = @phase_current_history.last[0]
     charger_current = @devices.goe.amp_l1
