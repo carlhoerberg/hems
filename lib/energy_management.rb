@@ -82,7 +82,7 @@ class EnergyManagement
           poll_shelly_demand_inputs
           manage_shelly_demands
           manage_genset_for_demand
-          manage_heaters
+          #manage_heaters
           manage_goe_amperage
           manage_victron_mode
           update_solar_actual
