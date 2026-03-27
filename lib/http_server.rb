@@ -1,4 +1,5 @@
 require "socket"
+require "timeout"
 
 # Simple multithreaded HTTP server
 class HTTPServer
@@ -13,7 +14,7 @@ class HTTPServer
       Thread.new do
         loop do
           client = @queue.pop || break
-          handle_client(client)
+            handle_client(client)
         end
       end
     end
@@ -39,9 +40,11 @@ class HTTPServer
   private
 
   def handle_client(socket)
-    request = parse_request(socket) || return
-    response = handle_request(request)
-    send_response(socket, response)
+    Timeout.timeout(5) do
+      request = parse_request(socket) || return
+      response = handle_request(request)
+      send_response(socket, response)
+    end
   rescue => e
     puts "Unhandled error in worker thread: #{e.message}"
     e.backtrace.each { |line| puts "  at #{line}" }
