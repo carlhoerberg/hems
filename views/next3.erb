@@ -90,14 +90,12 @@ acsource_error{L="<%=l%>",reason="<%=name%>"} 1
 # TYPE solar_current gauge
 # TYPE solar_limitation gauge
 <%[1, 2].each do |array|%>
-solar_power{mppt="1",array="<%=array%>"} <%=next3.solar.power(array)%>
 solar_voltage{mppt="1",array="<%=array%>"} <%=next3.solar.voltage(array)%>
 solar_current{mppt="1",array="<%=array%>"} <%=next3.solar.current(array)%>
 solar_total_energy{mppt="1",array="<%=array%>"} <%=next3.solar.total_energy(array)%>
 solar_limitation{mppt="1",array="<%=array%>"} <%=next3.solar.limitation(array)%>
 <%end%>
 <%[1, 2].each do |array|%>
-solar_power{mppt="2",array="<%=array%>"} <%=next3.solar2.power(array)%>
 solar_voltage{mppt="2",array="<%=array%>"} <%=next3.solar2.voltage(array)%>
 solar_current{mppt="2",array="<%=array%>"} <%=next3.solar2.current(array)%>
 solar_total_energy{mppt="2",array="<%=array%>"} <%=next3.solar2.total_energy(array)%>
