@@ -37,10 +37,10 @@ class EnergyManagement
     { id: :heater_9kw, phase_amps: { 1 => 13, 2 => 13, 3 => 13 } },
   ].freeze
 
-  INVERTER_CURRENT_LIMIT = 44
-  GENSET_CURRENT_LIMIT = 10
-
   ACTIVE_GENSET = :gencomm  # :gencomm or :sdmo
+
+  INVERTER_CURRENT_LIMIT = 44
+  GENSET_CURRENT_LIMIT = ACTIVE_GENSET == :gencomm ? 50 : 10
 
   GENSET_DEMAND_START_DELAY = 180    # seconds of unmet demand before starting genset
   GENSET_DEMAND_STOP_DELAY = 15 * 60 # seconds after last demand before stopping genset
@@ -108,6 +108,8 @@ class EnergyManagement
   # Fail-safe: re-enable when genset is fully off (both relays off).
   def manage_ac_source
     if ACTIVE_GENSET == :gencomm
+      return
+
       fuel = genset.fuel_relay
       mains_breaker = genset.mains_breaker_relay
 
