@@ -40,7 +40,7 @@ class EnergyManagement
   INVERTER_CURRENT_LIMIT = 44
   GENSET_CURRENT_LIMIT = 10
 
-  ACTIVE_GENSET = :gencomm  # :gencomm or :sdmo
+  ACTIVE_GENSET = :sdmo  # :gencomm or :sdmo
 
   GENSET_DEMAND_START_DELAY = 180    # seconds of unmet demand before starting genset
   GENSET_DEMAND_STOP_DELAY = 15 * 60 # seconds after last demand before stopping genset
