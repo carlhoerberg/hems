@@ -1,5 +1,5 @@
 require_relative "./devices"
-require_relative "./solar_forecast"
+require_relative "./smhi_solar_forecast"
 require "net/http"
 require "json"
 require "time"
@@ -40,7 +40,7 @@ class EnergyManagement
   INVERTER_CURRENT_LIMIT = 44
   GENSET_CURRENT_LIMIT = 10
 
-  ACTIVE_GENSET = :sdmo  # :gencomm or :sdmo
+  ACTIVE_GENSET = :gencomm  # :gencomm or :sdmo
 
   GENSET_DEMAND_START_DELAY = 180    # seconds of unmet demand before starting genset
   GENSET_DEMAND_STOP_DELAY = 15 * 60 # seconds after last demand before stopping genset
@@ -67,7 +67,7 @@ class EnergyManagement
     @last_shelly_demand_at = nil      # monotonic time of last shelly demand registration
     @ac_source_enabled = @devices.next3.acsource.enabled?
     @sdmo_cooling_down = false
-    @solar_forecast = SolarForecast.new
+    @solar_forecast = SmhiSolarForecast.new
     @last_threshold_check = 0
     @last_solar_actual_update = 0
     load_state
