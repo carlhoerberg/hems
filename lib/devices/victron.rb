@@ -72,6 +72,7 @@ class Devices
         ac_input_power: [vb[12 - 3]].to_i16 * 10,
         ac_output_voltage: vb[15 - 3] / 10.0,
         ac_output_current: [vb[18 - 3]].to_i16 / 10.0,
+        ac_output_frequency: [vb[21 - 3]].to_i16 / 100.0,
         ac_output_power: [vb[23 - 3]].to_i16 * 10,
         dc_current: [vb[27 - 3]].to_i16 / 10.0,
         state: vb[31 - 3],
