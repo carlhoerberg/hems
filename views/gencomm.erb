@@ -53,6 +53,10 @@ genset_aftertreatment_temp_t3{name="<%=name%>"} <%=measurements[:aftertreatment_
 genset_engine_reference_torque{name="<%=name%>"} <%=measurements[:engine_reference_torque]%>
 # TYPE genset_engine_torque_pct gauge
 genset_engine_torque_pct{name="<%=name%>"} <%=measurements[:engine_torque_pct]%>
+# TYPE genset_engine_demand_torque gauge
+genset_engine_demand_torque{name="<%=name%>"} <%=measurements[:engine_demand_torque]%>
+# TYPE genset_nominal_friction_torque_pct gauge
+genset_nominal_friction_torque_pct{name="<%=name%>"} <%=measurements[:nominal_friction_torque_pct]%>
 # TYPE genset_soot_load gauge
 genset_soot_load{name="<%=name%>"} <%=measurements[:soot_load]%>
 # TYPE genset_ash_load gauge

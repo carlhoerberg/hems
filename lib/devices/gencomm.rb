@@ -457,7 +457,7 @@ class Devices
     # Read extended instrumentation (Page 5)
     def extended_measurements
       e1 = @modbus.read_holding_registers(PAGE_EXTENDED, 16)
-      e2 = @modbus.read_holding_registers(PAGE_EXTENDED + 66, 6)
+      e2 = @modbus.read_holding_registers(PAGE_EXTENDED + 66, 11)
       e3 = @modbus.read_holding_registers(PAGE_EXTENDED + 80, 1)
       e4 = @modbus.read_holding_registers(PAGE_EXTENDED + 186, 2)
       e5 = @modbus.read_holding_registers(PAGE_EXTENDED + 202, 2)
@@ -476,6 +476,8 @@ class Devices
         aftertreatment_temp_t3: i16(e2[1]),
         engine_reference_torque: u32([e2[2], e2[3]]),
         engine_torque_pct: i32([e2[4], e2[5]]),
+        engine_demand_torque: i32([e2[6], e2[7]]),
+        nominal_friction_torque_pct: i16(e2[10]),
         injector_rail_pressure: u16(e3[0]) / 100.0,
         soot_load: u16(e4[0]),
         ash_load: u16(e4[1]),
