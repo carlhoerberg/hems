@@ -61,14 +61,6 @@ genset_nominal_friction_torque_pct{name="<%=name%>"} <%=measurements[:nominal_fr
 genset_soot_load{name="<%=name%>"} <%=measurements[:soot_load]%>
 # TYPE genset_ash_load gauge
 genset_ash_load{name="<%=name%>"} <%=measurements[:ash_load]%>
-# TYPE genset_dpf_regen_status gauge
-genset_dpf_regen_status{name="<%=name%>"} <%=measurements[:dpf_regen_status]%>
-# TYPE genset_dptc_filter_status gauge
-genset_dptc_filter_status{name="<%=name%>"} <%=dpf_status[:dptc_filter_status]%>
-# TYPE genset_aftertreatment_status_severity gauge
-genset_aftertreatment_status_severity{name="<%=name%>"} <%=dpf_status[:aftertreatment_status_severity]%>
-# TYPE genset_aftertreatment_status_reason gauge
-genset_aftertreatment_status_reason{name="<%=name%>"} <%=dpf_status[:aftertreatment_status_reason]%>
 # TYPE genset_dpf_soot_mass gauge
 genset_dpf_soot_mass{name="<%=name%>"} <%=measurements[:dpf_soot_mass]%>
 # TYPE genset_air_mass_flow_rate gauge
@@ -96,7 +88,17 @@ genset_trip_avg_fuel_efficiency{name="<%=name%>"} <%=measurements[:trip_avg_fuel
 # TYPE genset_instantaneous_fuel_efficiency gauge
 genset_instantaneous_fuel_efficiency{name="<%=name%>"} <%=measurements[:instantaneous_fuel_efficiency]%>
 # TYPE genset_status gauge
-genset_status{name="<%=name%>"} <%=status%>
+<%active_status_flags.each do |flag|%>
+genset_status{name="<%=name%>",reason="<%=flag%>"} 1
+<%end%>
+<%alarm_conditions.each do |alarm_name, condition|%>
+genset_status{name="<%=name%>",reason="<%=alarm_name%>: <%=condition%>"} 1
+<%end%>
+<%dpf_regen_status = measurements[:dpf_regen_status]%>
+<%if dpf_regen_status && dpf_regen_status != 0%>
+<%dpf_regen_label = {1 => "active", 2 => "undefined"}[dpf_regen_status] || dpf_regen_status.to_s%>
+genset_status{name="<%=name%>",reason="DPF regen: <%=dpf_regen_label%>"} 1
+<%end%>
 
 # TYPE genset_digital_output gauge
 <%digital_outputs.each do |key, value|%>

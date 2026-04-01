@@ -62,7 +62,7 @@ class HTTPServer
           end.map(&:value)
           @@lk.result_with_hash({ t: start, lk_data: })
         when "/metrics/gencomm"
-          @@gencomm.result_with_hash({ t:, name: "QAS45", measurements: @devices.gencomm.measurements, accumulated: @devices.gencomm.accumulated, status: @devices.gencomm.status, dpf_status: @devices.gencomm.dpf_status, digital_outputs: @devices.gencomm.digital_outputs })
+          @@gencomm.result_with_hash({ t:, name: "QAS45", measurements: @devices.gencomm.measurements, accumulated: @devices.gencomm.accumulated, active_status_flags: @devices.gencomm.active_status_flags, alarm_conditions: @devices.gencomm.alarm_conditions, digital_outputs: @devices.gencomm.digital_outputs })
         when "/metrics/victron"
           @@victron.result_with_hash({ t:, m: @devices.victron.measurements })
         when "/metrics/goe"
