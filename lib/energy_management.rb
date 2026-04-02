@@ -1,5 +1,6 @@
 require_relative "./devices"
 require_relative "./smhi_solar_forecast"
+require_relative "./victoriametrics"
 require "net/http"
 require "json"
 require "time"
@@ -70,6 +71,7 @@ class EnergyManagement
     @solar_forecast = SmhiSolarForecast.new
     @last_threshold_check = 0
     @last_solar_actual_update = 0
+    @last_forecast_push = 0
     load_state
   end
 
@@ -86,6 +88,7 @@ class EnergyManagement
           manage_goe_amperage
           #manage_victron_mode
           update_solar_actual
+          push_solar_forecast
           genset_threshold_management
           save_state
         end
@@ -686,6 +689,20 @@ class EnergyManagement
     puts "Updated solar forecast actual: #{(today_wh / 1000.0).round(2)}kWh"
   rescue => e
     puts "[WARN] Failed to update solar forecast actual: #{e.message}"
+  end
+
+  def push_solar_forecast
+    return if Time.monotonic - @last_forecast_push < 3600
+    forecast = @solar_forecast.estimate_watt_hours
+    return unless forecast&.any?
+    lines = forecast.each_with_index.map do |(_, wh), i|
+      "solar_forecast_wh{horizon_hours=\"#{i + 1}\"} #{wh}"
+    end.join("\n")
+    VictoriaMetrics.push(lines)
+    @last_forecast_push = Time.monotonic
+    puts "Pushed solar forecast to VictoriaMetrics (#{forecast.size} hours)"
+  rescue => e
+    puts "[WARN] Failed to push solar forecast: #{e.message}"
   end
 
   def weco_module_soc_diff
