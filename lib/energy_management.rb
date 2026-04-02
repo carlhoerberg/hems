@@ -695,7 +695,7 @@ class EnergyManagement
     return if Time.monotonic - @last_forecast_push < 3600
     forecast = @solar_forecast.estimate_watt_hours
     return unless forecast&.any?
-    lines = forecast.each_with_index.map do |(_, wh), i|
+    lines = forecast.first(24).each_with_index.map do |(_, wh), i|
       "solar_forecast_wh{horizon_hours=\"#{i + 1}\"} #{wh}"
     end.join("\n")
     VictoriaMetrics.push(lines)
