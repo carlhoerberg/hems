@@ -57,7 +57,6 @@ class EnergyManagement
     @shelly_demands = {}  # { device_id => { amps:, active: false, unmet_since: nil } }
     @shelly_demands_mutex = Mutex.new
     @phase_current_history = []
-    @genset_started_for_demand = false # true if we manually started genset for shelly demand
     @last_shelly_demand_at = nil      # monotonic time of last shelly demand registration
     @ac_source_enabled = @devices.next3.acsource.enabled?
     @sdmo_cooling_down = false
@@ -516,7 +515,6 @@ class EnergyManagement
     @shelly_demands_mutex.synchronize do
       state = {
         shelly_demands: @shelly_demands,
-        genset_started_for_demand: @genset_started_for_demand,
         active_genset: @active_genset,
       }
       File.write(STATE_FILE, JSON.pretty_generate(state))
@@ -530,7 +528,6 @@ class EnergyManagement
 
     state = JSON.parse(File.read(STATE_FILE), symbolize_names: true)
     @shelly_demands = (state[:shelly_demands] || {}).transform_keys(&:to_s)
-    @genset_started_for_demand = state[:genset_started_for_demand] || false
     saved_genset = state[:active_genset]&.to_sym
     @active_genset = saved_genset if saved_genset && GENSET_CURRENT_LIMITS.key?(saved_genset)
     puts "Loaded state from #{STATE_FILE}"
