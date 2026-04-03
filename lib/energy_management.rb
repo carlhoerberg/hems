@@ -23,9 +23,7 @@ class EnergyManagement
   DEFAULT_GENSET_ACTIVATION_SOC = 20
   DEFAULT_GENSET_DEACTIVATION_SOC = 95
 
-  BATTERY_CAPACITY_KWH = 31.8
-  NOMINAL_VOLTAGE = 230
-  MIN_SOLAR_PRODUCTION_WH = 200 # minimum Wh in a period to count as "solar producing"
+  BATTERY_CAPACITY_KWH = 31.8 * 2
 
   HEATER_PHASE_LIMIT = 44 # max amps per phase for heater best-fit
 
@@ -43,10 +41,6 @@ class EnergyManagement
   INVERTER_CURRENT_LIMIT = 44
   GENSET_CURRENT_LIMIT = ACTIVE_GENSET == :gencomm ? 50 : 10
 
-  GENSET_DEMAND_START_DELAY = 180    # seconds of unmet demand before starting genset
-  GENSET_DEMAND_STOP_DELAY = 15 * 60 # seconds after last demand before stopping genset
-
-  VICTRON_INVERTER_ONLY_MIN_SOC = 50 # only shed Victron charging if SoC > this
   MIN_PHASE_VOLTAGE = 210 # turn off shelly demands if any phase drops below this
   SOLAR_EXCESS_HEATER_STOP_SOC = 95   # keep solar excess heaters on until this SoC
 
@@ -83,11 +77,8 @@ class EnergyManagement
           update_phase_current_history
           poll_shelly_demand_inputs
           manage_shelly_demands
-          #manage_genset_for_demand
           manage_heaters
           manage_goe_amperage
-          #manage_victron_mode
-          #update_solar_actual
           push_solar_forecast
           genset_threshold_management
           save_state
@@ -110,35 +101,7 @@ class EnergyManagement
   # Disable during warmup/cooldown (fuel relay on but mains breaker off).
   # Fail-safe: re-enable when genset is fully off (both relays off).
   def manage_ac_source
-    if ACTIVE_GENSET == :gencomm
-      return
-
-      fuel = genset.fuel_relay
-      mains_breaker = genset.mains_breaker_relay
-
-      if fuel && mains_breaker
-        # Genset running, mains breaker closed, power available
-        unless @ac_source_enabled
-          puts "Fuel and mains breaker relays on, enabling AC source"
-          @devices.next3.acsource.enable
-          @ac_source_enabled = true
-        end
-      elsif fuel
-        # Warming up or cooling down, no stable power
-        if @ac_source_enabled
-          puts "Fuel relay on but mains breaker off (warmup/cooldown), disabling AC source"
-          @devices.next3.acsource.disable
-          @ac_source_enabled = false
-        end
-      else
-        # Genset fully off, fail-safe: enable AC source
-        unless @ac_source_enabled
-          puts "Genset off (fuel relay off), enabling AC source (fail-safe)"
-          @devices.next3.acsource.enable
-          @ac_source_enabled = true
-        end
-      end
-    else
+    if ACTIVE_GENSET == :sdmo
       # SDMO in manual mode: start/stop based on aux relay binary_input
       # binary_input bit 1: 1 = start request (aux relay closed), 0 = stop request (aux relay open)
       if @sdmo_cooling_down
@@ -224,7 +187,11 @@ class EnergyManagement
 
   # Per-phase current capacity: inverter 22A, genset adds 50A
   def per_phase_capacity
-    genset_running? ? INVERTER_CURRENT_LIMIT + GENSET_CURRENT_LIMIT : INVERTER_CURRENT_LIMIT
+    if genset_running? 
+      [INVERTER_CURRENT_LIMIT + GENSET_CURRENT_LIMIT, 80].min # transfer limit 80A
+    else
+      INVERTER_CURRENT_LIMIT
+    end
   end
 
   def phase_current
@@ -362,53 +329,6 @@ class EnergyManagement
     end
   end
 
-  # Shed Victron charging load when there's unmet shelly demand due to phase overload
-  # and SoC is sufficient. Restore normal mode when all demands are met or SoC drops too low.
-  def manage_victron_mode
-    @shelly_demands_mutex.synchronize do
-      has_capacity_unmet = @shelly_demands.any? do |_, d|
-        !d[:active] && no_capacity_reason(d[:amps])&.include?("over limit")
-      end
-
-      if has_capacity_unmet && !victron_inverter_only? &&
-         @devices.victron.battery_soc > VICTRON_INVERTER_ONLY_MIN_SOC
-        puts "Unmet shelly demand (phase over limit), setting Victron to inverter-only mode"
-        @devices.victron.mode = Devices::Victron::VEBUS_MODE_INVERTER_ONLY
-      elsif victron_inverter_only? && (!has_capacity_unmet ||
-            @devices.victron.battery_soc <= VICTRON_INVERTER_ONLY_MIN_SOC)
-        puts "Restoring Victron to normal mode"
-        @devices.victron.mode = Devices::Victron::VEBUS_MODE_ON
-      end
-    end
-  rescue => e
-    puts "[ERROR] manage_victron_mode: #{e.message}"
-  end
-
-  def manage_genset_for_demand
-    @shelly_demands_mutex.synchronize do
-      now = Time.monotonic
-      demand_ready = @shelly_demands.any? do |_, d|
-        d[:unmet_since] && now - d[:unmet_since] >= GENSET_DEMAND_START_DELAY
-      end
-
-      if demand_ready && !@genset_started_for_demand && !genset_running?
-        puts "Shelly demand unmet for #{GENSET_DEMAND_START_DELAY}s, starting genset"
-        set_aux_mode(1)
-        @genset_started_for_demand = true
-      end
-
-      if @genset_started_for_demand
-        if @shelly_demands.empty? && @last_shelly_demand_at &&
-           Time.monotonic - @last_shelly_demand_at >= GENSET_DEMAND_STOP_DELAY
-          puts "No shelly demand for #{GENSET_DEMAND_STOP_DELAY / 60} minutes, stopping genset"
-          set_aux_mode(2)
-          @genset_started_for_demand = false
-        end
-      end
-    end
-  end
-
-
   def solar_excess?
     @devices.next3.solar.excess?
   rescue => e
@@ -465,7 +385,7 @@ class EnergyManagement
 
   # Check if turning on this heater would keep all its phases under HEATER_PHASE_LIMIT
   def heater_fits?(heater, currents)
-    limit = genset_running? ? HEATER_PHASE_LIMIT + GENSET_CURRENT_LIMIT : HEATER_PHASE_LIMIT
+    limit = per_phase_capacity
     heater[:phase_amps].all? { |phase, amps| currents[phase - 1] + amps < limit }
   end
 
@@ -672,22 +592,9 @@ class EnergyManagement
     return 3.0 if @phase_current_history.empty?
 
     total_amps = @phase_current_history.sum { |phases| phases.sum } / @phase_current_history.size.to_f
-    total_amps * NOMINAL_VOLTAGE / 1000.0
+    total_amps * 230 / 1000.0
   end
 
-
-  def update_solar_actual
-    return if Time.monotonic - @last_solar_actual_update < 300
-
-    today_wh = @devices.next3.solar.total_day_energy
-    return if today_wh < 1000
-
-    @solar_forecast.actual = today_wh / 1000.0
-    @last_solar_actual_update = Time.monotonic
-    puts "Updated solar forecast actual: #{(today_wh / 1000.0).round(2)}kWh"
-  rescue => e
-    puts "[WARN] Failed to update solar forecast actual: #{e.message}"
-  end
 
   def push_solar_forecast
     return if Time.monotonic - @last_forecast_push < 3600
