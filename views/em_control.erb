@@ -10,5 +10,10 @@
       <button name="action" value="aux_manual_off" <%= "disabled" if em.aux1_operating_mode == 0 %>>Aux manual off</button>
       <button name="action" value="aux_auto" <%= "disabled" if em.aux1_operating_mode == 2 %>>Aux auto</button>
     </form>
+    <p>Active genset: <%= em.active_genset %></p>
+    <form method="post">
+      <button name="action" value="set_genset_gencomm" <%= "disabled" if em.active_genset == :gencomm %>>Gencomm (50A)</button>
+      <button name="action" value="set_genset_sdmo" <%= "disabled" if em.active_genset == :sdmo %>>SDMO (10A)</button>
+    </form>
   </body>
 </html>

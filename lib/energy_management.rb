@@ -36,10 +36,9 @@ class EnergyManagement
     { id: :heater_9kw, phase_amps: { 1 => 13, 2 => 13, 3 => 13 } },
   ].freeze
 
-  ACTIVE_GENSET = :gencomm  # :gencomm or :sdmo
+  GENSET_CURRENT_LIMITS = { gencomm: 50, sdmo: 10 }.freeze
 
   INVERTER_CURRENT_LIMIT = 44
-  GENSET_CURRENT_LIMIT = ACTIVE_GENSET == :gencomm ? 50 : 10
 
   MIN_PHASE_VOLTAGE = 210 # turn off shelly demands if any phase drops below this
   SOLAR_EXCESS_HEATER_STOP_SOC = 95   # keep solar excess heaters on until this SoC
@@ -66,6 +65,7 @@ class EnergyManagement
     @last_threshold_check = 0
     @last_solar_actual_update = 0
     @last_forecast_push = 0
+    @active_genset = :gencomm
     load_state
   end
 
@@ -100,8 +100,28 @@ class EnergyManagement
   # Enable AC source only when genset mains breaker is closed (supplying power).
   # Disable during warmup/cooldown (fuel relay on but mains breaker off).
   # Fail-safe: re-enable when genset is fully off (both relays off).
+  def active_genset
+    @active_genset
+  end
+
+  def active_genset=(new_genset)
+    new_genset = new_genset.to_sym
+    raise ArgumentError, "Unknown genset: #{new_genset}" unless GENSET_CURRENT_LIMITS.key?(new_genset)
+    return if @active_genset == new_genset
+
+    @active_genset = new_genset
+    limit = GENSET_CURRENT_LIMITS[new_genset]
+    puts "Active genset changed to #{new_genset}, setting AC source rated current to #{limit}A"
+    @devices.next3.acsource.rated_current = limit
+    save_state
+  end
+
+  def genset_current_limit
+    GENSET_CURRENT_LIMITS[@active_genset]
+  end
+
   def manage_ac_source
-    if ACTIVE_GENSET == :sdmo
+    if @active_genset == :sdmo
       # SDMO in manual mode: start/stop based on aux relay binary_input
       # binary_input bit 1: 1 = start request (aux relay closed), 0 = stop request (aux relay open)
       if @sdmo_cooling_down
@@ -160,7 +180,7 @@ class EnergyManagement
   end
 
   def genset_running?
-    ACTIVE_GENSET == :sdmo ? genset.ready_to_load? : genset.is_running?
+    @active_genset == :sdmo ? genset.ready_to_load? : genset.is_running?
   rescue => e
     puts "[ERROR] genset_running? check failed: #{e.message}"
     false
@@ -185,10 +205,10 @@ class EnergyManagement
     @devices.next3.aux1.operating_mode = mode
   end
 
-  # Per-phase current capacity: inverter 22A, genset adds 50A
+  # Per-phase current capacity: inverter 44A, genset adds its rated limit
   def per_phase_capacity
-    if genset_running? 
-      [INVERTER_CURRENT_LIMIT + GENSET_CURRENT_LIMIT, 80].min # transfer limit 80A
+    if genset_running?
+      [INVERTER_CURRENT_LIMIT + genset_current_limit, 80].min # transfer limit 80A
     else
       INVERTER_CURRENT_LIMIT
     end
@@ -497,6 +517,7 @@ class EnergyManagement
       state = {
         shelly_demands: @shelly_demands,
         genset_started_for_demand: @genset_started_for_demand,
+        active_genset: @active_genset,
       }
       File.write(STATE_FILE, JSON.pretty_generate(state))
     end
@@ -510,13 +531,15 @@ class EnergyManagement
     state = JSON.parse(File.read(STATE_FILE), symbolize_names: true)
     @shelly_demands = (state[:shelly_demands] || {}).transform_keys(&:to_s)
     @genset_started_for_demand = state[:genset_started_for_demand] || false
+    saved_genset = state[:active_genset]&.to_sym
+    @active_genset = saved_genset if saved_genset && GENSET_CURRENT_LIMITS.key?(saved_genset)
     puts "Loaded state from #{STATE_FILE}"
   rescue => e
     puts "[ERROR] Failed to load state: #{e.message}"
   end
 
   def genset
-    @devices.public_send(ACTIVE_GENSET)
+    @devices.public_send(@active_genset)
   end
 
   def shelly_rpc(host, method, params)

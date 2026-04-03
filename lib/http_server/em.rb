@@ -17,6 +17,8 @@ class HTTPServer
       when "aux_manual_on" then @em.set_aux_mode(1)
       when "aux_manual_off" then @em.set_aux_mode(0)
       when "aux_auto" then @em.set_aux_mode(2)
+      when "set_genset_gencomm" then @em.active_genset = :gencomm
+      when "set_genset_sdmo" then @em.active_genset = :sdmo
       else raise "no action selected"
       end
       res.status = 303
