@@ -31,6 +31,9 @@ battery_bms_recommended_discharging_current{pack="2"} <%=next3.battery2.bms_reco
 # TYPE battery_voltage gauge
 battery_voltage{pack="1"} <%=next3.battery.voltage%>
 battery_voltage{pack="2"} <%=next3.battery2.voltage%>
+<%system_total_warnings = next3.system_total.warnings%>
+<%system_total_errors = next3.system_total.errors%>
+<%if system_total_warnings[1] == 1%>
 # TYPE battery_warning gauge
 <%next3.battery.active_warnings.each do |name|%>
 battery_warning{pack="1",reason="<%=name%>"} 1
@@ -38,12 +41,15 @@ battery_warning{pack="1",reason="<%=name%>"} 1
 <%next3.battery2.active_warnings.each do |name|%>
 battery_warning{pack="2",reason="<%=name%>"} 1
 <%end%>
+<%end%>
+<%if system_total_errors[1] == 1%>
 # TYPE battery_error gauge
 <%next3.battery.active_errors.each do |name|%>
 battery_error{pack="1",reason="<%=name%>"} 1
 <%end%>
 <%next3.battery2.active_errors.each do |name|%>
 battery_error{pack="2",reason="<%=name%>"} 1
+<%end%>
 <%end%>
 
 # TYPE acload_frequency gauge
@@ -72,21 +78,29 @@ acload_current{L="<%=l%>"} <%=next3.acload.current(l)%>
 acload_voltage{L="<%=l%>"} <%=next3.acload.voltage(l)%>
 acload_reactive_power{L="<%=l%>"} <%=next3.acload.reactive_power(l)%>
 acload_total_consumed_energy{L="<%=l%>"} <%=next3.acload.total_consumed_energy(l)%>
+<%if system_total_warnings[3] == 1%>
 <%next3.acload.active_warnings(l).each do |name|%>
 acload_warning{L="<%=l%>",reason="<%=name%>"} 1
 <%end%>
+<%end%>
+<%if system_total_errors[3] == 1%>
 <%next3.acload.active_errors(l).each do |name|%>
 acload_error{L="<%=l%>",reason="<%=name%>"} 1
+<%end%>
 <%end%>
 acsource_current{L="<%=l%>"} <%=next3.acsource.current(l)%>
 acsource_voltage{L="<%=l%>"} <%=next3.acsource.voltage(l)%>
 acsource_reactive_power{L="<%=l%>"} <%=next3.acsource.reactive_power(l)%>
 acsource_total_consumed_energy{L="<%=l%>"} <%=next3.acsource.total_consumed_energy(l)%>
+<%if system_total_warnings[4] == 1%>
 <%next3.acsource.active_warnings(l).each do |name|%>
 acsource_warning{L="<%=l%>",reason="<%=name%>"} 1
 <%end%>
+<%end%>
+<%if system_total_errors[4] == 1%>
 <%next3.acsource.active_errors(l).each do |name|%>
 acsource_error{L="<%=l%>",reason="<%=name%>"} 1
+<%end%>
 <%end%>
 <%end%>
 
@@ -108,12 +122,14 @@ solar_total_energy{mppt="2",array="<%=array%>"} <%=next3.solar2.total_energy(arr
 solar_limitation{mppt="2",array="<%=array%>"} <%=next3.solar2.limitation(array)%>
 <%end%>
 
+<%if system_total_errors[0] == 1%>
 # TYPE converter_error gauge
 <%next3.converter.active_errors.each do |name|%>
 converter_error{unit="1",reason="<%=name%>"} 1
 <%end%>
 <%next3.converter2.active_errors.each do |name|%>
 converter_error{unit="2",reason="<%=name%>"} 1
+<%end%>
 <%end%>
 # TYPE converter_adc_noise_warning gauge
 <%next3.converter.active_noised_adc_channels.each do |name|%>

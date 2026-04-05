@@ -4,13 +4,15 @@ class Devices
   class Next3
     using Modbus::TypeExtensions
 
-    attr_reader :acload, :battery, :battery2, :acsource, :solar, :solar2, :aux1, :converter, :converter2
+    attr_reader :acload, :system_total, :battery, :battery2, :acsource, :solar, :solar2, :aux1, :converter, :converter2
 
     def initialize
       host = ENV.fetch("NEXT3_HOST", "studer-next")
       port = ENV.fetch("NEXT3_PORT", 502).to_i
       next3 = Modbus::TCP.new(host, port)
-      @acload = AcLoad.new next3.unit(1)
+      system_unit = next3.unit(1)
+      @acload = AcLoad.new system_unit
+      @system_total = SystemTotal.new system_unit
       @battery = Battery.new next3.unit(2)
       @battery2 = Battery.new next3.unit(3)
       @acsource = AcSource.new next3.unit(7)
@@ -19,6 +21,22 @@ class Devices
       @aux1 = Aux.new next3.unit(14), 1
       @converter = Converter.new next3.unit(14)
       @converter2 = Converter.new next3.unit(15)
+    end
+
+    class SystemTotal
+      def initialize(unit)
+        @unit = unit
+      end
+
+      # Bitfield enum: 1=device, 2=battery, 4=solar, 8=phase, 16=AC input phase
+      def warnings
+        @unit.read_holding_registers(8110, 2).to_u32
+      end
+
+      # Bitfield enum: 1=device, 2=battery, 4=solar, 8=phase, 16=AC input phase
+      def errors
+        @unit.read_holding_registers(8120, 2).to_u32
+      end
     end
 
     class Battery
