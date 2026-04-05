@@ -78,6 +78,14 @@ class Devices
         @unit.read_holding_registers(22, 4).to_f64
       end
 
+      def target_charging_current_low_limit
+        @unit.read_holding_registers(306, 2).to_f32
+      end
+
+      def target_charging_current_high_limit
+        @unit.read_holding_registers(308, 2).to_f32
+      end
+
       def charging_current_high_limit
         @unit.read_holding_registers(312, 2).to_f32
       end
