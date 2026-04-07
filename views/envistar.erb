@@ -30,5 +30,9 @@ envistar_fanspeed{name="Frånluftsfläkt"} <%=m.read("3x031")%>
 # UNIT envistar_valve %
 envistar_valve{name="Värme"} <%=m.read("3x040")%>
 
+# TYPE envistar_pump gauge
+# UNIT envistar_pump boolean
+envistar_pump{name="Värme"} <%=m.read("3x041")%>
+
 # TYPE metrics_gather_time gauge
 metrics_gather_time{device="envistar"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>

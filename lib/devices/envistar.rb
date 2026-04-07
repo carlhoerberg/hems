@@ -86,7 +86,8 @@ class Devices
         franluftsfilter_pressure: read("3x149") / 10.0,
         tilluftsflakt_fanspeed: read("3x029"),
         franluftsflakt_fanspeed: read("3x031"),
-        varme_valve: read("3x040")
+        varme_valve: read("3x040"),
+        varme_pump: read_u16("3x041")
       }
     end
   end
