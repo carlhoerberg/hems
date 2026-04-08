@@ -20,7 +20,7 @@ class Devices
   attr_reader :next3, :sdmo, :eta, :starlink, :shelly, :relays, :unifi, :topas, :weco, :ecowitt, :envistar, :casa, :grundfos, :lk, :gencomm, :victron, :goe
 
   def initialize
-    @next3 = Next3.new
+    @next3 = Next3.new("192.168.0.201")
     @sdmo = SDMO.new
     @eta = ETA.new
     @starlink = Starlink.new
