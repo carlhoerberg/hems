@@ -6,9 +6,9 @@ class Devices
 
     attr_reader :acload, :system_total, :battery, :battery2, :acsource, :solar, :solar2, :aux1, :converter, :converter2
 
-    def initialize
-      host = ENV.fetch("NEXT3_HOST", "studer-next")
-      port = ENV.fetch("NEXT3_PORT", 502).to_i
+    def initialize(host: nil, port: nil)
+      host ||= ENV.fetch("NEXT3_HOST", "studer-next")
+      port ||= ENV.fetch("NEXT3_PORT", 502).to_i
       next3 = Modbus::TCP.new(host, port)
       system_unit = next3.unit(1)
       @acload = AcLoad.new system_unit
