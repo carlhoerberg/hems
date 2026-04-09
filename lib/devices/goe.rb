@@ -81,7 +81,7 @@ class Devices
 
     # Total power in kW
     def power_total
-      @modbus.read_input_registers(REG_POWER_TOTAL, 2).to_u32 / 100.0
+      @modbus.read_input_registers(REG_POWER_TOTAL, 2).to_i32 / 100.0
     end
 
     # Total energy charged in kWh
@@ -132,7 +132,7 @@ class Devices
         amp_l1: [inp[14], inp[15]].to_u32 / 10.0,
         amp_l2: [inp[16], inp[17]].to_u32 / 10.0,
         amp_l3: [inp[18], inp[19]].to_u32 / 10.0,
-        power_total: [inp[20], inp[21]].to_u32 / 100.0,
+        power_total: [inp[20], inp[21]].to_i32 / 100.0,
         energy_total: [inp[28], inp[29]].to_u32 / 10.0,
         allow: hold[0],
         ampere_max: hold[11],
