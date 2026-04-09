@@ -355,6 +355,10 @@ class EnergyManagement
     false
   end
 
+  def unmet_shelly_demand_amps
+    @shelly_demands_mutex.synchronize { @shelly_demands.sum { |_, d| d[:active] ? 0 : d[:amps] } }
+  end
+
   def has_unmet_shelly_demand?
     @shelly_demands_mutex.synchronize { @shelly_demands.any? { |_, d| !d[:active] } }
   end
@@ -449,7 +453,8 @@ class EnergyManagement
     limit = per_phase_capacity
 
     other_load = l1_current - charger_current
-    target = (limit - other_load).floor
+    demand_amps = unmet_shelly_demand_amps
+    target = (limit - other_load - demand_amps).floor
 
     max_amps = genset_running? ? 8 : Devices::GoE::MAX_AMPS # avoid GCB tripping when genset is running by capping at 8A
     target = target.clamp(0, max_amps)
@@ -465,7 +470,7 @@ class EnergyManagement
         @devices.goe.allow = true
         @devices.goe.ampere = target
       elsif (current_setting = @devices.goe.ampere) != target
-        puts "go-e: adjusting amperage #{current_setting}A -> #{target}A (L1: #{l1_current.round(1)}A, other: #{other_load.round(1)}A)"
+        puts "go-e: adjusting amperage #{current_setting}A -> #{target}A (L1: #{l1_current.round(1)}A, other: #{other_load.round(1)}A, demand: #{demand_amps}A)"
         @devices.goe.ampere = target
       end
     end
