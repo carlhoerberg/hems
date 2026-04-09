@@ -10,6 +10,7 @@ class Devices
     # Input Registers (read-only)
     REG_CAR_STATE    = 100  # u16: 1=ready/no car, 2=charging, 3=waiting, 4=finished
     REG_PP_CABLE     = 101  # u16: cable ampere coding (13-32, 0=no cable)
+    REG_ERROR        = 107  # u16: error code (1=RCCB, 3=PHASE, 8=NO_GROUND, 10=INTERNAL)
     REG_VOLT_L1      = 108  # u32: voltage L1 in volts
     REG_VOLT_L2      = 110  # u32: voltage L2 in volts
     REG_VOLT_L3      = 112  # u32: voltage L3 in volts
@@ -38,6 +39,11 @@ class Devices
 
     def close
       @modbus.close
+    end
+
+    # Error code (0=ok, 1=RCCB, 3=PHASE, 8=NO_GROUND, 10=INTERNAL)
+    def error
+      @modbus.read_input_register(REG_ERROR)
     end
 
     # Car state: 1=ready/no car, 2=charging, 3=waiting, 4=finished
@@ -118,6 +124,7 @@ class Devices
       {
         car_state: inp[0],
         cable_amps: inp[1],
+        error: inp[7],
         volt_l1: [inp[8], inp[9]].to_u32,
         volt_l2: [inp[10], inp[11]].to_u32,
         volt_l3: [inp[12], inp[13]].to_u32,
