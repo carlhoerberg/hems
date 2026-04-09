@@ -95,7 +95,7 @@ genset_status{name="<%=name%>",reason="<%=flag%>"} 1
 genset_status{name="<%=name%>",reason="<%=alarm_name%>: <%=condition%>"} 1
 <%end%>
 <%dpf_regen_status = measurements[:dpf_regen_status]%>
-<%if dpf_regen_status && dpf_regen_status != 0%>
+<%if dpf_regen_status && dpf_regen_status != 0 && !(dpf_regen_status.respond_to?(:nan?) && dpf_regen_status.nan?)%>
 <%dpf_regen_label = {1 => "active", 2 => "undefined"}[dpf_regen_status] || dpf_regen_status.to_s%>
 genset_status{name="<%=name%>",reason="DPF regen: <%=dpf_regen_label%>"} 1
 <%end%>
