@@ -39,11 +39,11 @@ class SmhiSolarForecast
     result = {}
     data["timeSeries"].each do |entry|
       valid_time = Time.parse(entry["time"])
-      next if valid_time <= now
+      next if valid_time + 3600 <= now
       break if valid_time > cutoff
 
       wh = compute_watt_hours(valid_time, entry["data"])
-      result[valid_time.iso8601] = wh.round
+      result[(valid_time + 3600).iso8601] = wh.round
     end
 
     result
@@ -70,8 +70,8 @@ class SmhiSolarForecast
     wind_ms   = params["wind_speed"]                      || 1.0
     vis_km    = params["visibility_in_air"]               || 50.0
 
-    # Solar geometry at midpoint of the hour (SMHI validTime is period end)
-    mid_time = valid_time - 1800
+    # Solar geometry at midpoint of the hour (SMHI validTime is period start)
+    mid_time = valid_time + 1800
     sin_elev, cos_aoi = solar_geometry(mid_time)
 
     return 0 if sin_elev <= 0.0
