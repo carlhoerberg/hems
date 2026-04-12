@@ -603,7 +603,7 @@ class EnergyManagement
 
     worst_deficit_soc = (-worst_deficit_kwh / BATTERY_CAPACITY_KWH) * 100
     target_soc = (DEFAULT_GENSET_ACTIVATION_SOC + worst_deficit_soc).ceil
-    target_soc = target_soc.clamp(50, DEFAULT_GENSET_DEACTIVATION_SOC)
+    target_soc = target_soc.clamp(30, DEFAULT_GENSET_DEACTIVATION_SOC)
 
     @solar_deactivation_detail = "load=#{load_kw.round(1)}kW worst_deficit=#{(-worst_deficit_kwh).round(1)}kWh"
 
