@@ -23,7 +23,7 @@
         <% fallback = EnergyManagement::HOURLY_LOAD_FALLBACK_KW[h] %>
         <tr>
           <td><%= "%02d:00" % h %></td>
-          <td><%= ema ? ema.round(2) : "—" %></td>
+          <td><%= ema ? ema.round(2) : "&mdash;" %></td>
           <td style="color: <%= ema ? "gray" : "black" %>"><%= fallback %></td>
         </tr>
       <% end %>
