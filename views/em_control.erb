@@ -15,5 +15,18 @@
       <button name="action" value="set_genset_gencomm" <%= "disabled" if em.active_genset == :gencomm %>>Gencomm (50A)</button>
       <button name="action" value="set_genset_sdmo" <%= "disabled" if em.active_genset == :sdmo %>>SDMO (10A)</button>
     </form>
+    <h2>Hourly load profile</h2>
+    <table>
+      <tr><th>Hour</th><th>EMA (kWh/h)</th><th>Fallback (kWh/h)</th></tr>
+      <% 24.times do |h| %>
+        <% ema = em.hourly_load_kwh[h] %>
+        <% fallback = EnergyManagement::HOURLY_LOAD_FALLBACK_KW[h] %>
+        <tr>
+          <td><%= "%02d:00" % h %></td>
+          <td><%= ema ? ema.round(2) : "—" %></td>
+          <td style="color: <%= ema ? "gray" : "black" %>"><%= fallback %></td>
+        </tr>
+      <% end %>
+    </table>
   </body>
 </html>

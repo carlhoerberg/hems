@@ -649,6 +649,10 @@ class EnergyManagement
     @hourly_load_kwh[hour] || HOURLY_LOAD_FALLBACK_KW[hour]
   end
 
+  def hourly_load_kwh
+    @hourly_load_kwh
+  end
+
   # Reads the all-time consumed energy counter from Next3 once per hour and
   # updates a per-hour-of-day EMA so solar_aware_deactivation_soc can use
   # realistic load estimates instead of the instantaneous current snapshot.
