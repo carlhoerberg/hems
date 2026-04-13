@@ -332,6 +332,10 @@ class Devices
         @unit.read_holding_registers(3936 + 300 * phase, 4).to_f64
       end
 
+      def total_consumed_energy
+        @unit.read_holding_registers(3924, 4).to_f64
+      end
+
       def warnings(phase)
         raise ArgumentError.new("Phase 1, 2 or 3") unless [1,2,3].include? phase
         @unit.read_holding_registers(3002 + (phase - 1) * 300, 2).to_u32

@@ -25,6 +25,14 @@ class EnergyManagement
 
   BATTERY_CAPACITY_KWH = 31.8 * 2
 
+  # Fallback hourly load profile (kW) derived from observed data (Apr 9-12)
+  HOURLY_LOAD_FALLBACK_KW = [
+    5.1, 4.2, 3.6, 3.7, 3.8, 3.4,   # 00-05
+    3.6, 6.6, 6.5, 6.4, 8.1, 7.8,   # 06-11
+    7.3, 7.8, 10.1, 11.1, 11.2, 10.0, # 12-17
+    7.0, 7.1, 7.3, 7.4, 7.3, 7.2,   # 18-23
+  ].freeze
+
   HEATER_PHASE_LIMIT = 44 # max amps per phase for heater best-fit
 
   # All heaters with per-phase amp draw
@@ -65,6 +73,10 @@ class EnergyManagement
     @last_solar_actual_update = 0
     @last_forecast_push = 0
     @active_genset = :gencomm
+    @hourly_load_kwh = Array.new(24, nil)
+    @last_total_energy_wh = nil
+    @last_hourly_kwh_at = nil
+    @last_hourly_load_update = 0
     load_state
   end
 
@@ -79,6 +91,7 @@ class EnergyManagement
           manage_heaters
           manage_goe_amperage
           push_solar_forecast
+          update_hourly_load_profile
           genset_threshold_management
           save_state
         end
@@ -521,6 +534,8 @@ class EnergyManagement
       state = {
         shelly_demands: @shelly_demands,
         active_genset: @active_genset,
+        hourly_load_kwh: @hourly_load_kwh,
+        last_total_energy_wh: @last_total_energy_wh,
       }
       File.write(STATE_FILE, JSON.pretty_generate(state))
     end
@@ -535,6 +550,9 @@ class EnergyManagement
     @shelly_demands = (state[:shelly_demands] || {}).transform_keys(&:to_s)
     saved_genset = state[:active_genset]&.to_sym
     @active_genset = saved_genset if saved_genset && GENSET_CURRENT_LIMITS.key?(saved_genset)
+    saved_profile = state[:hourly_load_kwh]
+    @hourly_load_kwh = saved_profile if saved_profile&.size == 24
+    @last_total_energy_wh = state[:last_total_energy_wh]
     puts "Loaded state from #{STATE_FILE}"
   rescue => e
     puts "[ERROR] Failed to load state: #{e.message}"
@@ -576,14 +594,14 @@ class EnergyManagement
   end
 
   # Calculate genset deactivation SoC so that battery stays above activation threshold
-  # at every hour through the end of the solar day, accounting for both solar production and load.
+  # at every point through the next two days, accounting for solar production and load.
+  # Looks ahead through tomorrow so nighttime runs charge enough to survive until next-day solar.
   def solar_aware_deactivation_soc(current_soc)
     forecast = @solar_forecast.estimate_watt_hours
     return DEFAULT_GENSET_DEACTIVATION_SOC unless forecast&.any?
 
     now = Time.now
-    today = now.to_date
-    load_kw = average_load_kw
+    tomorrow = now.to_date + 1
     prev_time = now
     cumulative_kwh = 0.0
     worst_deficit_kwh = 0.0
@@ -591,9 +609,11 @@ class EnergyManagement
     forecast.each do |time_str, wh|
       period_time = Time.parse(time_str)
       next if period_time < now
-      break if period_time.to_date != today
+      break if period_time.to_date > tomorrow
 
       hours = (period_time - prev_time) / 3600.0
+      mid_hour = (prev_time + (period_time - prev_time) / 2).hour
+      load_kw = expected_load_kw(mid_hour)
       cumulative_kwh += wh / 1000.0 - (hours * load_kw)
       worst_deficit_kwh = cumulative_kwh if cumulative_kwh < worst_deficit_kwh
       prev_time = period_time
@@ -601,11 +621,16 @@ class EnergyManagement
 
     return DEFAULT_GENSET_DEACTIVATION_SOC if prev_time == now
 
-    worst_deficit_soc = (-worst_deficit_kwh / BATTERY_CAPACITY_KWH) * 100
+    # Account for energy already in the battery above the activation threshold.
+    # Only the gap beyond that buffer needs to come from the genset.
+    current_buffer_kwh = ((current_soc - DEFAULT_GENSET_ACTIVATION_SOC) / 100.0) * BATTERY_CAPACITY_KWH
+    net_deficit = worst_deficit_kwh + current_buffer_kwh
+    worst_deficit_soc = net_deficit < 0 ? (-net_deficit / BATTERY_CAPACITY_KWH) * 100 : 0
+
     target_soc = (DEFAULT_GENSET_ACTIVATION_SOC + worst_deficit_soc).ceil
     target_soc = target_soc.clamp(30, DEFAULT_GENSET_DEACTIVATION_SOC)
 
-    @solar_deactivation_detail = "load=#{load_kw.round(1)}kW worst_deficit=#{(-worst_deficit_kwh).round(1)}kWh"
+    @solar_deactivation_detail = "soc=#{current_soc}% load=#{expected_load_kw(now.hour).round(1)}kW worst_deficit=#{(-worst_deficit_kwh).round(1)}kWh"
 
     target_soc
   rescue => e
@@ -620,6 +645,36 @@ class EnergyManagement
     total_amps * 230 / 1000.0
   end
 
+  def expected_load_kw(hour)
+    @hourly_load_kwh[hour] || HOURLY_LOAD_FALLBACK_KW[hour]
+  end
+
+  # Reads the all-time consumed energy counter from Next3 once per hour and
+  # updates a per-hour-of-day EMA so solar_aware_deactivation_soc can use
+  # realistic load estimates instead of the instantaneous current snapshot.
+  def update_hourly_load_profile
+    return if Time.monotonic - @last_hourly_load_update < 3600
+
+    current_wh = @devices.next3.acload.total_consumed_energy
+    now = Time.now
+
+    if @last_total_energy_wh && @last_hourly_kwh_at
+      elapsed_h = (now - @last_hourly_kwh_at) / 3600.0
+      if elapsed_h.between?(0.5, 2.0)
+        kwh_per_hour = ((current_wh - @last_total_energy_wh) / 1000.0) / elapsed_h
+        hour = @last_hourly_kwh_at.hour
+        prev = @hourly_load_kwh[hour]
+        @hourly_load_kwh[hour] = prev ? prev * 0.85 + kwh_per_hour * 0.15 : kwh_per_hour
+        puts "Updated load profile hour #{hour}: #{kwh_per_hour.round(2)} kWh/h (EMA: #{@hourly_load_kwh[hour].round(2)})"
+      end
+    end
+
+    @last_total_energy_wh = current_wh
+    @last_hourly_kwh_at = now
+    @last_hourly_load_update = Time.monotonic
+  rescue => e
+    puts "[WARN] Failed to update hourly load profile: #{e.message}"
+  end
 
   def push_solar_forecast
     return if Time.monotonic - @last_forecast_push < 3600
