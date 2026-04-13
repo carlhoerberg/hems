@@ -655,7 +655,7 @@ class EnergyManagement
   def update_hourly_load_profile
     return if Time.monotonic - @last_hourly_load_update < 3600
 
-    current_wh = @devices.next3.acload.total_consumed_energy
+    current_wh = @devices.next3.acload.total_consumed_energy_all_phases
     now = Time.now
 
     if @last_total_energy_wh && @last_hourly_kwh_at

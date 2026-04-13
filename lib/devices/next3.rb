@@ -332,7 +332,7 @@ class Devices
         @unit.read_holding_registers(3936 + 300 * phase, 4).to_f64
       end
 
-      def total_consumed_energy
+      def total_consumed_energy_all_phases
         @unit.read_holding_registers(3924, 4).to_f64
       end
 
