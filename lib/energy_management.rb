@@ -88,7 +88,7 @@ class EnergyManagement
           update_phase_current_history
           poll_shelly_demand_inputs
           manage_shelly_demands
-          manage_heaters
+          #manage_heaters
           manage_goe_amperage
           push_solar_forecast
           update_hourly_load_profile
