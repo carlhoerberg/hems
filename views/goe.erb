@@ -23,5 +23,10 @@ goe_allow <%=m[:allow]%>
 goe_ampere <%=m[:ampere]%>
 # TYPE goe_ampere_max gauge
 goe_ampere_max <%=m[:ampere_max]%>
+# TYPE goe_cable_unlock_status gauge
+goe_cable_unlock_status <%=m[:cable_unlock_status]%>
+# TYPE goe_temperature gauge
+goe_temperature{sensor="cable"} <%=m[:temp_cable]%>
+goe_temperature{sensor="psu"} <%=m[:temp_psu]%>
 # TYPE metrics_gather_time gauge
 metrics_gather_time{device="goe"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>

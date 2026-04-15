@@ -1,54 +1,29 @@
-require_relative "../modbus/tcp"
+require 'net/http'
+require 'json'
 
 class Devices
-  # go-e Charger Modbus TCP integration (API v1)
-  # Port 502, unit ID 1
-  # Uses AMPERE_VOLATILE (register 299) for energy management control
+  # go-e Charger HTTP API v2 integration
+  # Port 80, HTTP GET /api/status and /api/set
   class GoE
-    using Modbus::TypeExtensions
-
-    # Input Registers (read-only)
-    REG_CAR_STATE    = 100  # u16: 1=ready/no car, 2=charging, 3=waiting, 4=finished
-    REG_PP_CABLE     = 101  # u16: cable ampere coding (13-32, 0=no cable)
-    REG_ERROR        = 107  # u16: error code (1=RCCB, 3=PHASE, 8=NO_GROUND, 10=INTERNAL)
-    REG_VOLT_L1      = 108  # u32: voltage L1 in volts
-    REG_VOLT_L2      = 110  # u32: voltage L2 in volts
-    REG_VOLT_L3      = 112  # u32: voltage L3 in volts
-    REG_VOLT_N       = 144  # u32: voltage N in volts
-    REG_AMP_L1       = 114  # u32: current L1 in 0.1A
-    REG_AMP_L2       = 116  # u32: current L2 in 0.1A
-    REG_AMP_L3       = 118  # u32: current L3 in 0.1A
-    REG_POWER_TOTAL  = 120  # u32: total power in 0.01kW
-    REG_ENERGY_TOTAL = 128  # u32: total energy in 0.1kWh
-    REG_POWER_L1     = 146  # u32: power L1 in 0.1kW
-    REG_POWER_L2     = 148  # u32: power L2 in 0.1kW
-    REG_POWER_L3     = 150  # u32: power L3 in 0.1kW
-    REG_PHASES       = 205  # u16: phase flags
-
-    # Holding Registers (read/write)
-    REG_ALLOW          = 200  # u16: allow charging (0/1)
-    REG_AMPERE_MAX     = 211  # u16: absolute max amps
-    REG_AMPERE_VOLATILE = 299 # u16: current amps (volatile, 6-16A, for energy control)
-
     MIN_AMPS = 6
     MAX_AMPS = 16
 
-    def initialize(host, port = 502)
-      @modbus = Modbus::TCP.new(host, port).unit(1)
+    def initialize(host, port = 80)
+      @host = host
+      @port = port
     end
 
     def close
-      @modbus.close
     end
 
-    # Error code (0=ok, 1=RCCB, 3=PHASE, 8=NO_GROUND, 10=INTERNAL)
+    # Error code (0=None, 1=FiAc, 2=FiDc, 3=Phase, 4=Overvolt, 5=Overamp, ...)
     def error
-      @modbus.read_input_register(REG_ERROR)
+      get_status(%w[err])['err']
     end
 
-    # Car state: 1=ready/no car, 2=charging, 3=waiting, 4=finished
+    # Car state: 0=Unknown/Error, 1=Idle, 2=Charging, 3=WaitCar, 4=Complete, 5=Error
     def car_state
-      @modbus.read_input_register(REG_CAR_STATE)
+      get_status(%w[car])['car']
     end
 
     def charging?
@@ -59,85 +34,99 @@ class Devices
       car_state >= 2
     end
 
-    # Cable ampere limit (13-32A, 0=no cable)
+    # Cable current limit in A (nil if no cable)
     def cable_amps
-      @modbus.read_input_register(REG_PP_CABLE)
+      get_status(%w[cbl])['cbl']
     end
 
     # Current on L1 in amps
     def amp_l1
-      @modbus.read_input_registers(REG_AMP_L1, 2).to_u32 / 10.0
+      get_status(%w[nrg])['nrg'][4]
     end
 
     # Current on L2 in amps
     def amp_l2
-      @modbus.read_input_registers(REG_AMP_L2, 2).to_u32 / 10.0
+      get_status(%w[nrg])['nrg'][5]
     end
 
     # Current on L3 in amps
     def amp_l3
-      @modbus.read_input_registers(REG_AMP_L3, 2).to_u32 / 10.0
+      get_status(%w[nrg])['nrg'][6]
     end
 
     # Total power in kW
     def power_total
-      @modbus.read_input_registers(REG_POWER_TOTAL, 2).to_i32 / 100.0
+      get_status(%w[nrg])['nrg'][11] / 1000.0
     end
 
     # Total energy charged in kWh
     def energy_total
-      @modbus.read_input_registers(REG_ENERGY_TOTAL, 2).to_u32 / 10.0
+      get_status(%w[eto])['eto'] / 1000.0
     end
 
-    # Allow/disallow charging
+    # Whether the car is allowed to charge right now
     def allow?
-      @modbus.read_holding_register(REG_ALLOW) == 1
+      get_status(%w[alw])['alw']
     end
 
+    # allow=true: Neutral (resume normal logic), allow=false: Force off
     def allow=(value)
-      @modbus.write_holding_register(REG_ALLOW, value ? 1 : 0)
+      set_value('frc', value ? 0 : 1)
     end
 
-    # Current ampere setting (volatile, for energy control)
+    # Current ampere setting in A
     def ampere
-      @modbus.read_holding_register(REG_AMPERE_VOLATILE)
+      get_status(%w[amp])['amp']
     end
 
-    # Set charging current (6-16A, volatile)
+    # Set charging current (6-16A)
     def ampere=(value)
-      value = value.to_i.clamp(MIN_AMPS, MAX_AMPS)
-      @modbus.write_holding_register(REG_AMPERE_VOLATILE, value)
+      set_value('amp', value.to_i.clamp(MIN_AMPS, MAX_AMPS))
     end
 
     # Absolute max amps configured on the device
     def ampere_max
-      @modbus.read_holding_register(REG_AMPERE_MAX)
+      get_status(%w[ama])['ama']
     end
 
     def measurements
-      # Registers 100-145: car_state, cable, volts, amps, power, energy_total, volt_n (46 regs, 1 request)
-      inp = @modbus.read_input_registers(REG_CAR_STATE, 46)
-      # Registers 200-211: allow through ampere_max (12 regs, 1 request)
-      hold = @modbus.read_holding_registers(REG_ALLOW, 12)
-      # Register 299: volatile ampere setting (1 request)
-      amp_setting = @modbus.read_holding_register(REG_AMPERE_VOLATILE)
+      data = get_status(%w[car cbl err nrg eto alw amp ama cus tma])
+      nrg = data['nrg']
       {
-        car_state: inp[0],
-        cable_amps: inp[1],
-        error: inp[7],
-        volt_l1: [inp[8], inp[9]].to_u32,
-        volt_l2: [inp[10], inp[11]].to_u32,
-        volt_l3: [inp[12], inp[13]].to_u32,
-        volt_n: [inp[44], inp[45]].to_u32,
-        amp_l1: [inp[14], inp[15]].to_u32 / 10.0,
-        amp_l2: [inp[16], inp[17]].to_u32 / 10.0,
-        amp_l3: [inp[18], inp[19]].to_u32 / 10.0,
-        power_total: [inp[20], inp[21]].to_i32 / 100.0,
-        energy_total: [inp[28], inp[29]].to_u32 / 10.0,
-        allow: hold[0],
-        ampere_max: hold[11],
-        ampere: amp_setting,
+        car_state: data['car'],
+        cable_amps: data['cbl'],
+        error: data['err'],
+        volt_l1: nrg[0],
+        volt_l2: nrg[1],
+        volt_l3: nrg[2],
+        volt_n: nrg[3],
+        amp_l1: nrg[4],
+        amp_l2: nrg[5],
+        amp_l3: nrg[6],
+        power_total: nrg[11] / 1000.0,
+        energy_total: data['eto'] / 1000.0,
+        allow: data['alw'] ? 1 : 0,
+        ampere_max: data['ama'],
+        ampere: data['amp'],
+        cable_unlock_status: data['cus'],
+        temp_cable: data['tma'][0],
+        temp_psu: data['tma'][1],
       }.freeze
+    end
+
+    private
+
+    def get_status(keys)
+      uri = URI("http://#{@host}:#{@port}/api/status")
+      uri.query = "filter=#{keys.join(',')}"
+      response = Net::HTTP.get_response(uri)
+      JSON.parse(response.body)
+    end
+
+    def set_value(key, value)
+      uri = URI("http://#{@host}:#{@port}/api/set")
+      uri.query = "#{key}=#{value}"
+      Net::HTTP.get_response(uri)
     end
   end
 end
