@@ -41,7 +41,7 @@ class HTTPServer
         when "/metrics/unifi"
           @@unifi.result_with_hash({ t:, unifi_health: @devices.unifi.health })
         when "/metrics/topas"
-          @@topas.result_with_hash({ t:, measurements: @devices.topas.measurements, status: @devices.topas.status })
+          @@topas.result_with_hash({ t:, measurements: @devices.topas.measurements, status: @devices.topas.status, configuration: @devices.topas.configuration })
         when "/metrics/weco"
           packs = @devices.weco.transform_values { |w| { modules: w.modules, total: w.total } }
           @@weco.result_with_hash({ t:, packs: })

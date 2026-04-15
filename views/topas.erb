@@ -37,5 +37,16 @@ topas_emergency <%=measurements[:emergency]%>
 # TYPE topas_temperature gauge
 topas_temperature <%=status[:temperature]%>
 
+# TYPE topas_sedimentation gauge
+topas_sedimentation <%=configuration[:sedimentation]%>
+# TYPE topas_excess_sludge_layer gauge
+topas_excess_sludge_layer <%=configuration[:excess_sludge_layer]%>
+# TYPE topas_registration_interval gauge
+topas_registration_interval <%=configuration[:registration_interval]%>
+# TYPE topas_pollution_coefficient gauge
+topas_pollution_coefficient <%=configuration[:pollution_coefficient]%>
+# TYPE topas_phosphorus_pump_performance gauge
+topas_phosphorus_pump_performance <%=configuration[:phosphorus_pump_performance]%>
+
 # TYPE metrics_gather_time gauge
 metrics_gather_time{device="topas"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>
