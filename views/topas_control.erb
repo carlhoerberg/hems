@@ -27,6 +27,10 @@
     </table>
     <h2>Measurments</h2>
     <table>
+      <tr>
+        <td>reactor_volume</td>
+        <td><%= (configuration[:reactor_size] * measurements[:reactor_level] / 10.0).round(1) %> L</td>
+      </tr>
       <%measurements.each do |key, value|%>
         <tr>
           <td><%=key%></td>
