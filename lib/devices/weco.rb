@@ -5,7 +5,7 @@ class Devices
     def initialize(device)
       @device = device
       @lock = Mutex.new
-      @key = 0x0000 # 0x85F9 # rand(0xFFFF)
+      @key = 0x85F9 # rand(0xFFFF)
       set_key
     rescue => e
       warn "Weco BMS not available: #{e.message}"
