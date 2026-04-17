@@ -11,7 +11,6 @@ Main application at: [lib/energy_management.rb](lib/energy_management.rb)
 * [Atlas Copco generator](lib/devices/gencomm.rb) — Deep Sea Electronics genset controller, Modbus TCP
 * [SDMO Generator](lib/devices/sdmo.rb) — generator with Nexys controller, Modbus RTU
 * [Shelly](lib/devices/shelly.rb) — smart switches/relays, HTTP/JSON
-* [Relays](lib/devices/relays.rb) — relay controller, Modbus TCP
 * [go-e Charger](lib/devices/goe.rb) — EV charging station, Modbus TCP
 * [ETA wood pellets boiler](lib/devices/eta.rb) — wood pellets boiler, HTTP/XML
 * [Weco battery BMS](lib/devices/weco.rb) — battery management system, UART/Serial

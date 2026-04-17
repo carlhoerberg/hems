@@ -40,8 +40,8 @@ class EnergyManagement
   HEATERS = [
     # { id: :shelly_2kw_p2, host: "192.168.0.190", phase_amps: { 1 => 4 } },
     # { id: :shelly_2kw_p3, host: "192.168.0.137", phase_amps: { 3 => 9 } },
-    { id: :heater_6kw, phase_amps: { 1 => 9, 2 => 9, 3 => 9 } },
-    { id: :heater_9kw, phase_amps: { 1 => 13, 2 => 13, 3 => 13 } },
+    { id: :heater_6kw, host: "192.168.0.224", channel: 1, phase_amps: { 1 => 9, 2 => 9, 3 => 9 } },
+    { id: :heater_9kw, host: "192.168.0.224", channel: 0, phase_amps: { 1 => 13, 2 => 13, 3 => 13 } },
   ].freeze
 
   GENSET_CURRENT_LIMITS = { gencomm: 50, sdmo: 10 }.freeze
@@ -412,11 +412,7 @@ class EnergyManagement
   end
 
   def heater_on?(heater)
-    if heater[:host]
-      heater_shelly_on?(heater[:host])
-    else
-      @devices.relays.send(:"#{heater[:id]}?")
-    end
+    heater_shelly_on?(heater[:host], heater[:channel])
   end
 
   # Check if turning on this heater would keep all its phases under HEATER_PHASE_LIMIT
@@ -427,22 +423,14 @@ class EnergyManagement
 
   def turn_on_heater(heater)
     puts "Turning on #{heater[:id]} heater"
-    if heater[:host]
-      turn_on_shelly(heater[:host])
-    else
-      @devices.relays.send(:"#{heater[:id]}=", true)
-    end
+    turn_on_shelly(heater[:host], heater[:channel])
   end
 
   def turn_off_heater(heater, reason = nil)
     msg = "Turning off #{heater[:id]} heater"
     msg += " (#{reason})" if reason
     puts msg
-    if heater[:host]
-      turn_off_shelly(heater[:host])
-    else
-      @devices.relays.send(:"#{heater[:id]}=", false)
-    end
+    turn_off_shelly(heater[:host], heater[:channel])
   end
 
   # Turn off one heater in reverse order (9kW first, then 6kW, then 2kW shellys)
@@ -494,8 +482,8 @@ class EnergyManagement
     puts "[ERROR] manage_goe_amperage: #{e.message}"
   end
 
-  def heater_shelly_on?(host)
-    response = shelly_rpc(host, "Switch.GetStatus", { id: 0 })
+  def heater_shelly_on?(host, channel = 0)
+    response = shelly_rpc(host, "Switch.GetStatus", { id: channel })
     @heater_shelly_errors&.delete(host)
     JSON.parse(response.body)["output"]
   rescue => e
@@ -515,16 +503,16 @@ class EnergyManagement
     nil
   end
 
-  def turn_on_shelly(host)
-    puts "Turning on Shelly #{host}"
-    shelly_rpc(host, "Switch.Set", { id: 0, on: true })
+  def turn_on_shelly(host, channel = 0)
+    puts "Turning on Shelly #{host} channel #{channel}"
+    shelly_rpc(host, "Switch.Set", { id: channel, on: true })
   rescue => e
     puts "[ERROR] Failed to turn on Shelly #{host}: #{e.message}"
   end
 
-  def turn_off_shelly(host)
-    puts "Turning off Shelly #{host}"
-    shelly_rpc(host, "Switch.Set", { id: 0, on: false })
+  def turn_off_shelly(host, channel = 0)
+    puts "Turning off Shelly #{host} channel #{channel}"
+    shelly_rpc(host, "Switch.Set", { id: channel, on: false })
   rescue => e
     puts "[ERROR] Failed to turn off Shelly #{host}: #{e.message}"
   end

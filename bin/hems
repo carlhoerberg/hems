@@ -4,7 +4,6 @@ require_relative "../lib/devices"
 require_relative "../lib/energy_management"
 require_relative "../lib/http_server"
 require_relative "../lib/http_server/metrics"
-require_relative "../lib/http_server/relays"
 require_relative "../lib/http_server/sdmo"
 require_relative "../lib/http_server/button"
 require_relative "../lib/http_server/topas"
@@ -24,7 +23,6 @@ devices = Devices.new
 em = EnergyManagement.new(devices)
 srv = HTTPServer.new({
   "/metrics" => HTTPServer::Metrics.new(devices),
-  "/relays" => HTTPServer::RelaysControl.new(devices.relays),
   "/sdmo" => HTTPServer::SDMOControl.new(devices.sdmo),
   "/button1" => HTTPServer::ButtonControl.new(devices),
   "/topas" => HTTPServer::TopasControl.new(devices.topas),

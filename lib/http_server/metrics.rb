@@ -14,7 +14,6 @@ class HTTPServer
     @@unifi = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "unifi.erb")))
     @@topas = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "topas.erb")))
     @@weco = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "weco.erb")))
-    @@relays = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "relays.erb")))
     @@ecowitt = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "ecowitt.erb")))
     @@envistar = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "envistar.erb")))
     @@casa = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "casa.erb")))
@@ -45,8 +44,6 @@ class HTTPServer
         when "/metrics/weco"
           packs = @devices.weco.transform_values { |w| { modules: w.modules, total: w.total } }
           @@weco.result_with_hash({ t:, packs: })
-        when "/metrics/relays"
-          @@relays.result_with_hash({ t:, status: @devices.relays.status })
         when "/metrics/ecowitt"
           @@ecowitt.result_with_hash({ t:, measurements: @devices.ecowitt.measurements })
         when "/metrics/envistar"

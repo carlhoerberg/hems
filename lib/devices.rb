@@ -3,7 +3,6 @@ require_relative "./devices/sdmo"
 require_relative "./devices/eta"
 require_relative "./devices/starlink"
 require_relative "./devices/shelly"
-require_relative "./devices/relays"
 require_relative "./devices/unifi"
 require_relative "./devices/topas"
 require_relative "./devices/weco"
@@ -17,7 +16,7 @@ require_relative "./devices/victron"
 require_relative "./devices/goe"
 
 class Devices
-  attr_reader :next3, :sdmo, :eta, :starlink, :shelly, :relays, :unifi, :topas, :weco, :ecowitt, :envistar, :casa, :grundfos, :lk, :gencomm, :victron, :goe
+  attr_reader :next3, :sdmo, :eta, :starlink, :shelly, :unifi, :topas, :weco, :ecowitt, :envistar, :casa, :grundfos, :lk, :gencomm, :victron, :goe
 
   def initialize
     @next3 = Next3.new("192.168.0.201")
@@ -25,7 +24,6 @@ class Devices
     @eta = ETA.new
     @starlink = Starlink.new
     @shelly = Shelly.new
-    @relays = Relays.new
     @unifi = Unifi.new
     @topas = Topas.new
     @weco = {
