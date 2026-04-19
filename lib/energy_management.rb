@@ -33,8 +33,6 @@ class EnergyManagement
     7.0, 7.1, 7.3, 7.4, 7.3, 7.2,   # 18-23
   ].freeze
 
-  HEATER_PHASE_LIMIT = 44 # max amps per phase for heater best-fit
-
   # All heaters with per-phase amp draw
   # phase_amps: { phase_number => amps_on_that_phase }
   HEATERS = [
@@ -400,7 +398,7 @@ class EnergyManagement
     return if @phase_current_history.empty?
     currents = @phase_current_history.last
 
-    # Turn on heaters in order if they fit under HEATER_PHASE_LIMIT (one per iteration)
+    # Turn on heaters in order if they fit (one per iteration)
     HEATERS.each do |heater|
       state = heater_on?(heater)
       next if state || state.nil? # skip if on or unreachable
@@ -415,7 +413,7 @@ class EnergyManagement
     heater_shelly_on?(heater[:host], heater[:channel])
   end
 
-  # Check if turning on this heater would keep all its phases under HEATER_PHASE_LIMIT
+  # Check if turning on this heater would keep all its phases under phase limit
   def heater_fits?(heater, currents)
     limit = per_phase_capacity
     heater[:phase_amps].all? { |phase, amps| currents[phase - 1] + amps < limit }
