@@ -36,7 +36,7 @@ class EnergyManagement
   # All heaters with per-phase amp draw
   # phase_amps: { phase_number => amps_on_that_phase }
   HEATERS = [
-    # { id: :shelly_2kw_p2, host: "192.168.0.190", phase_amps: { 1 => 4 } },
+    { id: :shelly_2kw_p2, host: "192.168.0.190", phase_amps: { 1 => 4 } },
     # { id: :shelly_2kw_p3, host: "192.168.0.137", phase_amps: { 3 => 9 } },
     { id: :heater_6kw, host: "192.168.0.224", channel: 1, phase_amps: { 1 => 9, 2 => 9, 3 => 9 } },
     { id: :heater_9kw, host: "192.168.0.224", channel: 0, phase_amps: { 1 => 13, 2 => 13, 3 => 13 } },
