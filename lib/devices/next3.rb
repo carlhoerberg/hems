@@ -37,6 +37,11 @@ class Devices
       def errors
         @unit.read_holding_registers(8120, 2).to_u32
       end
+
+      # Aggregate charging power across all batteries, positive when charging.
+      def battery_charging_power
+        @unit.read_holding_registers(8400, 2).to_f32
+      end
     end
 
     class Battery

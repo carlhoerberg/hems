@@ -36,11 +36,14 @@ class EnergyManagement
   # All heaters with per-phase amp draw
   # phase_amps: { phase_number => amps_on_that_phase }
   HEATERS = [
-    { id: :shelly_2kw_p2, host: "192.168.0.190", phase_amps: { 1 => 4 } },
     # { id: :shelly_2kw_p3, host: "192.168.0.137", phase_amps: { 3 => 9 } },
     { id: :heater_6kw, host: "192.168.0.224", channel: 1, phase_amps: { 1 => 9, 2 => 9, 3 => 9 } },
     { id: :heater_9kw, host: "192.168.0.224", channel: 0, phase_amps: { 1 => 13, 2 => 13, 3 => 13 } },
   ].freeze
+
+  SPORTSTUGAN_HEATER_HOST = "192.168.0.190"
+  SPORTSTUGAN_ACTIVATION_CHARGE_W = 1000
+  SPORTSTUGAN_DEACTIVATION_CHARGE_W = 0
 
   GENSET_CURRENT_LIMITS = { gencomm: 50, sdmo: 10 }.freeze
 
@@ -87,6 +90,7 @@ class EnergyManagement
           poll_shelly_demand_inputs
           manage_shelly_demands
           manage_heaters
+          manage_sportstugan_heater
           manage_goe_amperage
           push_solar_forecast
           update_hourly_load_profile
@@ -442,6 +446,26 @@ class EnergyManagement
     false
   end
 
+  def total_battery_charging_power
+    @devices.next3.system_total.battery_charging_power
+  end
+
+  def manage_sportstugan_heater
+    power = total_battery_charging_power
+    currently_on = heater_shelly_on?(SPORTSTUGAN_HEATER_HOST)
+    return if currently_on.nil?
+
+    if !currently_on && power > SPORTSTUGAN_ACTIVATION_CHARGE_W
+      puts "Battery charging at #{power.round}W > #{SPORTSTUGAN_ACTIVATION_CHARGE_W}W, enabling sportstugan heater"
+      turn_on_shelly(SPORTSTUGAN_HEATER_HOST)
+    elsif currently_on && power < SPORTSTUGAN_DEACTIVATION_CHARGE_W
+      puts "Battery discharging at #{power.round}W, disabling sportstugan heater"
+      turn_off_shelly(SPORTSTUGAN_HEATER_HOST)
+    end
+  rescue => e
+    puts "[ERROR] manage_sportstugan_heater: #{e.message}"
+  end
+
   # Adapt go-e charger amperage so that L1 on the inverter never exceeds INVERTER_CURRENT_LIMIT.
   # Calculates the non-charger load on L1, then sets the charger to use whatever headroom remains.
   def manage_goe_amperage
@@ -591,6 +615,7 @@ class EnergyManagement
     prev_time = now
     cumulative_kwh = 0.0
     worst_deficit_kwh = 0.0
+    best_surplus_kwh = 0.0
 
     forecast.each do |time_str, wh|
       period_time = Time.parse(time_str)
@@ -602,6 +627,7 @@ class EnergyManagement
       load_kw = expected_load_kw(mid_hour)
       cumulative_kwh += wh / 1000.0 - (hours * load_kw)
       worst_deficit_kwh = cumulative_kwh if cumulative_kwh < worst_deficit_kwh
+      best_surplus_kwh = cumulative_kwh if cumulative_kwh > best_surplus_kwh
       prev_time = period_time
     end
 
@@ -612,11 +638,16 @@ class EnergyManagement
     current_buffer_kwh = ((current_soc - DEFAULT_GENSET_ACTIVATION_SOC) / 100.0) * BATTERY_CAPACITY_KWH
     net_deficit = worst_deficit_kwh + current_buffer_kwh
     worst_deficit_soc = net_deficit < 0 ? (-net_deficit / BATTERY_CAPACITY_KWH) * 100 : 0
+    deficit_target = DEFAULT_GENSET_ACTIVATION_SOC + worst_deficit_soc
 
-    target_soc = (DEFAULT_GENSET_ACTIVATION_SOC + worst_deficit_soc).ceil
+    # Keep running until forecasted solar surplus can push the battery to 90% SoC.
+    surplus_soc = (best_surplus_kwh / BATTERY_CAPACITY_KWH) * 100
+    solar_charge_target = 90 - surplus_soc
+
+    target_soc = [deficit_target, solar_charge_target].max.ceil
     target_soc = target_soc.clamp(30, DEFAULT_GENSET_DEACTIVATION_SOC)
 
-    @solar_deactivation_detail = "soc=#{current_soc}% load=#{expected_load_kw(now.hour).round(1)}kW worst_deficit=#{(-worst_deficit_kwh).round(1)}kWh"
+    @solar_deactivation_detail = "soc=#{current_soc}% load=#{expected_load_kw(now.hour).round(1)}kW worst_deficit=#{(-worst_deficit_kwh).round(1)}kWh best_surplus=#{best_surplus_kwh.round(1)}kWh"
 
     target_soc
   rescue => e
