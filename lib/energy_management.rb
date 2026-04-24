@@ -42,7 +42,7 @@ class EnergyManagement
   ].freeze
 
   SPORTSTUGAN_HEATER_HOST = "192.168.0.190"
-  SPORTSTUGAN_ACTIVATION_CHARGE_W = 1000
+  SPORTSTUGAN_HEATER_W = 1100
   SPORTSTUGAN_DEACTIVATION_CHARGE_W = 0
 
   GENSET_CURRENT_LIMITS = { gencomm: 50, sdmo: 10 }.freeze
@@ -455,8 +455,8 @@ class EnergyManagement
     currently_on = heater_shelly_on?(SPORTSTUGAN_HEATER_HOST)
     return if currently_on.nil?
 
-    if !currently_on && power > SPORTSTUGAN_ACTIVATION_CHARGE_W
-      puts "Battery charging at #{power.round}W > #{SPORTSTUGAN_ACTIVATION_CHARGE_W}W, enabling sportstugan heater"
+    if !currently_on && power > SPORTSTUGAN_HEATER_W
+      puts "Battery charging at #{power.round}W > #{SPORTSTUGAN_HEATER_W}W, enabling sportstugan heater"
       turn_on_shelly(SPORTSTUGAN_HEATER_HOST)
     elsif currently_on && power < SPORTSTUGAN_DEACTIVATION_CHARGE_W
       puts "Battery discharging at #{power.round}W, disabling sportstugan heater"
