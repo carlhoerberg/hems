@@ -458,8 +458,8 @@ class EnergyManagement
     if !currently_on && power > SPORTSTUGAN_HEATER_W
       puts "Battery charging at #{power.round}W > #{SPORTSTUGAN_HEATER_W}W, enabling sportstugan heater"
       turn_on_shelly(SPORTSTUGAN_HEATER_HOST)
-    elsif currently_on && power < SPORTSTUGAN_DEACTIVATION_CHARGE_W
-      puts "Battery discharging at #{power.round}W, disabling sportstugan heater"
+    elsif currently_on && power < SPORTSTUGAN_DEACTIVATION_CHARGE_W && (soc = battery_soc) < SOLAR_EXCESS_HEATER_STOP_SOC
+      puts "Battery discharging at #{power.round}W and SoC #{soc}% < #{SOLAR_EXCESS_HEATER_STOP_SOC}%, disabling sportstugan heater"
       turn_off_shelly(SPORTSTUGAN_HEATER_HOST)
     end
   rescue => e
