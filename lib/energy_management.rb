@@ -392,12 +392,12 @@ class EnergyManagement
     currents = @phase_current_history.last
     solar_w = total_solar_power
     forecast_full = forecast_fills_battery?(soc)
-    soc_full_excess = soc >= SOLAR_EXCESS_HEATER_STOP_SOC && solar_excess?
+    battery_full = soc >= SOLAR_EXCESS_HEATER_STOP_SOC
 
     # Turn off the largest heater that no longer qualifies (one per iteration).
     HEATERS.reverse_each do |heater|
       next unless heater_on?(heater)
-      next if heater_allowed?(heater, soc_full_excess, forecast_full, solar_w)
+      next if heater_keep_running?(heater, battery_full, forecast_full, solar_w)
       turn_off_heater(heater, "soc=#{soc.round}% solar=#{solar_w.round}W forecast_full=#{forecast_full}")
       return
     end
@@ -406,18 +406,24 @@ class EnergyManagement
     HEATERS.each do |heater|
       state = heater_on?(heater)
       next if state || state.nil? # skip if on or unreachable
-      next unless heater_allowed?(heater, soc_full_excess, forecast_full, solar_w)
+      next unless heater_should_start?(heater, battery_full, forecast_full, solar_w)
       next unless heater_fits?(heater, currents)
       turn_on_heater(heater)
       return
     end
   end
 
-  # A heater may run when the battery is effectively full (mode A) OR when
-  # current solar production covers its draw and the forecast still expects the
-  # battery to reach 100% SoC (mode B — start absorbing solar earlier).
-  def heater_allowed?(heater, soc_full_excess, forecast_full, solar_w)
-    soc_full_excess || (forecast_full && solar_w > heater_w(heater))
+  # Mode A: battery full, dump excess into heater. Activation requires the
+  # solar arrays to actually be curtailed; keep-on only requires SoC >= stop
+  # threshold so passing clouds don't flap the heater off.
+  # Mode B: forecast still expects the battery to reach 100% AND current solar
+  # output covers the heater's draw — start absorbing solar earlier.
+  def heater_should_start?(heater, battery_full, forecast_full, solar_w)
+    (battery_full && solar_excess?) || (forecast_full && solar_w > heater_w(heater))
+  end
+
+  def heater_keep_running?(heater, battery_full, forecast_full, solar_w)
+    battery_full || (forecast_full && solar_w > heater_w(heater))
   end
 
   def heater_w(heater)
