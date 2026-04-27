@@ -42,6 +42,11 @@ class Devices
       def battery_charging_power
         @unit.read_holding_registers(8400, 2).to_f32
       end
+
+      # Aggregate solar power produced across all MPPTs, in W.
+      def solar_power
+        @unit.read_holding_registers(7505, 2).to_f32
+      end
     end
 
     class Battery

@@ -383,34 +383,49 @@ class EnergyManagement
   end
 
   def manage_heaters
-    demand = has_unmet_shelly_demand?
+    return turn_off_one_heater("voltage sag") if low_voltage?
+    return turn_off_one_heater("unmet shelly demand") if has_unmet_shelly_demand?
+    return if has_shelly_demand?
+    return if @phase_current_history.empty?
 
-    if low_voltage?
-      turn_off_one_heater("voltage sag")
-      return
-    elsif demand
-      turn_off_one_heater("unmet shelly demand")
-      return
-    elsif (soc = battery_soc) < SOLAR_EXCESS_HEATER_STOP_SOC
-      turn_off_one_heater("SoC #{soc}% below #{SOLAR_EXCESS_HEATER_STOP_SOC}%")
+    soc = battery_soc
+    currents = @phase_current_history.last
+    solar_w = total_solar_power
+    forecast_full = forecast_fills_battery?(soc)
+    soc_full_excess = soc >= SOLAR_EXCESS_HEATER_STOP_SOC && solar_excess?
+
+    # Turn off the largest heater that no longer qualifies (one per iteration).
+    HEATERS.reverse_each do |heater|
+      next unless heater_on?(heater)
+      next if heater_allowed?(heater, soc_full_excess, forecast_full, solar_w)
+      turn_off_heater(heater, "soc=#{soc.round}% solar=#{solar_w.round}W forecast_full=#{forecast_full}")
       return
     end
 
-    return unless solar_excess?
-    return if has_shelly_demand?
-
-    return if @phase_current_history.empty?
-    currents = @phase_current_history.last
-
-    # Turn on heaters in order if they fit (one per iteration)
+    # Turn on heaters in priority order if they qualify and fit.
     HEATERS.each do |heater|
       state = heater_on?(heater)
       next if state || state.nil? # skip if on or unreachable
-      if heater_fits?(heater, currents)
-        turn_on_heater(heater)
-        return
-      end
+      next unless heater_allowed?(heater, soc_full_excess, forecast_full, solar_w)
+      next unless heater_fits?(heater, currents)
+      turn_on_heater(heater)
+      return
     end
+  end
+
+  # A heater may run when the battery is effectively full (mode A) OR when
+  # current solar production covers its draw and the forecast still expects the
+  # battery to reach 100% SoC (mode B — start absorbing solar earlier).
+  def heater_allowed?(heater, soc_full_excess, forecast_full, solar_w)
+    soc_full_excess || (forecast_full && solar_w > heater_w(heater))
+  end
+
+  def heater_w(heater)
+    heater[:phase_amps].values.sum * 230
+  end
+
+  def total_solar_power
+    @devices.next3.system_total.solar_power
   end
 
   def heater_on?(heater)
@@ -653,6 +668,53 @@ class EnergyManagement
   rescue => e
     puts "[WARN] Solar forecast unavailable: #{e.message}"
     DEFAULT_GENSET_DEACTIVATION_SOC
+  end
+
+  # Will the SMHI forecast plus current SoC charge the battery to 100%?
+  # Cached for 5 minutes since SMHI is fetched on every call.
+  def forecast_fills_battery?(current_soc)
+    surplus_kwh = forecast_best_surplus_kwh
+    return false unless surplus_kwh
+    battery_kwh = (current_soc / 100.0) * BATTERY_CAPACITY_KWH
+    surplus_kwh + battery_kwh >= BATTERY_CAPACITY_KWH
+  end
+
+  def forecast_best_surplus_kwh
+    if @forecast_surplus_at && Time.monotonic - @forecast_surplus_at < 300
+      return @forecast_best_surplus_kwh
+    end
+    @forecast_surplus_at = Time.monotonic
+    @forecast_best_surplus_kwh = compute_forecast_best_surplus_kwh
+  end
+
+  def compute_forecast_best_surplus_kwh
+    forecast = @solar_forecast.estimate_watt_hours
+    return nil unless forecast&.any?
+
+    now = Time.now
+    tomorrow = now.to_date + 1
+    prev_time = now
+    cumulative_kwh = 0.0
+    best_surplus_kwh = 0.0
+
+    forecast.each do |time_str, wh|
+      period_time = Time.parse(time_str)
+      next if period_time < now
+      break if period_time.to_date > tomorrow
+
+      hours = (period_time - prev_time) / 3600.0
+      mid_hour = (prev_time + (period_time - prev_time) / 2).hour
+      load_kw = expected_load_kw(mid_hour)
+      cumulative_kwh += wh / 1000.0 - (hours * load_kw)
+      best_surplus_kwh = cumulative_kwh if cumulative_kwh > best_surplus_kwh
+      prev_time = period_time
+    end
+
+    return nil if prev_time == now
+    best_surplus_kwh
+  rescue => e
+    puts "[WARN] Forecast surplus calc failed: #{e.message}"
+    nil
   end
 
   def average_load_kw
