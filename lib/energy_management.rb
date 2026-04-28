@@ -50,7 +50,7 @@ class EnergyManagement
   INVERTER_CURRENT_LIMIT = 44
 
   MIN_PHASE_VOLTAGE = 210 # turn off shelly demands if any phase drops below this
-  SOLAR_EXCESS_HEATER_STOP_SOC = 98   # keep solar excess heaters on until this SoC
+  SOLAR_EXCESS_HEATER_STOP_SOC = 97   # keep solar excess heaters on until this SoC
 
   # Shelly units with demand switching — poll input to catch missed register/deregister actions
   SHELLY_DEMAND_UNITS = [
