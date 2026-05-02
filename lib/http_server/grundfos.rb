@@ -62,6 +62,12 @@ class HTTPServer
         @grundfos.direct_control = true
       when "Disable Direct Control"
         @grundfos.direct_control = false
+      when "Set Kp"
+        @grundfos.kp = form["kp"].to_f
+      when "Set Ti"
+        @grundfos.ti = form["ti"].to_f
+      when "Set sensor feedback"
+        @grundfos.sensor_feedback = form["sensor_feedback"].to_f
       end
       res.status = 303
       res["location"] = req.path
