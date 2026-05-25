@@ -37,8 +37,8 @@ class EnergyManagement
   # phase_amps: { phase_number => amps_on_that_phase }
   HEATERS = [
     # { id: :shelly_2kw_p3, host: "192.168.0.137", phase_amps: { 3 => 9 } },
-    { id: :heater_6kw, host: "192.168.0.224", channel: 1, phase_amps: { 1 => 9, 2 => 9, 3 => 9 } },
-    { id: :heater_9kw, host: "192.168.0.224", channel: 0, phase_amps: { 1 => 13, 2 => 13, 3 => 13 } },
+    { id: :heater_6kw, host: "192.168.0.224", channel: 1, phase_amps: { 1 => 9, 2 => 9, 3 => 9 }, tank_start_pct: 10, tank_stop_pct: 15 },
+    { id: :heater_9kw, host: "192.168.0.224", channel: 0, phase_amps: { 1 => 13, 2 => 13, 3 => 13 }, tank_start_pct: 9, tank_stop_pct: 14 },
   ].freeze
 
   SPORTSTUGAN_HEATER_HOST = "192.168.0.190"
@@ -393,12 +393,13 @@ class EnergyManagement
     solar_w = total_solar_power
     forecast_full = forecast_fills_battery?(soc)
     battery_full = soc >= SOLAR_EXCESS_HEATER_STOP_SOC
+    tank_pct = tank_charge_status
 
     # Turn off the largest heater that no longer qualifies (one per iteration).
     HEATERS.reverse_each do |heater|
       next unless heater_on?(heater)
-      next if heater_keep_running?(heater, battery_full, forecast_full, solar_w)
-      turn_off_heater(heater, "soc=#{soc.round}% solar=#{solar_w.round}W forecast_full=#{forecast_full}")
+      next if heater_keep_running?(heater, battery_full, forecast_full, solar_w, tank_pct)
+      turn_off_heater(heater, "soc=#{soc.round}% solar=#{solar_w.round}W forecast_full=#{forecast_full} tank=#{tank_pct&.round}%")
       return
     end
 
@@ -406,7 +407,7 @@ class EnergyManagement
     HEATERS.each do |heater|
       state = heater_on?(heater)
       next if state || state.nil? # skip if on or unreachable
-      next unless heater_should_start?(heater, battery_full, forecast_full, solar_w)
+      next unless heater_should_start?(heater, battery_full, forecast_full, solar_w, tank_pct)
       next unless heater_fits?(heater, currents)
       turn_on_heater(heater)
       return
@@ -418,12 +419,23 @@ class EnergyManagement
   # threshold so passing clouds don't flap the heater off.
   # Mode B: forecast still expects the battery to reach 100% AND current solar
   # output covers the heater's draw — start absorbing solar earlier.
-  def heater_should_start?(heater, battery_full, forecast_full, solar_w)
+  # Mode C: ETA tank charge below the heater's start threshold — boost the
+  # tank regardless of battery state, hold on until the stop threshold.
+  def heater_should_start?(heater, battery_full, forecast_full, solar_w, tank_pct)
+    return true if tank_pct && tank_pct < heater[:tank_start_pct]
     (battery_full && solar_excess?) || (forecast_full && solar_w > heater_w(heater))
   end
 
-  def heater_keep_running?(heater, battery_full, forecast_full, solar_w)
+  def heater_keep_running?(heater, battery_full, forecast_full, solar_w, tank_pct)
+    return true if tank_pct && tank_pct < heater[:tank_stop_pct]
     battery_full || (forecast_full && solar_w > heater_w(heater))
+  end
+
+  def tank_charge_status
+    @devices.eta.tank_charge_status
+  rescue => e
+    puts "[WARN] ETA tank charge unavailable: #{e.message}"
+    nil
   end
 
   def heater_w(heater)
