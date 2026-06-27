@@ -9,12 +9,12 @@ class SmhiSolarForecast
   LAT_DEG       = 63.2509
   LON_DEG       = 12.9513
   TILT_DEG      = 67.0
-  INSTALLED_KWP = 15.84   # 36 × 440 W
+  INSTALLED_KWP = 33.48   # 36 × 440 W + 36 × 490 W
 
   SOLAR_CONSTANT    = 1367.0
-  BIFACIALITY       = 0.80
-  TEMP_COEFF        = -0.003   # -0.30 %/°C (Denim U N3 440 BTG spec)
-  # NOCT = 43±2°C (Denim U N3 440 BTG spec, measured at 800 W/m², 20°C ambient, 1 m/s wind)
+  BIFACIALITY       = 0.80      # 80±5% (both Denim U N3 440 BTG and 490 BBG specs)
+  TEMP_COEFF        = -0.003   # -0.30 %/°C (both Denim U N3 440 BTG and 490 BBG specs)
+  # NOCT = 43±2°C (both Denim U N3 440 BTG and 490 BBG specs, measured at 800 W/m², 20°C ambient, 1 m/s wind)
   NOCT_DELTA        = 23.0     # T_cell_NOCT − T_ambient_NOCT = 43 − 20
 
   ALTITUDE_M            = 780.0
