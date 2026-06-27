@@ -103,23 +103,14 @@ class SmhiSolarForecast
     clearsky_ghi        = adjusted_solar_constant * atm * visibility_factor * sin_elev
 
     # Beam cloud transmission.
-    # lcc coefficient reduced to 0.55 (from 0.85): at 780m altitude, lcc=8 often means
-    # thin cloud layer rather than thick lowland stratus — less beam attenuation in practice.
     cloud_factor = (1.0 - 0.15 * hcc / 8.0) *
                    (1.0 - 0.50 * mcc / 8.0) *
-                   (1.0 - 0.55 * lcc / 8.0)
+                   (1.0 - 0.85 * lcc / 8.0)
 
     i_front = clearsky_beam_front * cloud_factor
 
-    # Diffuse sky irradiance (Skartveit-Olseth inspired):
-    # Clear sky has ~15% diffuse. As beam is blocked by clouds it forward-scatters into
-    # diffuse — thin overcast at 780m altitude can produce nearly clear-sky total irradiance
-    # via this "cloud enhancement" effect. Coefficient 0.40 calibrated to observed behaviour.
-    # Floor: even the thickest overcast transmits at least 5% of the extraterrestrial GHI.
-    diffuse_ghi = [
-      clearsky_ghi * (0.15 + 0.40 * (1.0 - cloud_factor)),
-      adjusted_solar_constant * 0.05 * sin_elev
-    ].max
+    # Diffuse sky irradiance: clear sky has ~15% diffuse fraction.
+    diffuse_ghi = clearsky_ghi * 0.15
     i_diffuse = diffuse_ghi * SKY_VIEW_FRONT
 
     # Bifacial rear: ground-reflected light, albedo depends on snow season
