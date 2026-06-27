@@ -422,12 +422,12 @@ class EnergyManagement
   # Mode C: ETA tank charge below the heater's start threshold — boost the
   # tank regardless of battery state, hold on until the stop threshold.
   def heater_should_start?(heater, battery_full, forecast_full, solar_w, tank_pct)
-    return true if tank_pct && tank_pct < heater[:tank_start_pct]
+    # return true if tank_pct && tank_pct < heater[:tank_start_pct]
     (battery_full && solar_excess?) || (forecast_full && solar_w > heater_w(heater))
   end
 
   def heater_keep_running?(heater, battery_full, forecast_full, solar_w, tank_pct)
-    return true if tank_pct && tank_pct < heater[:tank_stop_pct]
+    # return true if tank_pct && tank_pct < heater[:tank_stop_pct]
     battery_full || (forecast_full && solar_w > heater_w(heater))
   end
 
