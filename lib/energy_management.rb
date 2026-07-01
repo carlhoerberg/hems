@@ -90,7 +90,7 @@ class EnergyManagement
           poll_shelly_demand_inputs
           manage_shelly_demands
           manage_heaters
-          manage_sportstugan_heater
+          # manage_sportstugan_heater
           manage_goe_amperage
           push_solar_forecast
           update_hourly_load_profile
