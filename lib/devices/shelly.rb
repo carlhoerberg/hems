@@ -58,11 +58,17 @@ class Devices
       },
     }
 
-    attr_reader :devices, :device_names
+    CONFIG_TTL = 3600 # re-read names/appliance types from the devices once an hour
+    CONFIG_RETRY = 60 # but back off only a minute when a device didn't answer
+
+    # { device_id => { name: "Sauna", components: { "switch:0" => { name: "Heater", appliance_type: "heater" } } } }
+    attr_reader :devices, :device_info
 
     def initialize
       @devices = {}
-      @device_names = {}
+      @device_info = {}
+      @config_expires_at = {}
+      @config_mutex = Mutex.new
       @server = Thread.new { listen }
     end
 
@@ -79,7 +85,7 @@ class Devices
           ip = from[2]
           case data["method"]
           when "NotifyStatus", "NotifyFullStatus"
-            fetch_device_names(data["src"], ip) unless @device_names.key?(data["src"])
+            refresh_device_info(data["src"], ip)
             notify_status(data["src"], data["params"])
           when "NotifyEvent"
             data.dig("params", "events").each do |event|
@@ -93,22 +99,40 @@ class Devices
       end
     end
 
-    def fetch_device_names(device_id, ip)
+    # Fetch names and appliance types in the background, so a slow or gone
+    # device doesn't stall the UDP receive loop
+    def refresh_device_info(device_id, ip)
+      now = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      @config_mutex.synchronize do
+        expires_at = @config_expires_at[device_id]
+        return if expires_at && now < expires_at
+        @config_expires_at[device_id] = now + CONFIG_TTL
+      end
+      Thread.new { fetch_device_info(device_id, ip) }
+    end
+
+    def fetch_device_info(device_id, ip)
       http = Net::HTTP.new(ip, 80)
       http.open_timeout = 2
       http.read_timeout = 2
       res = http.get("/rpc/Shelly.GetConfig")
-      return unless res.is_a?(Net::HTTPSuccess)
+      raise "#{res.code} #{res.message}" unless res.is_a?(Net::HTTPSuccess)
       config = JSON.parse(res.body)
-      names = {}
+      components = {}
       config.each do |key, val|
-        next unless val.is_a?(Hash) && val.key?("name") && val["name"]
-        names[key] = val["name"]
+        next unless val.is_a?(Hash)
+        component = {}
+        component[:name] = val["name"] if val["name"]
+        component[:appliance_type] = val["appliance_type"] if val["appliance_type"]
+        components[key] = component unless component.empty?
       end
-      @device_names[device_id] = names
+      @device_info[device_id] = { name: config.dig("sys", "device", "name"), components: }
     rescue => e
-      @device_names[device_id] = {}
-      warn "Shelly: failed to fetch names for #{device_id} (#{ip}): #{e.inspect}"
+      @device_info[device_id] ||= { name: nil, components: {} }
+      @config_mutex.synchronize do
+        @config_expires_at[device_id] = Process.clock_gettime(Process::CLOCK_MONOTONIC) + CONFIG_RETRY
+      end
+      warn "Shelly: failed to fetch config for #{device_id} (#{ip}): #{e.inspect}"
     end
 
     def notify_status(device_id, params)

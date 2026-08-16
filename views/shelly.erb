@@ -1,10 +1,16 @@
+<%esc = ->(s) { s.to_s.gsub(/[\\"\n]/) { |c| c == "\n" ? "\\n" : "\\#{c}" } }%>
 <%devices.each do |device_id, metrics|%>
-<%names = device_names[device_id] || {}%>
+<%info = device_info[device_id] || {}%>
+<%components = info[:components] || {}%>
+<%device_labels = info[:name] ? %(,device_name="#{esc.(info[:name])}") : ""%>
 <%metrics.select { |_, m| m[:v] && m[:ts] / 1000 > Time.now.to_i - 3600 }.each do |key, m|%>
 <%name, component = key.to_s.split("/", 2)%>
-<%cn = names[component] if component%>
+<%c = (component && components[component]) || {}%>
+<%labels = +%(device_id="#{device_id}"#{device_labels})%>
+<%labels << %(,name="#{esc.(c[:name])}") if c[:name]%>
+<%labels << %(,appliance_type="#{esc.(c[:appliance_type])}") if c[:appliance_type]%>
 # TYPE <%=name%> <%=m[:counter] ? "counter" : "gauge"%>
-<%=name%>{device_id="<%=device_id%>"<%=cn ? ",name=\"#{cn}\"" : ""%>} <%=m[:v]%> <%=m[:ts]%>
+<%=name%>{<%=labels%>} <%=m[:v]%> <%=m[:ts]%>
 <%end%>
 <%end%>
 
