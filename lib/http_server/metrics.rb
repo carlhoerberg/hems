@@ -17,6 +17,7 @@ class HTTPServer
     @@ecowitt = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "ecowitt.erb")))
     @@envistar = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "envistar.erb")))
     @@casa = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "casa.erb")))
+    @@heru = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "heru.erb")))
     @@grundfos = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "grundfos.erb")))
     @@lk = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "lk.erb")))
     @@gencomm = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "gencomm.erb")))
@@ -50,6 +51,9 @@ class HTTPServer
           @@envistar.result_with_hash({ t:, m: @devices.envistar })
         when "/metrics/casa"
           @@casa.result_with_hash({ t:, casa: @devices.casa })
+        when "/metrics/heru"
+          heru = @devices.heru
+          @@heru.result_with_hash({ t:, m: heru.measurements, settings: heru.settings, modes: heru.modes, alarms: heru.alarms })
         when "/metrics/grundfos"
           @@grundfos.result_with_hash({ t:, grundfos: @devices.grundfos })
         when "/metrics/lk"

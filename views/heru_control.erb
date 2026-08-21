@@ -1,0 +1,67 @@
+<html>
+  <head>
+    <title>Heru</title>
+  </head>
+  <body>
+    <h1>Heru control</h1>
+    <form method="post">
+      <button name="action" value="<%=modes[:on] ? "off" : "on"%>"><%=modes[:on] ? "Turn off" : "Turn on"%></button>
+      <button name="action" value="boost"><%=modes[:boost] ? "Stop boost" : "Boost"%></button>
+      <button name="action" value="overpressure"><%=modes[:overpressure] ? "Stop overpressure" : "Overpressure"%></button>
+      <button name="action" value="away"><%=modes[:away] ? "Stop away" : "Away"%></button>
+      <button name="action" value="clear_alarms">Clear alarms</button>
+      <button name="action" value="reset_filter_timer">Reset filter timer</button>
+    </form>
+    <form method="post">
+      <label>Temperature setpoint
+        <input type="number" name="temperature_setpoint" min="15" max="40" step="1" value="<%=settings[:temperature_setpoint]%>">
+      </label>
+      <input type="submit" value="Set">
+    </form>
+    <form method="post">
+      <label>Supply fan speed %
+        <input type="number" name="supply_fan_speed" min="0" max="100" step="1" value="<%=settings[:supply_fan_speed]%>">
+      </label>
+      <label>Exhaust fan speed %
+        <input type="number" name="exhaust_fan_speed" min="0" max="100" step="1" value="<%=settings[:exhaust_fan_speed]%>">
+      </label>
+      <input type="submit" value="Set">
+    </form>
+    <h2>Modes</h2>
+    <table>
+      <%modes.each do |key, value|%>
+        <tr>
+          <td><%=key%></td>
+          <td><%=value%></td>
+        </tr>
+      <%end%>
+    </table>
+    <h2>Alarms</h2>
+    <table>
+      <%alarms.each do |key, value|%>
+        <tr>
+          <td><%=key%></td>
+          <td><%=value%></td>
+        </tr>
+      <%end%>
+    </table>
+    <h2>Measurments</h2>
+    <table>
+      <%measurements.each do |key, value|%>
+        <tr>
+          <td><%=key%></td>
+          <td><%=value%></td>
+        </tr>
+      <%end%>
+    </table>
+    <h2>Settings</h2>
+    <table>
+      <%settings.each do |key, value|%>
+        <tr>
+          <td><%=key%></td>
+          <td><%=value%></td>
+        </tr>
+      <%end%>
+    </table>
+  </body>
+</html>

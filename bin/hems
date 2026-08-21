@@ -8,6 +8,7 @@ require_relative "../lib/http_server/sdmo"
 require_relative "../lib/http_server/button"
 require_relative "../lib/http_server/topas"
 require_relative "../lib/http_server/casa"
+require_relative "../lib/http_server/heru"
 require_relative "../lib/http_server/envistar"
 require_relative "../lib/http_server/em"
 require_relative "../lib/http_server/eta"
@@ -27,6 +28,7 @@ srv = HTTPServer.new({
   "/button1" => HTTPServer::ButtonControl.new(devices),
   "/topas" => HTTPServer::TopasControl.new(devices.topas),
   "/casa" => HTTPServer::CasaControl.new(devices.casa),
+  "/heru" => HTTPServer::HeruControl.new(devices.heru),
   "/envistar" => HTTPServer::EnvistarControl.new(devices.envistar),
   "/eta" => HTTPServer::ETAControl.new(devices.eta),
   "/em" => HTTPServer::EMControl.new(em),

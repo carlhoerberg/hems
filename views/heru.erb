@@ -1,0 +1,74 @@
+# TYPE heru_temperature gauge
+heru_temperature{name="Outdoor"} <%=m[:outdoor_temperature]%>
+heru_temperature{name="Supply"} <%=m[:supply_air_temperature]%>
+heru_temperature{name="Exhaust"} <%=m[:exhaust_air_temperature]%>
+heru_temperature{name="Waste"} <%=m[:waste_air_temperature]%>
+heru_temperature{name="Water"} <%=m[:water_temperature]%>
+heru_temperature{name="Heat recovery wheel"} <%=m[:heat_recovery_wheel_temperature]%>
+heru_temperature{name="Room"} <%=m[:room_temperature]%>
+
+# TYPE heru_temperature_setpoint gauge
+heru_temperature_setpoint <%=settings[:temperature_setpoint]%>
+
+# TYPE heru_relative_humidity gauge
+heru_relative_humidity <%=m[:relative_humidity]%>
+
+# TYPE heru_carbon_dioxide gauge
+heru_carbon_dioxide <%=m[:carbon_dioxide]%>
+
+# TYPE heru_pressure gauge
+heru_pressure{name="Supply"} <%=m[:supply_pressure]%>
+heru_pressure{name="Exhaust"} <%=m[:exhaust_pressure]%>
+
+# TYPE heru_fan_power gauge
+heru_fan_power{name="Supply"} <%=m[:current_supply_fan_power]%>
+heru_fan_power{name="Exhaust"} <%=m[:current_exhaust_fan_power]%>
+
+# TYPE heru_fan_speed gauge
+heru_fan_speed{name="Supply"} <%=m[:current_supply_fan_speed]%>
+heru_fan_speed{name="Exhaust"} <%=m[:current_exhaust_fan_speed]%>
+
+# TYPE heru_fan_control_voltage gauge
+heru_fan_control_voltage{name="Supply"} <%=m[:supply_fan_control_voltage]%>
+heru_fan_control_voltage{name="Exhaust"} <%=m[:exhaust_fan_control_voltage]%>
+
+# TYPE heru_fan_step gauge
+heru_fan_step{name="Supply"} <%=m[:current_supply_fan_step]%>
+heru_fan_step{name="Exhaust"} <%=m[:current_exhaust_fan_step]%>
+
+# TYPE heru_power gauge
+heru_power{name="Heating"} <%=m[:current_heating_power]%>
+heru_power{name="Heat/cold recovery"} <%=m[:current_heat_cold_recovery_power]%>
+heru_power{name="Cooling"} <%=m[:current_cooling_power]%>
+
+# TYPE heru_current_fan_speed gauge
+heru_current_fan_speed <%=m[:current_fan_speed]%>
+
+# TYPE heru_weektimer_program gauge
+heru_weektimer_program <%=m[:current_weektimer_program]%>
+
+# TYPE heru_filter_days_left gauge
+heru_filter_days_left <%=m[:filter_days_left]%>
+
+# TYPE heru_mode gauge
+<%modes.each do |k, v|%>
+heru_mode{name="<%=k.to_s.capitalize.gsub("_", " ")%>"} <%=v ? 1 : 0%>
+<%end%>
+
+# TYPE heru_input gauge
+<%alarms.slice(*Devices::Heru::INPUT_KEYS).each do |k, v|%>
+heru_input{name="<%=k.to_s.capitalize.gsub("_", " ")%>"} <%=v ? 1 : 0%>
+<%end%>
+
+# TYPE heru_state gauge
+<%alarms.slice(*Devices::Heru::STATE_KEYS).each do |k, v|%>
+heru_state{name="<%=k.to_s.capitalize.gsub("_", " ")%>"} <%=v ? 1 : 0%>
+<%end%>
+
+# TYPE heru_alarm gauge
+<%alarms.except(*Devices::Heru::INPUT_KEYS, *Devices::Heru::STATE_KEYS).each do |k, v|%>
+heru_alarm{name="<%=k.to_s.capitalize.gsub("_", " ")%>"} <%=v ? 1 : 0%>
+<%end%>
+
+# TYPE metrics_gather_time gauge
+metrics_gather_time{device="heru"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>

@@ -9,6 +9,7 @@ require_relative "./devices/weco"
 require_relative "./devices/ecowitt"
 require_relative "./devices/envistar"
 require_relative "./devices/casa"
+require_relative "./devices/heru"
 require_relative "./devices/grundfos"
 require_relative "./devices/lk"
 require_relative "./devices/gencomm"
@@ -16,7 +17,7 @@ require_relative "./devices/victron"
 require_relative "./devices/goe"
 
 class Devices
-  attr_reader :next3, :sdmo, :eta, :starlink, :shelly, :unifi, :topas, :weco, :ecowitt, :envistar, :casa, :grundfos, :lk, :gencomm, :victron, :goe
+  attr_reader :next3, :sdmo, :eta, :starlink, :shelly, :unifi, :topas, :weco, :ecowitt, :envistar, :casa, :heru, :grundfos, :lk, :gencomm, :victron, :goe
 
   def initialize
     @next3 = Next3.new("192.168.0.201")
@@ -33,6 +34,7 @@ class Devices
     @ecowitt = Ecowitt.new
     @envistar = Envistar.new
     @casa = Casa.new
+    @heru = Heru.new("192.168.0.5")
     @grundfos = Grundfos.new
     @lk = {
       "hallen" => LK.new("lksystemsgw-2E3511D75D54D1D4",

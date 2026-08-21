@@ -11,6 +11,10 @@ module Modbus
       end
     end
 
+    def read_coil(addr, unit = 1)
+      read_coils(addr, 1, unit).first
+    end
+
     # FC02, read bit values
     def read_discrete_inputs(addr, count, unit = 1)
       function = 2
