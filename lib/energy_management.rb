@@ -37,6 +37,7 @@ class EnergyManagement
   # phase_amps: { phase_number => amps_on_that_phase }
   HEATERS = [
     # { id: :shelly_2kw_p3, host: "192.168.0.137", phase_amps: { 3 => 9 } },
+    { id: :sportstugan_heater, host: "192.168.0.237", channel: 0, phase_amps: { 1 => 8.5, 2 => 8.5, 3 => 8.5 } }, # Shelly 1 Gen 4
     { id: :heater_6kw, host: "192.168.0.224", channel: 1, phase_amps: { 1 => 9, 2 => 9, 3 => 9 }, tank_start_pct: 1, tank_stop_pct: 5 },
     { id: :heater_9kw, host: "192.168.0.224", channel: 0, phase_amps: { 1 => 13, 2 => 13, 3 => 13 }, tank_start_pct: 0, tank_stop_pct: 4 },
   ].freeze
