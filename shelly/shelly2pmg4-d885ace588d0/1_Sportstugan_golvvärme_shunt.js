@@ -11,8 +11,8 @@
 // Outdoor temperature comes from the ETA boiler, via the HEMS endpoint.
 
 // --- Heating curve ---
-const ROOM_TARGET = 20.0 // room temperature the curve is designed for (°C)
-const CURVE_SLOPE = 0.4 // supply temperature rise per °C below ROOM_TARGET
+const RoomTarget = Virtual.getHandle('number:200') // target room temperature (°C)
+const CURVE_SLOPE = 0.4 // supply temperature rise per °C below the target room temperature
 const MIN_SUPPLY = 20.0 // lowest useful supply temperature (°C)
 const MAX_SUPPLY = 35.0 // never send warmer water into the floor than this (°C)
 const HEAT_OFF_OUTDOOR = 15.0 // above this outdoor temperature the shunt stays closed (°C)
@@ -60,7 +60,8 @@ function fetchOutdoorTemperature (callback) {
 // Outdoor compensated supply temperature setpoint, null when no heat is needed
 function supplySetpoint (T_outdoor) {
   if (T_outdoor >= HEAT_OFF_OUTDOOR) return null
-  const T_set = ROOM_TARGET + CURVE_SLOPE * (ROOM_TARGET - T_outdoor)
+  const T_room = RoomTarget.getValue()
+  const T_set = T_room + CURVE_SLOPE * (T_room - T_outdoor)
   return Math.max(MIN_SUPPLY, Math.min(MAX_SUPPLY, T_set))
 }
 
@@ -125,7 +126,7 @@ function regulate () {
     step = Math.max(-MAX_STEP, Math.min(MAX_STEP, step))
     const desiredPos = Math.max(0, Math.min(100, Math.round(cover.current_pos + step)))
 
-    print('Outdoor: ' + T_outdoor + '°C, setpoint: ' + T_setpoint.toFixed(1) + '°C, supply: ' + T_supply.toFixed(1) +
+    print('Outdoor: ' + T_outdoor + '°C, room target: ' + RoomTarget.getValue() + '°C, setpoint: ' + T_setpoint.toFixed(1) + '°C, supply: ' + T_supply.toFixed(1) +
       '°C, return: ' + T_return + '°C, primary: ' + T_primary + '°C, position: ' + cover.current_pos + '% -> ' + desiredPos + '%')
 
     if (Math.abs(error) <= ERROR_DEAD_BAND) return;
