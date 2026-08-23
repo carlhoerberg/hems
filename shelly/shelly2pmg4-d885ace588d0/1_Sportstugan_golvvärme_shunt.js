@@ -18,13 +18,21 @@ const MAX_SUPPLY = 35.0 // never send warmer water into the floor than this (°C
 const HEAT_OFF_OUTDOOR = 15.0 // above this outdoor temperature the shunt stays closed (°C)
 
 // --- Shunt regulation ---
-const Kp = 0.15 // proportional gain on the supply error, in valve fraction per °C
-const DEAD_BAND = 2 // don't bother moving for smaller position changes than this (%)
-const REGULATE_INTERVAL = 30000 // ms between regulation cycles
+// Integrating (floating) control: every cycle the valve is nudged in the direction
+// that reduces the supply error, instead of being placed at an absolute position.
+// Recomputing an absolute position from the mixing ratio oscillates, since the loop
+// has a dead time of a minute or two and the valve authority is far from linear.
+const STEP_GAIN = 1.5 // valve movement per °C of supply error, in % per cycle
+const MAX_STEP = 6 // largest valve movement in one cycle (%)
+const ERROR_DEAD_BAND = 0.5 // supply error small enough to leave the valve alone (°C)
+const REGULATE_INTERVAL = 120000 // ms between regulation cycles, longer than the loop's dead time
+const SAMPLE_INTERVAL = 10000 // ms between supply temperature samples
+const SAMPLE_WEIGHT = 0.15 // weight of a new sample in the filtered supply temperature
 
 const OUTDOOR_TEMP_URL = 'http://192.168.0.2:8000/eta/outdoor_temp'
 
 let outdoorTemp = null // last known outdoor temperature (°C)
+let filteredSupply = null // filtered supply temperature (°C)
 
 function fetchOutdoorTemperature (callback) {
   Shelly.call('HTTP.GET', { url: OUTDOOR_TEMP_URL, timeout: 10 }, function (res, error_code, error_message) {
@@ -68,6 +76,13 @@ function getPrimaryTemperature () {
   return Shelly.getComponentStatus('temperature:102').tC
 }
 
+// The supply temperature swings a couple of °C between readings, so regulate on a
+// filtered value instead of chasing single readings around with the valve
+function sampleSupplyTemperature () {
+  const t = getSupplyTemperature()
+  filteredSupply = filteredSupply === null ? t : filteredSupply + SAMPLE_WEIGHT * (t - filteredSupply)
+}
+
 // 0% = fully closed (all return water), 100% = fully open (all primary water)
 function goToPosition (pos) {
   Shelly.call('Cover.GoToPosition', { id: 0, pos: pos }, function (res, error_code, error_message) {
@@ -93,7 +108,7 @@ function regulate () {
     }
 
     const T_setpoint = supplySetpoint(T_outdoor)
-    const T_supply = getSupplyTemperature()
+    const T_supply = filteredSupply
     const T_return = getReturnTemperature()
     const T_primary = getPrimaryTemperature()
 
@@ -105,31 +120,21 @@ function regulate () {
       return;
     }
 
-    // Feed forward: the mixing ratio that would give the setpoint right now,
-    // T_setpoint = T_return + x * (T_primary - T_return)
-    let fraction
-    if (T_primary - T_return < 0.5) {
-      fraction = 1 // no primary heat available, open up and wait for it
-    } else if (T_setpoint >= T_primary) {
-      fraction = 1
-    } else if (T_setpoint <= T_return) {
-      fraction = 0
-    } else {
-      fraction = (T_setpoint - T_return) / (T_primary - T_return)
-    }
-
-    // Feedback: proportional correction on the measured supply error
     const error = T_setpoint - T_supply
-    fraction = Math.max(0, Math.min(1, fraction + Kp * error))
+    let step = STEP_GAIN * error
+    step = Math.max(-MAX_STEP, Math.min(MAX_STEP, step))
+    const desiredPos = Math.max(0, Math.min(100, Math.round(cover.current_pos + step)))
 
-    const desiredPos = Math.round(fraction * 100)
-    print('Outdoor: ' + T_outdoor + '°C, setpoint: ' + T_setpoint.toFixed(1) + '°C, supply: ' + T_supply +
+    print('Outdoor: ' + T_outdoor + '°C, setpoint: ' + T_setpoint.toFixed(1) + '°C, supply: ' + T_supply.toFixed(1) +
       '°C, return: ' + T_return + '°C, primary: ' + T_primary + '°C, position: ' + cover.current_pos + '% -> ' + desiredPos + '%')
 
-    if (Math.abs(desiredPos - cover.current_pos) > DEAD_BAND) goToPosition(desiredPos)
+    if (Math.abs(error) <= ERROR_DEAD_BAND) return;
+    if (desiredPos !== cover.current_pos) goToPosition(desiredPos)
   })
 }
 
+sampleSupplyTemperature()
+Timer.set(SAMPLE_INTERVAL, true, sampleSupplyTemperature)
 Timer.set(REGULATE_INTERVAL, true, regulate)
 regulate()
 print('Sportstugan floor heating shunt regulation started')
