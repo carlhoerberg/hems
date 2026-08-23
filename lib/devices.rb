@@ -15,9 +15,10 @@ require_relative "./devices/lk"
 require_relative "./devices/gencomm"
 require_relative "./devices/victron"
 require_relative "./devices/goe"
+require_relative "./devices/wallas"
 
 class Devices
-  attr_reader :next3, :sdmo, :eta, :starlink, :shelly, :unifi, :topas, :weco, :ecowitt, :envistar, :casa, :heru, :grundfos, :lk, :gencomm, :victron, :goe
+  attr_reader :next3, :sdmo, :eta, :starlink, :shelly, :unifi, :topas, :weco, :ecowitt, :envistar, :casa, :heru, :grundfos, :lk, :gencomm, :victron, :goe, :wallas
 
   def initialize
     @next3 = Next3.new("192.168.0.201")
@@ -73,5 +74,7 @@ class Devices
     @gencomm = GenComm.new("192.168.0.10", unit: 1)
     @victron = Victron.new("192.168.0.202")
     @goe = GoE.new("go-echarger_274452")
+    # Bluetooth gateway next to the panel, cloud as fallback, see the README
+    @wallas = Wallas.new if ENV["WALLAS_AGENT"] || ENV["WALLAS_LINK"]
   end
 end

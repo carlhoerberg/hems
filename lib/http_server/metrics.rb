@@ -22,6 +22,7 @@ class HTTPServer
     @@lk = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "lk.erb")))
     @@gencomm = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "gencomm.erb")))
     @@victron = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "victron.erb")))
+    @@wallas = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "wallas.erb")))
     @@goe = ERB.new(File.read(File.join(__dir__, "..", "..", "views", "goe.erb")))
 
     def do_GET(req, res)
@@ -68,6 +69,17 @@ class HTTPServer
           @@victron.result_with_hash({ t:, m: @devices.victron.measurements })
         when "/metrics/goe"
           @@goe.result_with_hash({ t:, m: @devices.goe.measurements })
+        when "/metrics/wallas"
+          wallas = @devices.wallas
+          state = wallas&.local
+          if state
+            @@wallas.result_with_hash({ t:, local: state, m: nil, updated_at: nil })
+          elsif wallas&.cloud?
+            @@wallas.result_with_hash({ t:, local: nil, m: wallas.measurements, updated_at: wallas.updated_at })
+          else
+            res.status = 503
+            "no Wallas source, set WALLAS_AGENT or WALLAS_LINK"
+          end
         else
           res.status = 404
           "Not Found"

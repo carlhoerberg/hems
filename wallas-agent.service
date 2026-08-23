@@ -1,0 +1,18 @@
+[Unit]
+Description=Wallas 40 EA Bluetooth gateway
+Wants=bluetooth.service
+After=bluetooth.service network.target
+
+[Service]
+# Runs on the Pi in radio range of the 3008 panel, not on the hems host. Needs a
+# user that may talk to org.bluez, and the panel must already be bonded
+# (bluetoothctl pair, code from the panel display).
+ExecStart=/usr/local/bin/wallas_agent --mac 3C:E9:0E:96:69:3E --port 8080 --allow-write
+User=carl
+Restart=always
+RestartSec=10
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

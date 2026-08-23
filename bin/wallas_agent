@@ -1,0 +1,319 @@
+#!/usr/bin/env python3
+"""Local BLE gateway for the Wallas 40 EA, to run on a Pi within radio range of
+the 3008 control panel.
+
+The panel has no network interface and its cloud validates certificates, so
+Bluetooth is the only local way in. It talks a plain ASCII protocol over GATT:
+notifications on d769facf arrive as "<field>:<value>", one field per
+notification, the whole set burst on connect. Temperatures are hundredths of a
+Kelvin, so 34115 is 68.00 degrees.
+
+This keeps the link up, parses the fields and serves them as JSON to hems, which
+cannot reach the panel itself. Pair the panel once by hand before starting it
+(bluetoothctl: agent KeyboardOnly, pair <mac>, code from the panel display).
+
+  bin/wallas_agent --mac 3C:E9:0E:96:69:3E [--port 8080] [--allow-write]
+
+  GET  /state  -> {"fields": {...}, "values": {...}, "age": 12.3}
+  POST /set    -> {"target_room_temperature": 21.5}, needs --allow-write
+  POST /set    -> {"extra_water_pump": 1}
+  POST /stop   -> stop the heater
+  POST /write  -> body "SET RTT=29465", raw command, needs --allow-write
+"""
+
+import argparse
+import json
+import re
+import threading
+import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+import dbus
+import dbus.mainloop.glib
+from gi.repository import GLib
+
+SERVICE = "c6fbdd3c-7123-4c9e-86ab-005f1a7eda01"
+# The app subscribes to all of these, and the panel then bursts its whole field
+# set every 20 seconds or so. Subscribing to fewer means it goes quiet after the
+# first burst.
+NOTIFY = [
+    "d769facf-a4da-47ba-9253-65359ee480fb",  # the numbered fields
+    "cc00e463-2850-4e21-a255-6764dac0c275",
+    "8d4bcc34-cbbf-42ac-8972-0b35ddcfd03a",  # "S0.A:0"
+    "000018b3-f642-42dd-b048-aeb8e76e93de",  # wifi status
+    "00005b64-2745-479b-b006-56f3b4043c2c",  # update status
+]
+COMMAND = "b88e098b-e464-4b54-b827-79eb2b150a9f"
+
+# Commands are ASCII too, read off the phone app with HCI snoop logs: it writes
+# "SET RTT=30415" for a 31.00 degree room target, "SET EWP=1" for the extra water
+# pump and a bare "STOP" to stop the heater. Starting has not been captured yet,
+# and is deliberately not guessed: a wrong write runs a glow plug and a five
+# minute ignition sequence.
+SETTERS = {
+    "target_room_temperature": ("RTT", "temperature"),
+    "extra_water_pump": ("EWP", "bool"),
+}
+ACTIONS = {"stop": "STOP"}
+
+# Confirmed by watching the panel: 5 followed a setpoint change from 35 to 32,
+# 6 is the coolant temperature, 7 matches the target water temperature in the
+# cloud API, 8 the supply voltage. The rest are still unnamed.
+KELVIN = 27315  # hundredths of a Kelvin at 0 degrees
+FIELDS = {
+    0: ("state", None),
+    4: ("room_temperature", "temperature"),
+    5: ("target_room_temperature", "temperature"),
+    6: ("coolant_temperature", "temperature"),
+    7: ("target_coolant_temperature", "temperature"),
+    8: ("supply_voltage", "centi"),
+    9: ("starts", None),
+    11: ("unknown_11", None),
+    12: ("counter_12", None),
+    14: ("unknown_14", None),
+    15: ("limit_15", "temperature"),
+    17: ("model", None),
+    19: ("limit_19", "temperature"),
+    21: ("panel_version", None),
+}
+
+
+def convert(kind, raw):
+    """Scale a raw field value, keeping the raw string when it is not a number"""
+    try:
+        number = int(raw)
+    except ValueError:
+        return raw
+    if kind == "temperature":
+        return round((number - KELVIN) / 100.0, 2)
+    if kind == "centi":
+        return round(number / 100.0, 2)
+    return number
+
+
+class Panel:
+    def __init__(self, mac, allow_write):
+        self.mac = mac
+        self.allow_write = allow_write
+        self.lock = threading.Lock()
+        self.fields = {}        # raw "index" -> value, as the panel sends them
+        self.status = None      # the separate 8d4bcc34 string
+        self.updated_at = 0.0
+        self.connected = False
+
+        dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+        self.bus = dbus.SystemBus()
+        self.path = "/org/bluez/hci0/dev_" + mac.replace(":", "_")
+        self.bus.add_signal_receiver(
+            self.on_properties_changed,
+            dbus_interface="org.freedesktop.DBus.Properties",
+            signal_name="PropertiesChanged",
+            path_keyword="path",
+        )
+
+    # --- BlueZ plumbing ---
+
+    def device(self):
+        return dbus.Interface(self.bus.get_object("org.bluez", self.path), "org.bluez.Device1")
+
+    def properties(self, path, interface):
+        obj = dbus.Interface(self.bus.get_object("org.bluez", path), "org.freedesktop.DBus.Properties")
+        return obj.GetAll(interface)
+
+    def characteristics(self):
+        """Map characteristic UUID to object path"""
+        manager = dbus.Interface(self.bus.get_object("org.bluez", "/"), "org.freedesktop.DBus.ObjectManager")
+        found = {}
+        for path, interfaces in manager.GetManagedObjects().items():
+            char = interfaces.get("org.bluez.GattCharacteristic1")
+            if char and str(path).startswith(self.path):
+                found[str(char["UUID"])] = str(path)
+        return found
+
+    def connect(self):
+        device = self.device()
+        props = self.properties(self.path, "org.bluez.Device1")
+        if not props.get("Connected"):
+            print("connecting to %s" % self.mac, flush=True)
+            device.Connect()
+            for _ in range(20):
+                if self.properties(self.path, "org.bluez.Device1").get("ServicesResolved"):
+                    break
+                time.sleep(0.5)
+        self.connected = True
+        chars = self.characteristics()
+        for uuid in NOTIFY:
+            path = chars.get(uuid)
+            if not path:
+                print("characteristic %s not found" % uuid, flush=True)
+                continue
+            char = dbus.Interface(self.bus.get_object("org.bluez", path), "org.bluez.GattCharacteristic1")
+            try:
+                char.StartNotify()
+                print("subscribed %s" % uuid, flush=True)
+            except dbus.DBusException as e:
+                if "Already" not in str(e):
+                    print("subscribe %s failed: %s" % (uuid, e), flush=True)
+
+    def set(self, name, value):
+        """Turn a named value into the panel's own command syntax"""
+        if name not in SETTERS:
+            raise KeyError("no command known for %r, known: %s" % (name, ", ".join(SETTERS)))
+        verb, kind = SETTERS[name]
+        if kind == "temperature":
+            raw = int(round(float(value) * 100)) + KELVIN
+        elif kind == "bool":
+            raw = 1 if value in (True, 1, "1", "on", "true") else 0
+        else:
+            raw = int(value)
+        self.write("SET %s=%d" % (verb, raw))
+
+    def action(self, name):
+        """A command that takes no value, such as STOP"""
+        if name not in ACTIONS:
+            raise KeyError("no command known for %r, known: %s" % (name, ", ".join(ACTIONS)))
+        self.write(ACTIONS[name])
+
+    def write(self, payload):
+        if not self.allow_write:
+            raise PermissionError("started without --allow-write")
+        path = self.characteristics().get(COMMAND)
+        if not path:
+            raise RuntimeError("command characteristic not available")
+        char = dbus.Interface(self.bus.get_object("org.bluez", path), "org.bluez.GattCharacteristic1")
+        char.WriteValue([dbus.Byte(b) for b in payload.encode()], {})
+        print("wrote %r" % payload, flush=True)
+
+    # --- notifications ---
+
+    def on_properties_changed(self, interface, changed, invalidated, path=None):
+        if interface == "org.bluez.Device1" and "Connected" in changed:
+            self.connected = bool(changed["Connected"])
+            print("connected: %s" % self.connected, flush=True)
+            return
+        if interface != "org.bluez.GattCharacteristic1" or "Value" not in changed:
+            return
+        text = bytes(changed["Value"]).decode("utf-8", "replace")
+        with self.lock:
+            match = re.match(r"^(\d+):(.*)$", text)
+            if match:
+                self.fields[int(match.group(1))] = match.group(2)
+                self.updated_at = time.time()
+            elif text.strip():
+                self.status = text.strip()
+                self.updated_at = time.time()
+
+    def snapshot(self):
+        with self.lock:
+            fields = dict(self.fields)
+            status = self.status
+            updated_at = self.updated_at
+        values = {}
+        for index, raw in fields.items():
+            name, kind = FIELDS.get(index, ("field_%d" % index, None))
+            values[name] = convert(kind, raw)
+        return {
+            "connected": self.connected,
+            "age": round(time.time() - updated_at, 1) if updated_at else None,
+            "status": status,
+            "values": values,
+            "fields": {str(k): v for k, v in sorted(fields.items())},
+        }
+
+    # The panel bursts its whole state on connect and then goes quiet, so
+    # reconnect periodically to refresh rather than trusting stale values
+    def refresh_loop(self, interval):
+        while True:
+            try:
+                self.connect()
+            except dbus.DBusException as e:
+                print("connect failed: %s" % e, flush=True)
+            time.sleep(interval)
+            try:
+                if self.properties(self.path, "org.bluez.Device1").get("Connected"):
+                    self.device().Disconnect()
+            except dbus.DBusException:
+                pass
+            time.sleep(2)
+
+
+class Handler(BaseHTTPRequestHandler):
+    panel = None
+
+    def log_message(self, *args):
+        pass
+
+    def do_GET(self):
+        if self.path.rstrip("/") not in ("", "/state"):
+            self.send_error(404)
+            return
+        body = json.dumps(self.panel.snapshot(), indent=1).encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_POST(self):
+        route = self.path.rstrip("/")
+        if route in ("/" + a for a in ACTIONS):
+            try:
+                self.panel.action(route.lstrip("/"))
+            except PermissionError as e:
+                self.send_error(403, str(e))
+                return
+            except Exception as e:
+                self.send_error(502, str(e))
+                return
+            self.send_response(204)
+            self.end_headers()
+            return
+        if route not in ("/write", "/set"):
+            self.send_error(404)
+            return
+        length = int(self.headers.get("Content-Length", 0))
+        payload = self.rfile.read(length).decode().strip()
+        try:
+            if route == "/set":
+                for name, value in json.loads(payload).items():
+                    self.panel.set(name, value)
+            else:
+                if not re.match(r"^[\w.:,= -]{1,64}$", payload):
+                    self.send_error(400, "unexpected payload")
+                    return
+                self.panel.write(payload)
+        except PermissionError as e:
+            self.send_error(403, str(e))
+            return
+        except (KeyError, ValueError) as e:
+            self.send_error(400, str(e))
+            return
+        except Exception as e:
+            self.send_error(502, str(e))
+            return
+        self.send_response(204)
+        self.end_headers()
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--mac", default="3C:E9:0E:96:69:3E")
+    parser.add_argument("--port", type=int, default=8080)
+    parser.add_argument("--refresh", type=int, default=900,
+                        help="seconds between reconnects, a safety net since the "
+                             "panel streams on its own while subscribed")
+    parser.add_argument("--allow-write", action="store_true", help="enable POST /write")
+    args = parser.parse_args()
+
+    panel = Panel(args.mac, args.allow_write)
+    Handler.panel = panel
+    threading.Thread(target=panel.refresh_loop, args=(args.refresh,), daemon=True).start()
+    server = ThreadingHTTPServer(("0.0.0.0", args.port), Handler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    print("serving state on port %d, writes %s" %
+          (args.port, "enabled" if args.allow_write else "disabled"), flush=True)
+    GLib.MainLoop().run()
+
+
+if __name__ == "__main__":
+    main()
