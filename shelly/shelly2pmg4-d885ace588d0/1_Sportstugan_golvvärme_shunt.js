@@ -1,16 +1,14 @@
 // Shelly 2PM Gen4 — Sportstugan floor heating shunt
 //
-// Regulates the mixing shunt (a 3-point actuator driven as a cover) so that the
-// secondary supply temperature follows an outdoor-compensated heating curve.
+// Regulates the mixing shunt (a 3-point actuator driven as a calibrated cover)
+// so that the secondary supply temperature follows an outdoor compensated
+// heating curve.
 //
 // Sensors on the addon:
 //   temperature:100 — secondary supply (out to the floor heating loops)
 //   temperature:101 — secondary return (back from the loops)
 //   temperature:102 — primary supply (from the culvert/boiler)
 // Outdoor temperature comes from the ETA boiler, via the HEMS endpoint.
-//
-// The actuator has no position feedback, so the position is estimated: the cover
-// is driven to a fully closed position at startup and every move is timed.
 
 // --- Heating curve ---
 const ROOM_TARGET = 20.0 // room temperature the curve is designed for (°C)
@@ -20,15 +18,12 @@ const MAX_SUPPLY = 35.0 // never send warmer water into the floor than this (°C
 const HEAT_OFF_OUTDOOR = 15.0 // above this outdoor temperature the shunt stays closed (°C)
 
 // --- Shunt regulation ---
-const Kp = 0.15 // proportional gain on the supply error, in fraction per °C
-const FULL_TRAVEL_TIME = 120 // s for the actuator to go from fully closed to fully open
+const Kp = 0.15 // proportional gain on the supply error, in valve fraction per °C
 const DEAD_BAND = 2 // don't bother moving for smaller position changes than this (%)
 const REGULATE_INTERVAL = 30000 // ms between regulation cycles
 
 const OUTDOOR_TEMP_URL = 'http://192.168.0.2:8000/eta/outdoor_temp'
 
-// Estimated shunt position, 0% = fully closed (all return water), 100% = fully open (all primary water)
-let shuntPos = 0
 let outdoorTemp = null // last known outdoor temperature (°C)
 
 function fetchOutdoorTemperature (callback) {
@@ -73,32 +68,27 @@ function getPrimaryTemperature () {
   return Shelly.getComponentStatus('temperature:102').tC
 }
 
-function isMoving () {
-  const state = Shelly.getComponentStatus('cover:0').state
-  return state === 'opening' || state === 'closing'
-}
-
-function move (command, duration, newPos) {
-  const params = { id: 0 }
-  if (duration !== null) params.duration = duration
-  Shelly.call(command, params, function (res, error_code, error_message) {
-    if (error_code !== 0) {
-      print('Error issuing ' + command + ': ' + error_message)
-      return;
-    }
-    shuntPos = newPos
+// 0% = fully closed (all return water), 100% = fully open (all primary water)
+function goToPosition (pos) {
+  Shelly.call('Cover.GoToPosition', { id: 0, pos: pos }, function (res, error_code, error_message) {
+    if (error_code !== 0) print('Error issuing Cover.GoToPosition: ' + error_message)
   })
 }
 
 function regulate () {
-  if (isMoving()) {
+  const cover = Shelly.getComponentStatus('cover:0')
+  if (cover.state === 'opening' || cover.state === 'closing') {
     print('Shunt is moving, skipping regulation cycle')
+    return;
+  }
+  if (cover.current_pos === null) {
+    print('Shunt position unknown, the cover needs to be calibrated')
     return;
   }
 
   fetchOutdoorTemperature(function (T_outdoor) {
     if (T_outdoor === null) {
-      print('No outdoor temperature available yet, leaving shunt at ' + shuntPos + '%')
+      print('No outdoor temperature available yet, leaving shunt at ' + cover.current_pos + '%')
       return;
     }
 
@@ -108,9 +98,9 @@ function regulate () {
     const T_primary = getPrimaryTemperature()
 
     if (T_setpoint === null) {
-      if (shuntPos !== 0) {
+      if (cover.current_pos !== 0) {
         print('Outdoor ' + T_outdoor + '°C, no heat needed, closing shunt')
-        move('Cover.Close', null, 0)
+        goToPosition(0)
       }
       return;
     }
@@ -134,40 +124,12 @@ function regulate () {
 
     const desiredPos = Math.round(fraction * 100)
     print('Outdoor: ' + T_outdoor + '°C, setpoint: ' + T_setpoint.toFixed(1) + '°C, supply: ' + T_supply +
-      '°C, return: ' + T_return + '°C, primary: ' + T_primary + '°C, position: ' + shuntPos + '% -> ' + desiredPos + '%')
+      '°C, return: ' + T_return + '°C, primary: ' + T_primary + '°C, position: ' + cover.current_pos + '% -> ' + desiredPos + '%')
 
-    if (desiredPos === 100 && shuntPos !== 100) {
-      move('Cover.Open', null, 100)
-      return;
-    }
-    if (desiredPos === 0 && shuntPos !== 0) {
-      move('Cover.Close', null, 0)
-      return;
-    }
-
-    const diff = desiredPos - shuntPos
-    if (Math.abs(diff) <= DEAD_BAND) return;
-
-    const duration = Math.abs(diff) / 100 * FULL_TRAVEL_TIME
-    move(diff > 0 ? 'Cover.Open' : 'Cover.Close', duration, desiredPos)
+    if (Math.abs(desiredPos - cover.current_pos) > DEAD_BAND) goToPosition(desiredPos)
   })
 }
 
-// The actuator position is unknown at startup, so drive it fully closed to calibrate
-function calibrate () {
-  const state = Shelly.getComponentStatus('cover:0').state
-  if (state === 'closed') {
-    shuntPos = 0
-    print('Shunt already closed')
-  } else if (state === 'open') {
-    shuntPos = 100
-    print('Shunt already open')
-  } else {
-    print('Shunt position unknown, closing it to calibrate')
-    move('Cover.Close', null, 0)
-  }
-}
-
-calibrate()
 Timer.set(REGULATE_INTERVAL, true, regulate)
+regulate()
 print('Sportstugan floor heating shunt regulation started')
