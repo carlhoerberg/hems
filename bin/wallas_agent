@@ -223,22 +223,25 @@ class Panel:
             "fields": {str(k): v for k, v in sorted(fields.items())},
         }
 
-    # The panel bursts its whole state on connect and then goes quiet, so
-    # reconnect periodically to refresh rather than trusting stale values
-    def refresh_loop(self, interval):
+    # The panel streams on its own once subscribed, so the only job here is to
+    # notice a dropped link or a stalled stream and reconnect. Reconnecting
+    # immediately after our own disconnect makes BlueZ abort the attempt
+    # (le-connection-abort-by-local), hence the pause before connecting again.
+    def watchdog(self, poll, stale_after):
         while True:
             try:
-                self.connect()
-            except dbus.DBusException as e:
-                print("connect failed: %s" % e, flush=True)
-            time.sleep(interval)
-            try:
-                if self.properties(self.path, "org.bluez.Device1").get("Connected"):
+                connected = bool(self.properties(self.path, "org.bluez.Device1").get("Connected"))
+                stalled = self.updated_at and time.time() - self.updated_at > stale_after
+                if connected and stalled:
+                    print("no data for %ds, reconnecting" % stale_after, flush=True)
                     self.device().Disconnect()
-            except dbus.DBusException:
-                pass
-            time.sleep(2)
-
+                    time.sleep(5)
+                    connected = False
+                if not connected:
+                    self.connect()
+            except dbus.DBusException as e:
+                print("watchdog: %s" % e, flush=True)
+            time.sleep(poll)
 
 class Handler(BaseHTTPRequestHandler):
     panel = None
@@ -302,15 +305,15 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--mac", default="3C:E9:0E:96:69:3E")
     parser.add_argument("--port", type=int, default=8080)
-    parser.add_argument("--refresh", type=int, default=900,
-                        help="seconds between reconnects, a safety net since the "
-                             "panel streams on its own while subscribed")
+    parser.add_argument("--poll", type=int, default=15, help="seconds between link checks")
+    parser.add_argument("--stale", type=int, default=120,
+                        help="reconnect when no notification has arrived for this long")
     parser.add_argument("--allow-write", action="store_true", help="enable POST /write")
     args = parser.parse_args()
 
     panel = Panel(args.mac, args.allow_write)
     Handler.panel = panel
-    threading.Thread(target=panel.refresh_loop, args=(args.refresh,), daemon=True).start()
+    threading.Thread(target=panel.watchdog, args=(args.poll, args.stale), daemon=True).start()
     server = ThreadingHTTPServer(("0.0.0.0", args.port), Handler)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     print("serving state on port %d, writes %s" %

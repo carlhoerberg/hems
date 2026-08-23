@@ -20,16 +20,5 @@ wallas_starts <%=v["starts"]%>
 # TYPE wallas_state gauge
 wallas_state <%=v["state"]%>
 
-# Fields of the panel protocol that aren't identified yet, kept so that their
-# meaning can be spotted from how they move
-# TYPE wallas_field gauge
-<% state["fields"].each do |index, raw| %>
-<% next unless raw.match?(/\A-?\d+\z/) %>
-wallas_field{index="<%=index%>"} <%=raw%>
-<% end %>
-
-# TYPE wallas_data_age_seconds gauge
-wallas_data_age_seconds <%=state["age"] || -1%>
-
 # TYPE metrics_gather_time gauge
 metrics_gather_time{device="wallas"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>
