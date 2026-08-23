@@ -64,6 +64,7 @@ ACTIONS = {"stop": "STOP", "start": "START"}
 KELVIN = 27315  # hundredths of a Kelvin at 0 degrees
 FIELDS = {
     0: ("state", None),
+    3: ("extra_water_pump", None),  # flipped when the app wrote SET EWP=1
     4: ("room_temperature", "temperature"),
     5: ("target_room_temperature", "temperature"),
     6: ("coolant_temperature", "temperature"),

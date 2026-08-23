@@ -122,8 +122,11 @@ the setpoint (verified against the panel display) and `STOP`:
     curl -X POST http://192.168.0.110:8080/stop
 
 The agent needs `--allow-write` for those, `Devices::Wallas` exposes
-`target_room_temperature=`, `extra_water_pump=` and `stop`, and `command_panel`
-sends a raw command for verbs that are not mapped yet.
+`target_room_temperature=`, `extra_water_pump=`, `stop`, `start` and
+`command_panel` for verbs that are not mapped yet, and `/wallas` is a control
+page with the current values, the setpoint, the extra water pump and start/stop.
+Start there needs a confirmation box ticked, since it runs a glow plug and a five
+minute ignition.
 
 `START` is assumed rather than captured: neither snoop log contains a start, so
 `start` and `power = true` write a verb we have not seen the app use. The panel

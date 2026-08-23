@@ -1,0 +1,58 @@
+<html>
+  <head>
+    <title>Wallas</title>
+  </head>
+  <body>
+    <h1>Wallas control</h1>
+    <% if state.nil? %>
+      <p>Bluetooth gateway unreachable.</p>
+    <% else %>
+      <% v = state["values"] %>
+      <p>
+        <%=v["state"].to_i.zero? ? "Off" : "Running or paused (state #{v["state"]})"%>,
+        room <%=v["room_temperature"]%> °C,
+        coolant <%=v["coolant_temperature"]%> °C,
+        <%=v["supply_voltage"]%> V,
+        data <%=state["age"]%> s old<%=state["connected"] ? "" : ", panel not connected"%>
+      </p>
+      <form method="post">
+        <label>
+          <input type="checkbox" name="confirm" value="1">
+          I know the heater will run its ignition sequence
+        </label>
+        <button name="action" value="start">Start</button>
+        <button name="action" value="stop">Stop</button>
+      </form>
+      <form method="post">
+        <label>Target room temperature
+          <input type="number" name="target_room_temperature" min="5" max="40" step="1"
+                 value="<%=v["target_room_temperature"].to_f.round%>">
+        </label>
+        <input type="submit" value="Set">
+      </form>
+      <form method="post">
+        Extra water pump (<%=v["extra_water_pump"] || state["fields"]["3"]%>):
+        <button name="action" value="extra_water_pump_on">On</button>
+        <button name="action" value="extra_water_pump_off">Off</button>
+      </form>
+      <h2>Values</h2>
+      <table>
+        <%v.each do |key, value|%>
+          <tr>
+            <td><%=key%></td>
+            <td><%=value%></td>
+          </tr>
+        <%end%>
+      </table>
+      <h2>Raw fields</h2>
+      <table>
+        <%state["fields"].each do |index, raw|%>
+          <tr>
+            <td><%=index%></td>
+            <td><%=raw%></td>
+          </tr>
+        <%end%>
+      </table>
+    <% end %>
+  </body>
+</html>
