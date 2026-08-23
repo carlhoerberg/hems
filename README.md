@@ -36,12 +36,12 @@ self signed certificate with a TLS access_denied alert. It validates the server
 certificate and we cannot get a real certificate for a domain we do not own.
 
 What does work is the Bluetooth link the phone app uses.
-[bin/wallas_agent](bin/wallas_agent) runs on a Pi in radio range of the panel
-(BLE reaches maybe 5 m, so it has to be the same room), holds the bonded
-connection and serves the panel's own fields as JSON. Point `WALLAS_AGENT` at it
-(`http://192.168.0.110:8080`) and `/metrics/wallas` uses it, falling back to the
-cloud API in [lib/devices/wallas.rb](lib/devices/wallas.rb) (`WALLAS_LINK`, the
-"Wallas Remote" link, which carries the client token) when the gateway is down.
+[bin/wallas_agent](bin/wallas_agent) runs on a Pi at 192.168.0.110, in radio
+range of the panel (BLE reaches maybe 5 m, so it has to be the same room), holds
+the bonded connection and serves the panel's own fields as JSON.
+[lib/devices/wallas.rb](lib/devices/wallas.rb) reads it, and that is the only
+source: the cloud API behind the "Wallas Remote" link works but needs internet
+and is minutes behind, so it is not used.
 
 Pair once by hand, the panel shows a six digit code that has to be typed within
 about half a minute:
@@ -125,7 +125,8 @@ The agent needs `--allow-write` for those, `Devices::Wallas` exposes
 `target_room_temperature=`, `extra_water_pump=` and `stop`, and `command_panel`
 sends a raw command for verbs that are not mapped yet.
 
-Starting is the one gap: neither capture contains it, so `power = true` still
-goes through the cloud, which needs internet. A snoop log of pressing start in
-the app would close it. Guessing is a bad idea: a wrong write runs a glow plug
-and a five minute ignition sequence.
+`START` is assumed rather than captured: neither snoop log contains a start, so
+`start` and `power = true` write a verb we have not seen the app use. The panel
+ignores commands it does not recognise, which is how the wrong write format was
+spotted in the first place, so the likely failure is that nothing happens. A
+snoop log of pressing start in the app would settle it.

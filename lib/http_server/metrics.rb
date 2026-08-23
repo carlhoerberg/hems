@@ -70,15 +70,11 @@ class HTTPServer
         when "/metrics/goe"
           @@goe.result_with_hash({ t:, m: @devices.goe.measurements })
         when "/metrics/wallas"
-          wallas = @devices.wallas
-          state = wallas&.local
-          if state
-            @@wallas.result_with_hash({ t:, local: state, m: nil, updated_at: nil })
-          elsif wallas&.cloud?
-            @@wallas.result_with_hash({ t:, local: nil, m: wallas.measurements, updated_at: wallas.updated_at })
+          if (state = @devices.wallas.state)
+            @@wallas.result_with_hash({ t:, state: })
           else
             res.status = 503
-            "no Wallas source, set WALLAS_AGENT or WALLAS_LINK"
+            "Wallas Bluetooth gateway unreachable"
           end
         else
           res.status = 404

@@ -74,7 +74,7 @@ class Devices
     @gencomm = GenComm.new("192.168.0.10", unit: 1)
     @victron = Victron.new("192.168.0.202")
     @goe = GoE.new("go-echarger_274452")
-    # Bluetooth gateway next to the panel, cloud as fallback, see the README
-    @wallas = Wallas.new if ENV["WALLAS_AGENT"] || ENV["WALLAS_LINK"]
+    # Through the Bluetooth gateway next to the panel, the only way in
+    @wallas = Wallas.new("192.168.0.110")
   end
 end

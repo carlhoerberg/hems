@@ -17,7 +17,7 @@ cannot reach the panel itself. Pair the panel once by hand before starting it
   GET  /state  -> {"fields": {...}, "values": {...}, "age": 12.3}
   POST /set    -> {"target_room_temperature": 21.5}, needs --allow-write
   POST /set    -> {"extra_water_pump": 1}
-  POST /stop   -> stop the heater
+  POST /stop   -> stop the heater, POST /start to start it (assumed verb)
   POST /write  -> body "SET RTT=29465", raw command, needs --allow-write
 """
 
@@ -54,7 +54,9 @@ SETTERS = {
     "target_room_temperature": ("RTT", "temperature"),
     "extra_water_pump": ("EWP", "bool"),
 }
-ACTIONS = {"stop": "STOP"}
+# STOP is from a capture of the app, START is assumed: the app was never made to
+# start the heater while snooping. Unknown verbs are ignored by the panel.
+ACTIONS = {"stop": "STOP", "start": "START"}
 
 # Confirmed by watching the panel: 5 followed a setpoint change from 35 to 32,
 # 6 is the coolant temperature, 7 matches the target water temperature in the

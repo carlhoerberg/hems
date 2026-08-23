@@ -1,12 +1,6 @@
-<%# The BLE gateway next to the panel is the primary source, the cloud is the
-    fallback. Both emit the same metric names so graphs survive a source switch. %>
-<% if local %>
-<% v = local["values"] %>
-# TYPE wallas_source gauge
-wallas_source{source="ble"} 1
-
+<% v = state["values"] %>
 # TYPE wallas_ble_connected gauge
-wallas_ble_connected <%=local["connected"] ? 1 : 0%>
+wallas_ble_connected <%=state["connected"] ? 1 : 0%>
 
 # TYPE wallas_temperature gauge
 wallas_temperature{name="Room"} <%=v["room_temperature"]%>
@@ -22,54 +16,20 @@ wallas_supply_voltage <%=v["supply_voltage"]%>
 # TYPE wallas_starts counter
 wallas_starts <%=v["starts"]%>
 
-# The panel's own state code, 3 while the heater is off
+# The panel's own state code, 0 off and 3 idle/paused
 # TYPE wallas_state gauge
 wallas_state <%=v["state"]%>
 
 # Fields of the panel protocol that aren't identified yet, kept so that their
 # meaning can be spotted from how they move
 # TYPE wallas_field gauge
-<% local["fields"].each do |index, raw| %>
+<% state["fields"].each do |index, raw| %>
 <% next unless raw.match?(/\A-?\d+\z/) %>
 wallas_field{index="<%=index%>"} <%=raw%>
 <% end %>
 
 # TYPE wallas_data_age_seconds gauge
-wallas_data_age_seconds <%=local["age"] || -1%>
-<% else %>
-# TYPE wallas_source gauge
-wallas_source{source="cloud"} 1
-
-# TYPE wallas_ble_connected gauge
-wallas_ble_connected 0
-
-# TYPE wallas_heater_state gauge
-wallas_heater_state{state="<%=m[:heaterstate]%>"} 1
-
-# TYPE wallas_temperature gauge
-<% { "Room" => m[:roomtemp], "Coolant" => m[:watertemp], "Burner" => m[:burnertemp] }.each do |name, value| %>
-<% next if value.nil? %>
-wallas_temperature{name="<%=name%>"} <%=value%>
-<% end %>
-
-# TYPE wallas_target_temperature gauge
-<% { "Room" => m[:targetroomtemp], "Coolant" => m[:targetwatertemp] }.each do |name, value| %>
-<% next if value.nil? %>
-wallas_target_temperature{name="<%=name%>"} <%=value%>
-<% end %>
-
-<% { "wallas_power" => m[:power], "wallas_burner_fan_rpm" => m[:burnerfanrpm],
-     "wallas_supply_voltage" => m[:supplyvolt], "wallas_runtime_hours" => m[:runtime],
-     "wallas_starts" => m[:starts], "wallas_error_code" => m[:errorcode] }.each do |metric, value| %>
-<% next if value.nil? %>
-# TYPE <%=metric%> gauge
-<%=metric%> <%=value%>
-<% end %>
-
-# The panel uploads every few minutes, a growing age means it is offline
-# TYPE wallas_data_age_seconds gauge
-wallas_data_age_seconds <%=updated_at ? (Time.now - updated_at).round : -1%>
-<% end %>
+wallas_data_age_seconds <%=state["age"] || -1%>
 
 # TYPE metrics_gather_time gauge
 metrics_gather_time{device="wallas"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>
