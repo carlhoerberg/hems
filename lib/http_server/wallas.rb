@@ -25,7 +25,7 @@ class HTTPServer
       case form["action"]
       when "start"
         # Starting runs a glow plug and a five minute ignition, so only with the
-        # confirmation ticked. The verb itself is still unverified.
+        # confirmation ticked.
         @wallas.start if form["confirm"]
       when "stop" then @wallas.stop
       when "extra_water_pump_on" then @wallas.extra_water_pump = true

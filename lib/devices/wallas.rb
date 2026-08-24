@@ -57,9 +57,7 @@ class Devices
       post("/stop", "")
     end
 
-    # STOP came out of a capture of the phone app, START is an assumption, so
-    # this one is unverified. The panel ignores commands it does not recognise,
-    # a wrong verb is a no-op rather than a misfire.
+    # Runs the glow plug and a five minute ignition sequence
     def start
       post("/start", "")
     end

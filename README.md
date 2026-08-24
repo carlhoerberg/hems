@@ -83,20 +83,21 @@ hundredths of a Kelvin: subtract 27315 and divide by 100.
 
 | Field | Meaning | How it was established |
 | --- | --- | --- |
-| 0 | state: 0 off, 3 idle/paused | went 3 to 0 as the coolant cooled and the pumps stopped |
+| 0 | state: 0 off, 3 on | 0 with the heater off, 3 with it on |
+| 1 | a phase or status code, not the percentage the display shows | 0 off, 22 through the ignition ramp, 33 at full ignition, 64 while paused |
+| 3 | extra water pump | flipped to 1 the instant the app wrote `SET EWP=1` |
 | 4 | room temperature | tracks the panel display |
 | 5 | target room temperature | followed a 35 to 32 change made on the panel |
 | 6 | coolant temperature | matches the panel display |
-| 7 | target coolant temperature | 34115 = 68.00, the cloud's targetwatertemp |
+| 7 | target coolant temperature | 34115 = 68.00 degrees |
 | 8 | supply voltage, hundredths of a volt | 1259 = 12.59 V |
-| 9 | starts | matches the cloud's starts |
-| 10 | seconds counter, climbs ~1.6/s | probably uptime or total runtime |
+| 9 | starts | matches the Device Stats page |
+| 10 | runtime seconds, only while the burner fires | /3600 matches the Usage Hours page, and it stands still when the heater is on but paused |
 | 15, 19 | 78.00 and 200.00, likely limits | round values that never move |
-| 17, 21 | model `40EA`, panel software `1.5.14` | self evident |
-| 1 | probably power percent | was 33 while circulating, 0 once fully off |
-| 2 | probably the primary water pump | 1 while circulating, 0 once off |
-| 3 | extra water pump | flipped to 1 the instant the app wrote `SET EWP=1` |
-| 11, 12, 13, 14, 16, 18, 20 | unidentified | exported as `wallas_field{index=...}` so their meaning can be spotted from how they move |
+| 16 | serial number | matches Device Info, 444 |
+| 17 | model, `40EA` | self evident |
+| 21 | heater software version | matches Device Info; the panel's own version is the `5b63` read instead |
+| 2, 11, 12, 13, 14, 18, 20 | unidentified | 12 sits at 74031 and is not the Pump counter the panel shows |
 
 `8d4bcc34` carries a separate `S0.A:0` string.
 
@@ -113,6 +114,7 @@ app, take a bug report, then read the ATT writes with tshark):
 | `SET RTT=30415` | room target, hundredths of a Kelvin, here 31.00 degrees |
 | `SET EWP=1` | extra water pump on, `0` off |
 | `STOP` | stop the heater |
+| `START` | start it, glow plug and a five minute ignition |
 
 There is no handshake or authorization step: the only other writes in those
 captures are `0100` to the notification descriptors. Replaying them works, both
@@ -128,8 +130,6 @@ page with the current values, the setpoint, the extra water pump and start/stop.
 Start there needs a confirmation box ticked, since it runs a glow plug and a five
 minute ignition.
 
-`START` is assumed rather than captured: neither snoop log contains a start, so
-`start` and `power = true` write a verb we have not seen the app use. The panel
-ignores commands it does not recognise, which is how the wrong write format was
-spotted in the first place, so the likely failure is that nothing happens. A
-snoop log of pressing start in the app would settle it.
+`START` is not in either capture, it was a guess that turned out right: it starts
+the heater. `/wallas` keeps a confirmation box in front of it all the same, since
+a stray click runs a five minute ignition.

@@ -47,37 +47,42 @@ COMMAND = "b88e098b-e464-4b54-b827-79eb2b150a9f"
 
 # Commands are ASCII too, read off the phone app with HCI snoop logs: it writes
 # "SET RTT=30415" for a 31.00 degree room target, "SET EWP=1" for the extra water
-# pump and a bare "STOP" to stop the heater. Starting has not been captured yet,
-# and is deliberately not guessed: a wrong write runs a glow plug and a five
-# minute ignition sequence.
+# pump and a bare "STOP" to stop the heater. START is not in either capture but
+# turned out to be the verb, it started the heater.
 SETTERS = {
     "target_room_temperature": ("RTT", "temperature"),
     "extra_water_pump": ("EWP", "bool"),
 }
-# STOP is from a capture of the app, START is assumed: the app was never made to
-# start the heater while snooping. Unknown verbs are ignored by the panel.
 ACTIONS = {"stop": "STOP", "start": "START"}
 
-# Confirmed by watching the panel: 5 followed a setpoint change from 35 to 32,
-# 6 is the coolant temperature, 7 matches the target water temperature in the
-# cloud API, 8 the supply voltage. The rest are still unnamed.
+# Field meanings, from watching the panel and from its own display pages: 5
+# followed a setpoint change from 35 to 32, 6 is the coolant temperature, 7
+# matches the target water temperature, 8 the supply voltage, and 0/1 were 0/0
+# with the heater off against 3/64 with it on. 9, 16 and 21 match the Device
+# Stats and Device Info pages (starts, serial number, heater software), and 10 in
+# seconds matches the usage hours there. Note the panel's own software version is
+# the 5b63 read, not field 21.
 KELVIN = 27315  # hundredths of a Kelvin at 0 degrees
+NOISY = {10}    # runtime, ticks every second the burner runs
 FIELDS = {
-    0: ("state", None),
-    3: ("extra_water_pump", None),  # flipped when the app wrote SET EWP=1
+    0: ("state", None),                 # 0 off, 3 on
+    # field 1 is some phase or status code, not the percentage on the display:
+    # 0 off, 17 right after START, 22 through the ignition ramp, 33 at full
+    # ignition, 64 while paused. field 2 is 1 from START until some point after
+    # the ramp, so probably the ignition or glow plug phase.
+    3: ("extra_water_pump", None),      # flipped when the app wrote SET EWP=1
     4: ("room_temperature", "temperature"),
     5: ("target_room_temperature", "temperature"),
     6: ("coolant_temperature", "temperature"),
     7: ("target_coolant_temperature", "temperature"),
     8: ("supply_voltage", "centi"),
     9: ("starts", None),
-    11: ("unknown_11", None),
-    12: ("counter_12", None),
-    14: ("unknown_14", None),
+    10: ("runtime_seconds", None),      # advances only while the burner fires
     15: ("limit_15", "temperature"),
+    16: ("serial_number", None),
     17: ("model", None),
     19: ("limit_19", "temperature"),
-    21: ("panel_version", None),
+    21: ("heater_version", None),
 }
 
 
@@ -103,6 +108,8 @@ class Panel:
         self.status = None      # the separate 8d4bcc34 string
         self.updated_at = 0.0
         self.connected = False
+        self.notifying = False   # subscriptions are per connection, and BlueZ
+                                 # keeps the link across a restart of this agent
 
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
         self.bus = dbus.SystemBus()
@@ -144,6 +151,7 @@ class Panel:
                     break
                 time.sleep(0.5)
         self.connected = True
+        subscribed = 0
         chars = self.characteristics()
         for uuid in NOTIFY:
             path = chars.get(uuid)
@@ -153,10 +161,14 @@ class Panel:
             char = dbus.Interface(self.bus.get_object("org.bluez", path), "org.bluez.GattCharacteristic1")
             try:
                 char.StartNotify()
+                subscribed += 1
                 print("subscribed %s" % uuid, flush=True)
             except dbus.DBusException as e:
-                if "Already" not in str(e):
+                if "Already" in str(e):
+                    subscribed += 1
+                else:
                     print("subscribe %s failed: %s" % (uuid, e), flush=True)
+        self.notifying = subscribed > 0
 
     def set(self, name, value):
         """Turn a named value into the panel's own command syntax"""
@@ -192,6 +204,8 @@ class Panel:
     def on_properties_changed(self, interface, changed, invalidated, path=None):
         if interface == "org.bluez.Device1" and "Connected" in changed:
             self.connected = bool(changed["Connected"])
+            if not self.connected:
+                self.notifying = False
             print("connected: %s" % self.connected, flush=True)
             return
         if interface != "org.bluez.GattCharacteristic1" or "Value" not in changed:
@@ -200,7 +214,17 @@ class Panel:
         with self.lock:
             match = re.match(r"^(\d+):(.*)$", text)
             if match:
-                self.fields[int(match.group(1))] = match.group(2)
+                index, value = int(match.group(1)), match.group(2)
+                previous = self.fields.get(index)
+                # Log changes of the discrete fields, so a run of the heater
+                # leaves a trace in the journal and the unidentified ones can be
+                # read afterwards. The temperatures, the voltage and the runtime
+                # move constantly and would drown it.
+                name, kind = FIELDS.get(index, ("field_%d" % index, None))
+                if previous is not None and previous != value and kind is None \
+                        and index not in NOISY:
+                    print("%s (%d): %s -> %s" % (name, index, previous, value), flush=True)
+                self.fields[index] = value
                 self.updated_at = time.time()
             elif text.strip():
                 self.status = text.strip()
@@ -228,16 +252,22 @@ class Panel:
     # immediately after our own disconnect makes BlueZ abort the attempt
     # (le-connection-abort-by-local), hence the pause before connecting again.
     def watchdog(self, poll, stale_after):
+        started = time.time()
         while True:
             try:
                 connected = bool(self.properties(self.path, "org.bluez.Device1").get("Connected"))
-                stalled = self.updated_at and time.time() - self.updated_at > stale_after
-                if connected and stalled:
-                    print("no data for %ds, reconnecting" % stale_after, flush=True)
+                quiet = time.time() - (self.updated_at or started)
+                if not connected:
+                    self.connect()
+                elif not self.notifying:
+                    # connected but not subscribed, which is where a restart of
+                    # this agent leaves us: BlueZ holds the link, we hold nothing
+                    print("connected without subscriptions, subscribing", flush=True)
+                    self.connect()
+                elif quiet > stale_after:
+                    print("no data for %ds, reconnecting" % quiet, flush=True)
                     self.device().Disconnect()
                     time.sleep(5)
-                    connected = False
-                if not connected:
                     self.connect()
             except dbus.DBusException as e:
                 print("watchdog: %s" % e, flush=True)
