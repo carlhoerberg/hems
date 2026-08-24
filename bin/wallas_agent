@@ -66,11 +66,12 @@ KELVIN = 27315  # hundredths of a Kelvin at 0 degrees
 NOISY = {10}    # runtime, ticks every second the burner runs
 FIELDS = {
     0: ("state", None),                 # 0 off, 3 on
-    # field 1 is some phase or level code, not the percentage on the display: 0
-    # off, then 17, 18, 22 through the ignition ramp, 33 at full ignition, 64
-    # while paused or purging. field 2 came on three minutes into a warm start,
-    # together with the coolant reading dropping as cooler loop water reached the
-    # sensor, so it is probably the circulation pump.
+    # field 1 is a phase code, not the percentage on the display: 0 off, then 17,
+    # 18, 22, 23 through the ignition ramp, 33 at full burn, 129 for the cooldown
+    # after the burner stops (about five minutes, runtime frozen, coolant
+    # falling) and 64 once settled into pause. field 2 came on three minutes into
+    # a warm start, together with the coolant reading dropping as cooler loop
+    # water reached the sensor, so it is the circulation pump.
     2: ("water_pump", None),
     3: ("extra_water_pump", None),      # flipped when the app wrote SET EWP=1
     4: ("room_temperature", "temperature"),
