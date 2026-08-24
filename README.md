@@ -84,20 +84,21 @@ hundredths of a Kelvin: subtract 27315 and divide by 100.
 | Field | Meaning | How it was established |
 | --- | --- | --- |
 | 0 | state: 0 off, 3 on | 0 with the heater off, 3 with it on |
-| 1 | a phase or status code, not the percentage the display shows | 0 off, 22 through the ignition ramp, 33 at full ignition, 64 while paused |
+| 1 | a phase or level code, not the percentage the display shows | 0 off, then 17, 18, 22 through the ignition ramp, 33 at full ignition, 64 while paused or purging |
+| 2 | probably the circulation pump | came on three minutes into a warm start, with the coolant reading dropping as cooler loop water reached the sensor |
 | 3 | extra water pump | flipped to 1 the instant the app wrote `SET EWP=1` |
 | 4 | room temperature | tracks the panel display |
 | 5 | target room temperature | followed a 35 to 32 change made on the panel |
 | 6 | coolant temperature | matches the panel display |
 | 7 | target coolant temperature | 34115 = 68.00 degrees |
 | 8 | supply voltage, hundredths of a volt | 1259 = 12.59 V |
-| 9 | starts | matches the Device Stats page |
+| 9 | starts | incremented three seconds after a START |
 | 10 | runtime seconds, only while the burner fires | /3600 matches the Usage Hours page, and it stands still when the heater is on but paused |
 | 15, 19 | 78.00 and 200.00, likely limits | round values that never move |
 | 16 | serial number | matches Device Info, 444 |
 | 17 | model, `40EA` | self evident |
 | 21 | heater software version | matches Device Info; the panel's own version is the `5b63` read instead |
-| 2, 11, 12, 13, 14, 18, 20 | unidentified | 12 sits at 74031 and is not the Pump counter the panel shows |
+| 11, 12, 13, 14, 18, 20 | unidentified, and static through a full stop and start, so probably settings rather than state | 12 sits at 74031 and is not the Pump counter the panel shows |
 
 `8d4bcc34` carries a separate `S0.A:0` string.
 
