@@ -9,10 +9,13 @@
     <% else %>
       <% v = state["values"] %>
       <p>
-        <%=v["state"].to_i.zero? ? "Off" : "Running or paused (state #{v["state"]})"%>,
+        <strong><%=v["on"] ? "On" : "Off"%></strong>,
+        <%=v["phase"]%>,
+        pump <%=v["water_pump"].to_i.zero? ? "off" : "on"%>,
         room <%=v["room_temperature"]%> °C,
         coolant <%=v["coolant_temperature"]%> °C,
         <%=v["supply_voltage"]%> V,
+        <%=(v["runtime_seconds"].to_i / 3600.0).round(1)%> h on <%=v["starts"]%> starts,
         data <%=state["age"]%> s old<%=state["connected"] ? "" : ", panel not connected"%>
       </p>
       <form method="post">

@@ -83,8 +83,8 @@ hundredths of a Kelvin: subtract 27315 and divide by 100.
 
 | Field | Meaning | How it was established |
 | --- | --- | --- |
-| 0 | state: 0 off, 3 on | 0 with the heater off, 3 with it on |
-| 1 | phase code, not the percentage the display shows | 0 off, 17/18/22/23 through the ignition ramp, 33 at full burn, 129 for the five minute cooldown after the burner stops, 64 once settled into pause |
+| 0 | on or off: 0 off, 3 on | 3 holds through burning, cooldown and pause alike, so it is not the phase |
+| 1 | the phase, served as `phase` too | 0 off, 17/18/22/23 through the ignition ramp, 33 at full burn, 129 for the five minute cooldown after the burner stops, 64 once settled into pause |
 | 2 | probably the circulation pump | came on three minutes into a warm start, with the coolant reading dropping as cooler loop water reached the sensor |
 | 3 | extra water pump | flipped to 1 the instant the app wrote `SET EWP=1` |
 | 4 | room temperature | tracks the panel display |

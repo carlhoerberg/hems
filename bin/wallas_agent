@@ -64,6 +64,19 @@ ACTIONS = {"stop": "STOP", "start": "START"}
 # the 5b63 read, not field 21.
 KELVIN = 27315  # hundredths of a Kelvin at 0 degrees
 NOISY = {10}    # runtime, ticks every second the burner runs
+
+# What field 1 goes through over a cycle. State (field 0) is only on or off, the
+# phase is in here.
+PHASES = {
+    0: "Off",
+    17: "Ignition",
+    18: "Ignition",
+    22: "Ignition",
+    23: "Ignition",
+    33: "Full burn",
+    129: "Cooldown",
+    64: "Paused",
+}
 FIELDS = {
     0: ("state", None),                 # 0 off, 3 on
     # field 1 is a phase code, not the percentage on the display: 0 off, then 17,
@@ -72,6 +85,7 @@ FIELDS = {
     # falling) and 64 once settled into pause. field 2 came on three minutes into
     # a warm start, together with the coolant reading dropping as cooler loop
     # water reached the sensor, so it is the circulation pump.
+    1: ("phase_code", None),
     2: ("water_pump", None),
     3: ("extra_water_pump", None),      # flipped when the app wrote SET EWP=1
     4: ("room_temperature", "temperature"),
@@ -242,6 +256,11 @@ class Panel:
         for index, raw in fields.items():
             name, kind = FIELDS.get(index, ("field_%d" % index, None))
             values[name] = convert(kind, raw)
+        if "state" in values:
+            values["on"] = values["state"] != 0
+        if "phase_code" in values:
+            code = values["phase_code"]
+            values["phase"] = PHASES.get(code, "Unknown (%s)" % code)
         return {
             "connected": self.connected,
             "age": round(time.time() - updated_at, 1) if updated_at else None,
