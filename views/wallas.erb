@@ -16,9 +16,22 @@ wallas_supply_voltage <%=v["supply_voltage"]%>
 # TYPE wallas_starts counter
 wallas_starts <%=v["starts"]%>
 
-# The panel's own state code, 0 off and 3 idle/paused
+# 0 off, 3 on, which holds through burning, cooldown and pause alike
 # TYPE wallas_state gauge
 wallas_state <%=v["state"]%>
+
+# The phase within that: 0 off, 17/18/22/23 ignition, 33 full burn, 129 cooldown,
+# 64 paused
+# TYPE wallas_phase_code gauge
+wallas_phase_code <%=v["phase_code"]%>
+
+# TYPE wallas_pump gauge
+wallas_pump{name="Circulation"} <%=v["water_pump"].to_i%>
+wallas_pump{name="Extra"} <%=v["extra_water_pump"].to_i%>
+
+# Burner hours, for the 2000 hour service interval
+# TYPE wallas_runtime_hours counter
+wallas_runtime_hours <%=(v["runtime_seconds"].to_f / 3600).round(2)%>
 
 # TYPE metrics_gather_time gauge
 metrics_gather_time{device="wallas"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>
