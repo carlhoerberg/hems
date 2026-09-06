@@ -34,9 +34,5 @@ casa_fireplace_active <%=casa.fireplace_active%>
 # TYPE casa_fireplace_level gauge
 casa_fireplace_level <%=casa.fireplace_level%>
 
-# HELP casa_timed_function_time_left Minutes left of the running timed function, boost or fireplace
-# TYPE casa_timed_function_time_left gauge
-casa_timed_function_time_left <%=casa.timed_function_time_left%>
-
 # TYPE metrics_gather_time gauge
 metrics_gather_time{device="casa"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>
