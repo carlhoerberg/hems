@@ -14,6 +14,19 @@
       </select>
       <input type="submit" name="action" value="Set operating mode">
     </form>
+    <h2>Fireplace</h2>
+    <p>
+      <%=fireplace_active == 1 ? "Active, #{timed_function_time_left} min left" : "Not active"%>
+    </p>
+    <form method="post">
+      <select name="fireplace_level">
+        <option value="0" <%="selected" if fireplace_level == 0%>>Low (1/3 of max)</option>
+        <option value="1" <%="selected" if fireplace_level == 1%>>Normal (2/3 of max)</option>
+        <option value="2" <%="selected" if fireplace_level == 2%>>High (max)</option>
+      </select>
+      <button name="action" value="start_fireplace">Start</button>
+      <button name="action" value="stop_fireplace">Stop</button>
+    </form>
     <h2>Status</h2>
     <table>
       <%status.each do |key, value|%>

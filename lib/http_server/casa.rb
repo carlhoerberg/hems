@@ -17,7 +17,10 @@ class HTTPServer
       res.body = @@view.result_with_hash({
         measurements: @casa.measurements,
         status: @casa.status,
-        operating_mode: @casa.operating_mode
+        operating_mode: @casa.operating_mode,
+        fireplace_active: @casa.fireplace_active,
+        fireplace_level: @casa.fireplace_level,
+        timed_function_time_left: @casa.timed_function_time_left
       })
     end
 
@@ -25,6 +28,14 @@ class HTTPServer
       form = URI.decode_www_form(req.body).to_h
       if (op = form["operating_mode"])
         @casa.operating_mode = op.to_i
+      end
+      # Set the overpressure level before starting, so the run uses it
+      if (level = form["fireplace_level"])
+        @casa.fireplace_level = level.to_i
+      end
+      case form["action"]
+      when "start_fireplace" then @casa.fireplace_active = true
+      when "stop_fireplace" then @casa.fireplace_active = false
       end
       res.status = 303
       res["location"] = req.path

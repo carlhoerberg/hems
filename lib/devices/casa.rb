@@ -170,6 +170,37 @@ class Devices
       write "4x5001", value
     end
 
+    # Fireplace mode overpressures the house so the fireplace draws properly,
+    # by throttling the exhaust fan and boosting the supply fan for a while.
+    # The unit runs it on its own timer, the remaining minutes show up in
+    # 3x6308 (the shared timed function countdown).
+
+    # 3x6335, 0 = not active, 1 = active
+    def fireplace_active
+      read "3x6335"
+    end
+
+    # 4x5002 is write only, 1 = start the fireplace function with its timer,
+    # 0 = stop it
+    def fireplace_active=(value)
+      write "4x5002", value ? 1 : 0
+    end
+
+    # 4x5105, the overpressure level:
+    # 0 = Low (1/3 of max), 1 = Normal (2/3 of max), 2 = High (max)
+    def fireplace_level
+      read "4x5105"
+    end
+
+    def fireplace_level=(value)
+      write "4x5105", value
+    end
+
+    # 3x6308, minutes left of the running timed function (boost or fireplace)
+    def timed_function_time_left
+      read "3x6308"
+    end
+
     # 3x6136 Combined alarm See full list
     # 3x6137 Combined info See full list
 

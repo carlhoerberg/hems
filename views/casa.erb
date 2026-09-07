@@ -27,5 +27,12 @@ casa_unit_state <%=casa.unit_state%>
 # TYPE casa_operating_mode gauge
 casa_operating_mode <%=casa.operating_mode%>
 
+# TYPE casa_fireplace_active gauge
+casa_fireplace_active <%=casa.fireplace_active%>
+
+# HELP casa_fireplace_level 0 = Low (1/3 of max), 1 = Normal (2/3 of max), 2 = High (max)
+# TYPE casa_fireplace_level gauge
+casa_fireplace_level <%=casa.fireplace_level%>
+
 # TYPE metrics_gather_time gauge
 metrics_gather_time{device="casa"} <%=Process.clock_gettime(Process::CLOCK_MONOTONIC) - t%>
