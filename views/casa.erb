@@ -1,34 +1,93 @@
+<%s = casa.status; m = casa.measurements%>
 # TYPE casa_temperature gauge
-<%casa.temperatures.each do |k, v|%>
-casa_temperature{name="<%=k.to_s.capitalize.gsub("_", " ")%>"} <%=v%>
-<%end%>
+casa_temperature{name="Fresh"} <%=m[:fresh_air_temperature]%>
+casa_temperature{name="Supply before reheater"} <%=m[:supply_air_before_heater_temperature]%>
+casa_temperature{name="Supply"} <%=m[:supply_air_temperature]%>
+casa_temperature{name="Extract"} <%=m[:extract_air_temperature]%>
+casa_temperature{name="Exhaust"} <%=m[:exhaust_air_temperature]%>
+casa_temperature{name="Room"} <%=m[:room_air_temperature]%>
+casa_temperature{name="User panel"} <%=m[:user_panel_1_air_temperature]%>
+
+# HELP casa_temperature_setpoint Room is the user setpoint, Supply is what the room controller asks the supply air to be
+# TYPE casa_temperature_setpoint gauge
+casa_temperature_setpoint{name="Room"} <%=s[:temperature_setpoint]%>
+casa_temperature_setpoint{name="Supply"} <%=s[:room_controller_supply_setpoint]%>
 
 # TYPE casa_relative_humidity gauge
-casa_relative_humidity <%=casa.relative_humidity%>
+casa_relative_humidity <%=m[:relative_humidity]%>
 
 # TYPE casa_absolute_humidity gauge
-casa_absolute_humidity <%=casa.absolute_humidity%>
+casa_absolute_humidity <%=m[:absolute_humidity]%>
 
 # TYPE casa_absolute_humidity_setpoint gauge
-casa_absolute_humidity_setpoint <%=casa.absolute_humidity_setpoint%>
+casa_absolute_humidity_setpoint <%=m[:absolute_humidity_setpoint]%>
 
 # TYPE casa_power_control gauge
-casa_power_control{name="Supply fan"} <%=casa.supply_fan_control%>
-casa_power_control{name="Exhaust fan"} <%=casa.exhaust_fan_control%>
-casa_power_control{name="Reheater"} <%=casa.supply_control_power_output%>
+casa_power_control{name="Supply fan"} <%=s[:supply_fan_control]%>
+casa_power_control{name="Exhaust fan"} <%=s[:exhaust_fan_control]%>
+casa_power_control{name="Reheater"} <%=s[:supply_control_power_output]%>
+
+# HELP casa_auto_control Fan speed adjustment from the automatic controls, percent
+# TYPE casa_auto_control gauge
+casa_auto_control{name="A+"} <%=s[:a_plus_control]%>
+casa_auto_control{name="Auto RH"} <%=s[:auto_rh_control]%>
+casa_auto_control{name="Auto air quality"} <%=s[:auto_air_quality_control]%>
+casa_auto_control{name="Auto temperature boost"} <%=s[:auto_temperature_boost_control]%>
+casa_auto_control{name="Fan speed limit"} <%=s[:fan_speed_limit_control]%>
+casa_auto_control{name="Smart"} <%=s[:smart_control]%>
+
+# HELP casa_function_active 0 = not active, 1 = active, defrost 1-4 = active
+# TYPE casa_function_active gauge
+casa_function_active{name="Travelling"} <%=s[:travelling_function_active]%>
+casa_function_active{name="Week timer"} <%=s[:week_timer_active]%>
+casa_function_active{name="Cooling control"} <%=s[:cooling_control_active]%>
+casa_function_active{name="Defrost"} <%=s[:defrost_active]%>
+casa_function_active{name="Rotor"} <%=s[:rotor_active]%>
+casa_function_active{name="Preheater"} <%=s[:preheater_active]%>
+casa_function_active{name="Summer cooling"} <%=s[:summer_cooling_active]%>
+casa_function_active{name="Fireplace"} <%=s[:fireplace_function_active]%>
+casa_function_active{name="Central vacuum cleaner"} <%=s[:central_vacuum_cleaner_function_active]%>
+casa_function_active{name="Hood compensation"} <%=s[:hood_compensation_active]%>
+casa_function_active{name="External boost"} <%=s[:external_boost_control_active]%>
+casa_function_active{name="External away"} <%=s[:external_away_control_active]%>
+casa_function_active{name="Filter guard input"} <%=s[:filter_guard_input_status]%>
+
+# HELP casa_bypass_plate_position Heat exchanger bypass plate, Automatic in percent open, Manual 0 = closed (winter) 1 = open (summer)
+# TYPE casa_bypass_plate_position gauge
+casa_bypass_plate_position{type="Automatic"} <%=s[:automatic_heat_exchanger_bypass_plate_position]%>
+casa_bypass_plate_position{type="Manual"} <%=s[:manual_heat_exchanger_bypass_plate_position]%>
+
+# HELP casa_preheater_power Preheater output in percent
+# TYPE casa_preheater_power gauge
+casa_preheater_power{name="Preheater"} <%=s[:preheater_output_power]%>
+casa_preheater_power{name="Nordic preheater"} <%=s[:nordic_preheater_power]%>
+
+# HELP casa_defrost Defrost fan adjustments in percent
+# TYPE casa_defrost gauge
+casa_defrost{name="Supply limit"} <%=s[:defrost_supply_limit]%>
+casa_defrost{name="Exhaust forcing"} <%=s[:defrost_exhaust_forcing]%>
+
+# HELP casa_boost_time_left Minutes left of the running timed function, boost or fireplace
+# TYPE casa_boost_time_left gauge
+casa_boost_time_left <%=s[:boost_time_left]%>
+
+# TYPE casa_hours_to_next_service gauge
+casa_hours_to_next_service <%=s[:hours_to_next_service]%>
 
 # TYPE casa_alarms gauge
 casa_alarms{type="Active"} <%=casa.active_alarms%>
 casa_alarms{type="Info"} <%=casa.info_alarms%>
 
+# HELP casa_unit_state 0 = External stop, 1 = User stopped, 2 = Starting, 3 = Normal, 4 = Commissioning
 # TYPE casa_unit_state gauge
-casa_unit_state <%=casa.unit_state%>
+casa_unit_state <%=s[:unit_state]%>
 
+# HELP casa_operating_mode 0 = Stop, 1 = Away, 2 = Home, 3 = Boost, 4 = Travelling
 # TYPE casa_operating_mode gauge
-casa_operating_mode <%=casa.operating_mode%>
+casa_operating_mode <%=s[:ventilation_speed_state]%>
 
 # TYPE casa_fireplace_active gauge
-casa_fireplace_active <%=casa.fireplace_active%>
+casa_fireplace_active <%=s[:fireplace_function_active]%>
 
 # HELP casa_fireplace_level 0 = Low (1/3 of max), 1 = Normal (2/3 of max), 2 = High (max)
 # TYPE casa_fireplace_level gauge
