@@ -30,9 +30,24 @@ class Devices
         "total_current" => "shelly_current",
         "total_act_power" => "shelly_apower",
         "total_aprt_power" => "shelly_aprtpower",
+        "a_current" => ["shelly_current", nil, "a"],
+        "a_voltage" => ["shelly_voltage", nil, "a"],
+        "a_act_power" => ["shelly_apower", nil, "a"],
+        "a_aprt_power" => ["shelly_aprtpower", nil, "a"],
+        "b_current" => ["shelly_current", nil, "b"],
+        "b_voltage" => ["shelly_voltage", nil, "b"],
+        "b_act_power" => ["shelly_apower", nil, "b"],
+        "b_aprt_power" => ["shelly_aprtpower", nil, "b"],
+        "c_current" => ["shelly_current", nil, "c"],
+        "c_voltage" => ["shelly_voltage", nil, "c"],
+        "c_act_power" => ["shelly_apower", nil, "c"],
+        "c_aprt_power" => ["shelly_aprtpower", nil, "c"],
       },
       /^emdata:\d+$/ => {
         "total_act" => ["shelly_aenergy_total", :counter],
+        "a_total_act_energy" => ["shelly_aenergy_total", :counter, "a"],
+        "b_total_act_energy" => ["shelly_aenergy_total", :counter, "b"],
+        "c_total_act_energy" => ["shelly_aenergy_total", :counter, "c"],
       },
       /^em1:\d+$/ => {
         "current" => "shelly_current",
@@ -125,7 +140,7 @@ class Devices
           next unless component_data.is_a?(Hash)
 
           fields.each do |field_path, metric_def|
-            metric_name, type = Array === metric_def ? metric_def : [metric_def, nil]
+            metric_name, type, phase = Array === metric_def ? metric_def : [metric_def, nil, nil]
             v = if Array === field_path
                   component_data.dig(*field_path)
                 else
@@ -135,7 +150,8 @@ class Devices
             v = v ? 1 : 0 if v == true || v == false
             entry = { v:, ts: }
             entry[:counter] = true if type == :counter
-            device["#{metric_name}/#{component_key}"] = entry
+            key = phase ? "#{metric_name}/#{component_key}/#{phase}" : "#{metric_name}/#{component_key}"
+            device[key] = entry
           end
         end
       end
