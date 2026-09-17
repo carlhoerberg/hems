@@ -125,9 +125,20 @@ class Devices
         denitr_sedimentation_last_time: m[11],
         denitr_recirculation_last_time: m[12],
         info: m[47],
+        desludging_error: m[47] & 1 > 0, # E107
+        emergency_water_level: m[47] & 2 > 0, # E108
+        chem_container_p_low: m[47] & 4 > 0, # E131 - flocculant/precipitant container running low
+        chem_container_p2_low: m[47] & 8 > 0, # E133
         warning: m[48],
+        raw_water_pumping_failure: m[48] & 1 > 0, # E104
+        long_term_overload: m[48] & 2 > 0, # E109
+        denitrification_sludge_failure: m[48] & 4 > 0, # E106
+        chem_tank_p_empty: m[48] & 8 > 0, # E130 - flocculant/precipitant container empty
+        chem_tank_2_empty: m[48] & 16 > 0, # E132
+        accumulation_pressure_drop: m[48] & 64 > 0, # E110
+        reactor_pressure_drop: m[48] & 128 > 0, # E111
         emergency: m[49],
-        chem_volume_remaining: m[52],
+        chem_volume_remaining: m[52] / 10.0,
         chem_percentage_remaining: (m[53] & 127),
         chem_days_remaining: (m[53] >> 7),
         analog_v1_input: m[54] / 1000.0,
