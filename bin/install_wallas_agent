@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# Installs bin/wallas_agent as a systemd service on the Pi that sits in BLE
+# range of the Wallas 3008 panel. Run from a machine with SSH access to that
+# Pi; the panel pairing step needs a PTY so the script can prompt for the
+# six-digit code shown on the panel display, hence -t below.
+#
+#   bin/install_wallas_agent [host] [mac]
+#
+set -euo pipefail
+
+HOST="${1:-192.168.0.15}"
+MAC="${2:-3C:E9:0E:96:69:3E}"
+REMOTE_USER="carl"
+
+cd "$(dirname "$0")/.."
+
+echo "Copying wallas_agent and its systemd unit to $HOST..."
+scp bin/wallas_agent wallas-agent.service "$REMOTE_USER@$HOST:/tmp/"
+
+ssh -t "$REMOTE_USER@$HOST" "MAC='$MAC' bash -s" <<'REMOTE'
+set -euo pipefail
+
+echo "Installing dependencies..."
+sudo apt-get update -qq
+sudo apt-get install -y -qq python3-dbus python3-gi bluez
+
+sudo install -m 755 /tmp/wallas_agent /usr/local/bin/wallas_agent
+sudo install -m 644 /tmp/wallas-agent.service /etc/systemd/system/
+rm -f /tmp/wallas_agent /tmp/wallas-agent.service
+
+if bluetoothctl info "$MAC" 2>/dev/null | grep -q "Paired: yes"; then
+  echo "$MAC is already paired, skipping pairing."
+else
+  echo "Pairing with $MAC. Watch the panel display for a six-digit code —"
+  echo "it appears within a few seconds of 'pair' below and expires quickly."
+  {
+    echo "agent KeyboardOnly"
+    echo "default-agent"
+    echo "scan on"
+    sleep 3
+    echo "pair $MAC"
+    sleep 5
+    read -r -p "Code shown on the panel: " pin < /dev/tty
+    echo "$pin"
+    sleep 2
+    echo "trust $MAC"
+    sleep 1
+    echo "scan off"
+    echo "quit"
+  } | bluetoothctl
+fi
+
+if ! bluetoothctl info "$MAC" 2>/dev/null | grep -q "Paired: yes"; then
+  echo "Pairing failed, not enabling the service. Re-run this script to retry." >&2
+  exit 1
+fi
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now wallas-agent
+echo "Done, wallas-agent is $(systemctl is-active wallas-agent)."
+REMOTE

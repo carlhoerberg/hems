@@ -45,6 +45,14 @@ NOTIFY = [
 ]
 COMMAND = "b88e098b-e464-4b54-b827-79eb2b150a9f"
 
+# Only these two ever carry "<index>:<value>" telemetry. The wifi and update
+# status characteristics occasionally notify their own digit-prefixed text
+# (base64-ish blobs), which would otherwise be misread as low-numbered fields.
+FIELD_CHARS = {
+    "d769facf-a4da-47ba-9253-65359ee480fb",
+    "cc00e463-2850-4e21-a255-6764dac0c275",
+}
+
 # Commands are ASCII too, read off the phone app with HCI snoop logs: it writes
 # "SET RTT=30415" for a 31.00 degree room target, "SET EWP=1" for the extra water
 # pump and a bare "STOP" to stop the heater. START is not in either capture but
@@ -102,6 +110,9 @@ FIELDS = {
     21: ("heater_version", None),
 }
 
+# The only fields whose real value is ever letters, not digits.
+ALNUM_FIELDS = {17, 21}
+
 
 def convert(kind, raw):
     """Scale a raw field value, keeping the raw string when it is not a number"""
@@ -127,6 +138,7 @@ class Panel:
         self.connected = False
         self.notifying = False   # subscriptions are per connection, and BlueZ
                                  # keeps the link across a restart of this agent
+        self.field_char_paths = set()  # resolved paths of FIELD_CHARS, set on connect
 
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
         self.bus = dbus.SystemBus()
@@ -170,6 +182,7 @@ class Panel:
         self.connected = True
         subscribed = 0
         chars = self.characteristics()
+        self.field_char_paths = {chars[uuid] for uuid in FIELD_CHARS if uuid in chars}
         for uuid in NOTIFY:
             path = chars.get(uuid)
             if not path:
@@ -219,6 +232,13 @@ class Panel:
     # --- notifications ---
 
     def on_properties_changed(self, interface, changed, invalidated, path=None):
+        # BlueZ signals PropertiesChanged for every device and characteristic
+        # on the adapter, not just this panel, and other BLE devices nearby
+        # (mesh nodes, other IoT gear) notify their own GATT changes. Without
+        # this filter their values land in self.fields under whatever digit
+        # their payload happens to start with.
+        if not path or not str(path).startswith(self.path):
+            return
         if interface == "org.bluez.Device1" and "Connected" in changed:
             self.connected = bool(changed["Connected"])
             if not self.connected:
@@ -229,9 +249,22 @@ class Panel:
             return
         text = bytes(changed["Value"]).decode("utf-8", "replace")
         with self.lock:
-            match = re.match(r"^(\d+):(.*)$", text)
+            # Only the field characteristics use "<index>:<value>"; the wifi
+            # and update status characteristics notify their own digit-led
+            # text sometimes, which is not a field and must not overwrite one.
+            # d769facf itself also carries a chunked, unrelated notification
+            # (an iotwallas.net cloud URL, seemingly for diagnostics) using
+            # the very same "<index>:<chunk>" framing and the same low index
+            # numbers as the real fields, indistinguishable by index alone.
+            # Every real field value is plain digits, except the model and
+            # version strings, so require that shape too to tell them apart.
+            match = re.match(r"^(\d+):([\w.]*)$", text) if path in self.field_char_paths else None
             if match:
                 index, value = int(match.group(1)), match.group(2)
+                expected = r"^[\w.]*$" if index in ALNUM_FIELDS else r"^\d*$"
+                if not re.match(expected, value):
+                    match = None
+            if match:
                 previous = self.fields.get(index)
                 # Log changes of the discrete fields, so a run of the heater
                 # leaves a trace in the journal and the unidentified ones can be
