@@ -10,7 +10,7 @@ class Devices
   # bin/wallas_agent runs on a Pi in radio range of the panel, holds the bonded
   # connection and serves the panel's own fields. See the README for the protocol.
   class Wallas
-    def initialize(host = "192.168.0.110", port = 8080)
+    def initialize(host = "192.168.0.15", port = 8080)
       @agent = URI("http://#{host}:#{port}")
     end
 

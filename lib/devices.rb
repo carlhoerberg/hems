@@ -75,6 +75,6 @@ class Devices
     @victron = Victron.new("192.168.0.202")
     @goe = GoE.new("go-echarger_274452")
     # Through the Bluetooth gateway next to the panel, the only way in
-    @wallas = Wallas.new("192.168.0.110")
+    @wallas = Wallas.new("192.168.0.15")
   end
 end

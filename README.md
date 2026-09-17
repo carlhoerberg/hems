@@ -36,7 +36,7 @@ self signed certificate with a TLS access_denied alert. It validates the server
 certificate and we cannot get a real certificate for a domain we do not own.
 
 What does work is the Bluetooth link the phone app uses.
-[bin/wallas_agent](bin/wallas_agent) runs on a Pi at 192.168.0.110, in radio
+[bin/wallas_agent](bin/wallas_agent) runs on a Pi at 192.168.0.15, in radio
 range of the panel (BLE reaches maybe 5 m, so it has to be the same room), holds
 the bonded connection and serves the panel's own fields as JSON.
 [lib/devices/wallas.rb](lib/devices/wallas.rb) reads it, and that is the only
@@ -121,8 +121,8 @@ There is no handshake or authorization step: the only other writes in those
 captures are `0100` to the notification descriptors. Replaying them works, both
 the setpoint (verified against the panel display) and `STOP`:
 
-    curl -X POST -d '{"target_room_temperature": 24}' http://192.168.0.110:8080/set
-    curl -X POST http://192.168.0.110:8080/stop
+    curl -X POST -d '{"target_room_temperature": 24}' http://192.168.0.15:8080/set
+    curl -X POST http://192.168.0.15:8080/stop
 
 The agent needs `--allow-write` for those, `Devices::Wallas` exposes
 `target_room_temperature=`, `extra_water_pump=`, `stop`, `start` and
